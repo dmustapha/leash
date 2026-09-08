@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "working_dir": "/Users/MAC/ethonline-2026",
+  "stage0_activated": true,
+  "manifest": {
+    "hackathon": {
+      "name": "ETHOnline 2026",
+      "url": "https://ethglobal.com/events/ethonline2026",
+      "platform": "other",
+      "platform_detail": "ethglobal",
+      "hard_deadline": "2026-09-13T16:19:00Z",
+      "videoLengthRequirement": 240,
+      "tracks": ["Building from Scratch", "Continuity Track"],
+      "judging_criteria": "TBD — intel to discover",
+      "sponsors": []
+    },
+    "research_depth": 10,
+    "team": [{"name": "Damilola Mustapha", "email": "damilolamustaphaa@gmail.com", "github": "dmustapha", "twitter": "@capitanoo23"}],
+    "demoFormat": "recorded",
+    "demo": {"music_vibe": "none", "creative_overrides": "let skill decide"},
+    "dry_run": false,
+    "copilot_pat_available": false
+  },
+  "checkpoints_answered": {
+    "manifest": true
+  },
+  "pipeline": {
+    "phases": {
+      "intel": {"status": "pending"},
+      "warroom": {"status": "pending"},
+      "forge": {"status": "pending"},
+      "critique": {"status": "pending"},
+      "url_preverify": {"status": "pending"},
+      "build": {"status": "pending"},
+      "debug": {"status": "pending"},
+      "wire": {"status": "pending"},
+      "verify_milestone": {"status": "pending"},
+      "design_forge": {"status": "pending"},
+      "stress_test": {"status": "pending"},
+      "polish": {"status": "pending"},
+      "deploy": {"status": "pending"},
+      "livetest": {"status": "pending"},
+      "interrogate": {"status": "pending"},
+      "demo_rehearsal": {"status": "pending"},
+      "demo": {"status": "pending"},
+      "package": {"status": "pending"},
+      "verify_preflight": {"status": "pending"}
+    }
+  }
+}

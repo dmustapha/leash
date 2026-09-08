@@ -1,0 +1,309 @@
+{
+  "hackathon_name": "ETHOnline 2026",
+  "url": "https://ethglobal.com/events/ethonline2026",
+  "platform": "other",
+  "platform_detail": "ethglobal",
+  "deadline": "2026-09-13T16:00:00Z",
+  "deadline_note": "Sunday Sep 13 2026, 12:00 PM EDT — confirmed from /info/details [A1]. Late submissions not accepted.",
+  "prize_pool_usd": 80000,
+  "roster_audit": {
+    "discovered": false,
+    "entrants_scanned": 0,
+    "path": "research/roster-audit/",
+    "not_discoverable_reason": "ETHGlobal showcase hidden until deadline (No projects found); 1 competitor (ChainSight) found via GitHub topic search"
+  },
+  "tracks": [
+    "Building from Scratch (Classic)",
+    "Continuity: Extend Open Source",
+    "Continuity: Ship a Feature"
+  ],
+  "chain": null,
+  "team_size_max": 5,
+  "submission_requirements": [
+    "Project title + description + repo link via Hacker Dashboard",
+    "Demo video 2-4 min MANDATORY (auto-rejected outside range)",
+    "Up to 3 partner prize selections",
+    "Public GitHub repo",
+    "Version control history throughout event (large single commits risk DQ)",
+    "AI usage documented incl. spec files and prompts"
+  ],
+  "required_integrations": [],
+  "products": [],
+  "docs_url": "see research/sponsors-deep.md Domain Knowledge tables",
+  "toolkit_url": null,
+  "telegram": null,
+  "registration_form": null,
+  "submission_form": null,
+  "demoFormat": "recorded",
+  "demo_video_requirements": {
+    "max_seconds": 240,
+    "min_seconds": 120,
+    "formats": [
+      "720p minimum"
+    ],
+    "platform": "YouTube/Loom",
+    "content_notes": "NO AI voiceovers/TTS, NO phone recordings, NO speed-ups, NO music+text instead of narration; intro <20s; max 4 bullets/slide"
+  },
+  "submission_form_fields": [],
+  "disqualifiers": [
+    "Demo video outside 2-4 min = auto-reject",
+    "Pre-existing code on Scratch track (public libs OK)",
+    "Missing version history / large single commits",
+    "AI voiceover in demo video",
+    "Entirely-AI submissions may lose partner prize/finalist eligibility",
+    "Late submission",
+    "Wrong track selection (prizes locked to selected track)"
+  ],
+  "workshops": [],
+  "sponsor_bounties": [],
+  "sidetracks": [],
+  "network": {
+    "chain": null,
+    "chain_id": null,
+    "rpc": null,
+    "testnet_name": null,
+    "faucet_url": null,
+    "deploy_requirement": null
+  },
+  "judging_criteria": [
+    {
+      "name": "Technicality",
+      "weight_pct": 20,
+      "note": "problem complexity + solution sophistication"
+    },
+    {
+      "name": "Originality",
+      "weight_pct": 20,
+      "note": "novelty or creative problem-solving"
+    },
+    {
+      "name": "Practicality",
+      "weight_pct": 20,
+      "note": "functionality + real-world usability"
+    },
+    {
+      "name": "Usability",
+      "weight_pct": 20,
+      "note": "UI/UX/DX intuitiveness"
+    },
+    {
+      "name": "WOW Factor",
+      "weight_pct": 20,
+      "note": "unique or impressive elements"
+    }
+  ],
+  "judges": [],
+  "prizes": [
+    {
+      "track": "The Graph — Composable/Standardized Graph Products",
+      "amount_usd": 5000,
+      "notes": "scratch; 2500/1500/1000"
+    },
+    {
+      "track": "The Graph — AI Tooling/Use Case (Scratch)",
+      "amount_usd": 5000,
+      "notes": "load-bearing Graph usage, live data"
+    },
+    {
+      "track": "The Graph — AI Tooling/Use Case (Continuity)",
+      "amount_usd": 5000,
+      "notes": "extend existing OSS repo"
+    },
+    {
+      "track": "Hedera — AI & Agentic Payments (x402)",
+      "amount_usd": 6000,
+      "notes": "3x2000; live x402-gated service on Hedera"
+    },
+    {
+      "track": "Hedera — Open Source Harness",
+      "amount_usd": 2000,
+      "notes": "2x1000"
+    },
+    {
+      "track": "Hedera — Tokenization of Anything (ATS)",
+      "amount_usd": 6000,
+      "notes": "3x2000"
+    },
+    {
+      "track": "Hedera — Continuity",
+      "amount_usd": 1000,
+      "notes": ""
+    },
+    {
+      "track": "Arc — Best DeFi/Onchain Finance",
+      "amount_usd": 1667,
+      "notes": "Arc + USDC, functional MVP"
+    },
+    {
+      "track": "Arc — Best Agentic Economy App",
+      "amount_usd": 1667,
+      "notes": "agents w/ real decision signals"
+    },
+    {
+      "track": "Arc — DeFi/Agentic (Continuity)",
+      "amount_usd": 1666,
+      "notes": ""
+    },
+    {
+      "track": "Arc — Launch on Testnet→Mainnet",
+      "amount_usd": 3500,
+      "notes": "2500/1000; mainnet-ready by Sep 30"
+    },
+    {
+      "track": "Arc — Launch (Continuity)",
+      "amount_usd": 1500,
+      "notes": ""
+    },
+    {
+      "track": "World — AgentKit Continuity",
+      "amount_usd": 3500,
+      "notes": "3x1166"
+    },
+    {
+      "track": "World — Selfie Check",
+      "amount_usd": 3500,
+      "notes": "3x1166; risk/eligibility/fairness signal"
+    },
+    {
+      "track": "1inch — Build an Aqua App",
+      "amount_usd": 5000,
+      "notes": "official Aqua/SwapVM contracts required"
+    },
+    {
+      "track": "1inch — Aqua App (Continuity)",
+      "amount_usd": 2000,
+      "notes": ""
+    },
+    {
+      "track": "ENS — Best Use of ENSv2",
+      "amount_usd": 4500,
+      "notes": "ENSv2 Sepolia, central to project"
+    },
+    {
+      "track": "ENS — Continuity Integration",
+      "amount_usd": 500,
+      "notes": ""
+    },
+    {
+      "track": "Uniswap — Stack Contribution",
+      "amount_usd": 3000,
+      "notes": "3x1000; OSS + FEEDBACK.md"
+    },
+    {
+      "track": "Uniswap — Stack Contribution (Continuity)",
+      "amount_usd": 2000,
+      "notes": ""
+    },
+    {
+      "track": "Ledger — AI Agents x Ledger",
+      "amount_usd": 3500,
+      "notes": "Ledger Agent Stack; agents hold secrets/pay securely"
+    },
+    {
+      "track": "Ledger — Continuity",
+      "amount_usd": 1500,
+      "notes": ""
+    },
+    {
+      "track": "Privy — Best B2B Financial Product",
+      "amount_usd": 2500,
+      "notes": "org wallets core"
+    },
+    {
+      "track": "Privy — Best Financial Flow",
+      "amount_usd": 2500,
+      "notes": "one complete functional flow"
+    },
+    {
+      "track": "Chainlink — Confidential Workflow (CRE)",
+      "amount_usd": 2000,
+      "notes": "2x1000"
+    },
+    {
+      "track": "Chainlink — Continuity Upgrade",
+      "amount_usd": 500,
+      "notes": ""
+    },
+    {
+      "track": "Chainlink — Liquidation Protection Challenge",
+      "amount_usd": 500,
+      "notes": "join via contract fn"
+    },
+    {
+      "track": "Bazantic — Help an Agent Use Your Project (Continuity)",
+      "amount_usd": 1000,
+      "notes": "x402 Gateway + Recipe"
+    },
+    {
+      "track": "Bazantic — Best Recipe Using Sponsor APIs",
+      "amount_usd": 1000,
+      "notes": ""
+    },
+    {
+      "track": "Bazantic — Agentify a New API",
+      "amount_usd": 1000,
+      "notes": ""
+    }
+  ],
+  "builder_profile": {
+    "skills": [
+      "Solidity/Foundry",
+      "Next.js/TypeScript",
+      "Rust",
+      "Circom/ZK",
+      "AI agents",
+      "cross-chain relayers"
+    ],
+    "tools": [
+      "Claude Code pipeline",
+      "Playwright",
+      "Remotion demo videos"
+    ],
+    "preferences": [
+      "deep native sponsor integration",
+      "on-chain proof-first submissions",
+      "solo builder",
+      "past ETHGlobal winner (0G @ Open Agents w/ AgentMesh; Chainlink Convergence w/ GhostFund)"
+    ]
+  },
+  "event_class": "sponsor_track",
+  "judge_reading": "Partner prizes judged by sponsor engineers/devrel who know their own tech — deep native integration wins; finalist track judged by ETHGlobal staff+judges on 5 equal criteria. Grand mechanism = sponsor tracks ($80K all sponsor prizes, no organizer cash prize found yet).",
+  "sponsor_vintage": [
+    {
+      "primitive": "1inch Aqua/SwapVM",
+      "shipped": "2026-07",
+      "source": "1inch dev access announcement [B2]"
+    },
+    {
+      "primitive": "Graph Subgraph MCP milestone",
+      "shipped": "2026-08",
+      "source": "Graph changelog [B2]"
+    },
+    {
+      "primitive": "Chainlink CRE Confidential Compute early-access",
+      "shipped": "2026",
+      "source": "Chainlink docs [A2]"
+    },
+    {
+      "primitive": "ENSv2 Sepolia Beta (Namechain L2 cancelled 2026-02)",
+      "shipped": "2026",
+      "source": "ENS blog [B2]"
+    },
+    {
+      "primitive": "Circle Arc Nanopayments (testnet-new)",
+      "shipped": "2026",
+      "source": "Circle docs [B2]"
+    },
+    {
+      "primitive": "Ledger wallet-cli ring v2.0.0 (Key Ring)",
+      "shipped": "2026",
+      "source": "Ledger GitHub [A2]"
+    },
+    {
+      "primitive": "Hedera Blocky402 x402 tooling",
+      "shipped": "2026",
+      "source": "Hedera prize page [A1]"
+    }
+  ],
+  "judging_note": "7-min: 4 demo + 3 Q&A. Async two-round judging (~20% advance to live finals). Partner prizes judged separately by sponsors — most prizes go to NON-finalists."
+}
