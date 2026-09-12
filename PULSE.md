@@ -136,3 +136,8 @@
 
 #### Blockers for Downstream
 - None.
+
+#### Update (url_preverify, 2026-09-12): production domain acquired
+- [USER] Dami registered **leash.ink** (Namecheap). This is the CANONICAL submission/demo domain. `leash-ens.vercel.app` stays as the guaranteed fallback.
+- Wiring (build/deploy WS-6): Vercel project = `leash-ens`; add custom domains `leash.ink` + `www.leash.ink`. Keep Namecheap DNS and add: A `@` -> 76.76.21.21, CNAME `www` -> cname.vercel-dns.com. Vercel auto-issues TLS. Use the exact record value Vercel shows in the dashboard as source of truth.
+- Flag F1/F2 copy + README live-link + demo URL should reference https://leash.ink.

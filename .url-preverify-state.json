@@ -12,6 +12,14 @@
       "status": "available",
       "http": 404,
       "note": "leash.vercel.app (200) and leash-dashboard.vercel.app (200) are TAKEN; name the Vercel project leash-ens to avoid an auto-suffixed collision URL. Other free alts: leash-x402, leash-console, leashctl."
+    },
+    "production_domain": {
+      "domain": "leash.ink",
+      "status": "registered",
+      "registrar": "NameCheap, Inc.",
+      "nameservers": ["dns1.registrar-servers.com", "dns2.registrar-servers.com"],
+      "wiring": "Keep Namecheap DNS; add A @ -> 76.76.21.21 and CNAME www -> cname.vercel-dns.com; add leash.ink + www.leash.ink in Vercel project leash-ens. Vercel auto-issues TLS.",
+      "note": "Canonical submission URL once live. leash-ens.vercel.app remains the guaranteed fallback."
     }
   },
   "deploy_platforms_reachable": { "github.com": 200, "vercel.com": 200, "render.com": 200 },
