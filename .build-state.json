@@ -1,8 +1,8 @@
 {
   "project": "leash",
-  "currentPhase": "phase-5",
-  "currentStep": "5.4b",
-  "currentSubStep": "5.4a-human-pending",
+  "currentPhase": "phase-6",
+  "currentStep": "6.1",
+  "currentSubStep": "6.1.a",
   "status": "in-progress",
   "autonomous_mode": false,
   "expected_phases": [
@@ -48,8 +48,8 @@
     {
       "phase": "Phase 5",
       "started_at": "2026-09-12T12:35:00Z",
-      "completed_at": null,
-      "evidence": "IN-PROGRESS->5.1/5.2/5.3 done: seed canonical accounts (DEV-020 fixed, evm==key-EVM MATCH); WS-5a /demo 4 real beats, next build PASSES (web/tsconfig strict+ES2020 fix DEV-027), isolation 0 edges, honest-framing 0, SPEND real settle 0.0.10487802@1789213788; VM-2 orchestrator re-ran 6/6 three-prize hero on canonical 0.0.10499595 (spend gas-free @1789214406, revoke Sepolia 0x12945fe4, Privy FUNDING_DENIED real token), WINNER-READINESS ~80. Remaining: 5.4a human Privy toggle + 5.4b real console"
+      "completed_at": "2026-09-12T14:30:00Z",
+      "evidence": "Phase 5 COMPLETE (BUILD-REPORT.md): 5.1 seed canonical accounts (DEV-020 fixed, evm==key-EVM MATCH, idempotent); 5.2 WS-5a /demo 4 real beats + A/B SplitScreen, next build PASSES (web/tsconfig strict+ES2020 DEV-027), isolation 0, honest-framing 0, SPEND real settle; 5.3 VM-2 orchestrator re-ran 6/6 three-prize hero on canonical 0.0.10499595 (spend gas-free @1789214406, revoke Sepolia 0x12945fe4, Privy FUNDING_DENIED real token), WINNER-READINESS ~80; 5.4b WS-5b real console /app (relayer-sponsored org/agent/fund/revoke real txs driven locally, next build PASSES, isolation 0, custody key stripped). 5.4a Privy dashboard toggle = deploy-time human step (login UNTESTED, DEV-031); DEV-030 new-console-agent funding off-allowlist honest DENY"
     }
   ],
   "completedSteps": [
@@ -72,7 +72,8 @@
     "4.2",
     "5.1",
     "5.2",
-    "5.3"
+    "5.3",
+    "5.4b"
   ],
   "fileGroups": {
     "0.1": {
@@ -267,6 +268,31 @@
     "5.3": {
       "files": [
         "agent/vm2.live.ts"
+      ],
+      "written": true,
+      "verified": true
+    },
+    "5.4b": {
+      "files": [
+        "db/index-hcs.ts",
+        "relayer/relay.ts",
+        "web/lib/console.ts",
+        "web/app/api/org/route.ts",
+        "web/app/api/agents/route.ts",
+        "web/app/api/revoke/route.ts",
+        "web/app/api/pay/route.ts",
+        "web/app/app/page.tsx",
+        "web/app/app/app-console.tsx",
+        "web/app/app/_components/register-agent-form.tsx",
+        "web/app/app/_components/agent-row.tsx",
+        "web/app/app/loading.tsx",
+        "web/app/app/error.tsx",
+        "db/schema.ts",
+        "db/init.sql",
+        "db/push.ts",
+        "web/app/api/fund/route.ts",
+        "web/app/globals.css",
+        "package.json"
       ],
       "written": true,
       "verified": true
@@ -488,6 +514,38 @@
       "reason": "next build FAILED type-check under ES2017/strict:false; root tsc (ES2022/strict) passed",
       "class": "DEGRADED",
       "impact": "none (next build now passes); orchestrator caught this - subagent only ran dev"
+    },
+    {
+      "step": "5.4b",
+      "id": "DEV-028",
+      "description": "console agent custody DER key held in agents.agentKey DB column (testnet); stripped from all API responses via publicAgent",
+      "reason": "pay route must sign x402 transfer (agent custody); mirrors sandbox SANDBOX_AGENT_KEY",
+      "class": "DEGRADED",
+      "impact": "prod would wrap behind Privy custody (privyWalletId retained)"
+    },
+    {
+      "step": "5.4b",
+      "id": "DEV-029",
+      "description": "Neon DB had zero tables; added db/init.sql + db/push.ts + db:push and pushed index schema",
+      "reason": "no drizzle-kit in deps",
+      "class": "COSMETIC",
+      "impact": "idempotent"
+    },
+    {
+      "step": "5.4b",
+      "id": "DEV-030",
+      "description": "new /app console agent in-cap funding returns FUNDING_DENIED (off Privy allowlist = correct default-DENY)",
+      "reason": "funding policy allowlist covers only seeded sandbox agents",
+      "class": "DEGRADED",
+      "impact": "real-console only; ALLOW needs Privy policy allowlist re-provision (policy op). Demo uses sandbox where fund ALLOWs"
+    },
+    {
+      "step": "5.4b",
+      "id": "DEV-031",
+      "description": "WS-5b login UNTESTED locally - blocked on 5.4a human Privy dashboard toggle + NEXT_PUBLIC_PRIVY_APP_ID",
+      "reason": "dashboard access is a human deploy-time step",
+      "class": "UNTESTED",
+      "impact": "full login surface built against real SDK; test after 5.4a; does not block scored sandbox"
     }
   ],
   "phaseExecutors": {
@@ -509,7 +567,8 @@
     "receiverAccount": "0.0.10497604",
     "treasuryWalletHedera": "0.0.10495945",
     "agentDataAccount": "0.0.10499595",
-    "agentPaymentsAccount": "0.0.10499598"
+    "agentPaymentsAccount": "0.0.10499598",
+    "consoleExampleOrg": "consoleco.leash.eth"
   },
   "env": {
     "added": [
@@ -577,5 +636,5 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T13:40:00Z"
+  "timestamp": "2026-09-12T14:30:00Z"
 }

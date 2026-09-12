@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "setup": "tsx --env-file=.env scripts/setup.ts",
+    "db:push": "tsx --env-file=.env db/push.ts",
     "seed": "tsx scripts/seed-demo.ts",
     "verify:claims": "tsx scripts/verify-claims.ts",
     "facilitator": "tsx --env-file=.env facilitator/server.ts",
