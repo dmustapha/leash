@@ -13,3 +13,4 @@
 - critique | complete | 2026-09-12 | competitive=differentiated narrative=compelling | 3 elevations applied (E-1/E-3/E-4), E-2 dropped, E-5 deferred | CRITIQUE-REPORT.md + .critique-state.json
 2026-09-12 | url_preverify | inline | PASS | deploy names + external endpoints verified; Vercel project must be leash-ens (leash/leash-dashboard taken)
 2026-09-12T07:15:55Z | hackathon-build | START | Phase 0 | env + franchise skeleton + WS-0 smokes (DP-0); ~32.8h to deadline
+2026-09-12T12:38:13Z | hackathon-build | COMPLETE | Phase 0-6 (build-owned) | all 3 prizes proven live (ENS revoke + Hedera gas-free + Privy DENY); VM-1 + VM-2 PASS; next build passes; 32 DEVs logged; 6.1 deploy + 6.3 demo/README routed downstream
