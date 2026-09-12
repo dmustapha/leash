@@ -52,7 +52,7 @@ export function utcMinuteAndDay(epochSeconds: number): { minuteUtc: number; dayU
 // consensus clock, NOT the app/host clock (INVARIANT #3 addendum). A fetch/HTTP failure THROWS (fail-closed
 // -> RPC_ERROR upstream); it is NEVER caught to a host-clock fallback (that would let a mirror-down settle
 // silently escape a window restriction).
-export async function mirrorConsensusNow(topicId: string): Promise<{ minuteUtc: number; dayUtc: number }> {
+export async function mirrorConsensusNow(topicId: string): Promise<{ minuteUtc: number; dayUtc: number; epochSeconds: number }> {
   const res = await fetch(
     `${MIRROR}/api/v1/topics/${topicId}/messages?order=desc&limit=1`,
   );
@@ -63,7 +63,11 @@ export async function mirrorConsensusNow(topicId: string): Promise<{ minuteUtc: 
   // caller only calls this when a window is declared, and a window with no chain clock cannot be satisfied
   // honestly, so we throw rather than fabricate a host-clock instant.
   if (!latest) throw new Error(`no topic messages on ${topicId}: cannot derive consensus time for window`);
-  return utcMinuteAndDay(consensusToEpochSeconds(latest.consensus_timestamp));
+  // Return the consensus epoch too so the rolling-cap lookback WIDTH anchors to the chain clock, not the
+  // host clock — a host clock AHEAD of consensus would otherwise narrow `now-24h/7d` and under-count recent
+  // spend (a silent un-cap direction). REF-4 / DEV-D01 fix.
+  const epochSeconds = consensusToEpochSeconds(latest.consensus_timestamp);
+  return { ...utcMinuteAndDay(epochSeconds), epochSeconds };
 }
 
 // One page of ALLOW amounts for `agentName` at/after `fromEpochSeconds`, plus the next-page cursor.

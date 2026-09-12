@@ -57,6 +57,31 @@ export async function isKeyListAccount(payerId: string, network: string): Promis
   return isKeyListShape(body.key);
 }
 
+// Extract the ECDSA_secp256k1 member public keys (raw compressed hex) from a mirror-node ProtobufEncoded
+// KeyList `.key.key` hex. In the protobuf, each ECDSA member is the field-7 tag `3a` + length `21` (0x21 = 33
+// bytes) + the 33-byte compressed pubkey. PURE + unit-testable. (An ED25519 member would be `3a20` + 32 bytes,
+// but LEASH's rail is ECDSA by construction — generateECDSA throughout.)
+export function keyListEcdsaMembers(protobufHex: string | undefined | null): string[] {
+  if (!protobufHex) return [];
+  const out: string[] = [];
+  const re = /3a21([0-9a-fA-F]{66})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(protobufHex)) !== null) out.push(m[1].toLowerCase());
+  return out;
+}
+
+// Fetch the payer account's on-chain KeyList member ECDSA pubkeys from the mirror node. THROWS on a
+// fetch/HTTP error (fail-closed — the co-sign verify caller maps it to a rejected verify, never a pass).
+// This binds `verifyPayerSignature` to THIS account's real members instead of a single global env pubkey, so
+// the co-sign path is correct for any number of bound agents (INVARIANT #8 payer binding).
+export async function payerKeyListMembers(payerId: string, network: string): Promise<string[]> {
+  const base = MIRROR_BASE[network] ?? MIRROR_BASE.testnet;
+  const r = await fetch(`${base}/accounts/${payerId}`);
+  if (!r.ok) throw new Error(`mirror account read failed for ${payerId}: ${r.status}`);
+  const body = (await r.json()) as { key?: MirrorKeyShape | null };
+  return keyListEcdsaMembers(body.key?.key);
+}
+
 // REF-3 startup assertion: LEASH's co-sign authority key MUST differ from its gas fee-payer key, so
 // "LEASH's authority key != its gas key" is literally true within the process. Normalizes both to a raw
 // ECDSA public-key hex before comparing (so a DER vs raw-hex encoding of the SAME key still trips the guard).

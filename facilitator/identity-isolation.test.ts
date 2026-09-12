@@ -1,11 +1,14 @@
-// File: facilitator/identity-isolation.integration.ts
-// [WS-7 D1 / INVARIANT #13 / B-07] Import-graph guard: prove the ENFORCEMENT path never reads agent identity.
-// D1 identity records (agent.description/type/avatar/erc8004) are ADVISORY - they must never influence a spend
-// decision. This is a MODULE-BOUNDARY assertion (not a keyword grep): starting from facilitator/server.ts we
-// transitively resolve every first-party import and assert scripts/ens/identity.ts is NEVER in the graph. If a
-// future change makes the facilitator read identity, this test fails at the boundary.
+// File: facilitator/identity-isolation.test.ts
+// [WS-7 D1 / INVARIANT #13 / B-07 / REF-6] Import-graph guard: prove the ENFORCEMENT path never reads agent
+// identity. D1 identity records (agent.description/type/avatar/erc8004) are ADVISORY - they must never influence
+// a spend decision. MODULE-BOUNDARY assertion: from facilitator/server.ts, transitively resolve every first-party
+// import and assert scripts/ens/identity.ts is NEVER in the graph.
+// [Adversarial-review fix — REF-6 "fails CI"]: this file is now UNIT-tier (*.test.ts, source-reading,
+// zero-credential) so CI's `npm run test` actually runs it — previously it was *.integration.ts which CI never
+// executed, so the INVARIANT #13 "fails CI" claim was unenforced. A third check scans facilitator/ CODE for any
+// `'agent.` ENS text-key literal read (belt-and-braces on REF-6's wording), stripping comments to avoid FP.
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, resolve, relative } from 'node:path';
 
 const ROOT = resolve(__dirname, '..');
@@ -58,6 +61,23 @@ describe('INVARIANT #13 - the facilitator enforcement graph imports no identity 
     for (const file of graph) {
       const src = readFileSync(file, 'utf8');
       if (/from\s*['"][^'"]*scripts\/ens\/identity['"]/.test(src)) offenders.push(relative(ROOT, file));
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  // [REF-6 exact wording] No facilitator/ CODE reads an `agent.`-prefixed ENS text key. The facilitator
+  // enforcement path must read EXACTLY `leash.policy`; an `'agent.type'`/`'agent.address'`/`'agent.erc8004'`
+  // string literal in facilitator code would be an advisory-record read on the enforcement path. Comments are
+  // stripped first (the files legitimately DESCRIBE agent.* records in prose), so only real code literals fail.
+  it('no facilitator/ source reads an `agent.` ENS text-key literal (enforcement reads only leash.policy)', () => {
+    const dir = resolve(ROOT, 'facilitator');
+    const offenders: string[] = [];
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith('.ts')) continue;
+      if (name.endsWith('.test.ts') || name.endsWith('.integration.ts')) continue; // tests may reference the keys
+      const raw = readFileSync(resolve(dir, name), 'utf8');
+      const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, ''); // strip block + line comments
+      if (/['"]agent\.[a-zA-Z]/.test(code)) offenders.push(name);
     }
     expect(offenders).toEqual([]);
   });

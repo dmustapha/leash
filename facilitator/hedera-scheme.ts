@@ -36,7 +36,7 @@ import {
 // the Hiero SDK class directly, matching the frozen provision-canonical.ts import convention.
 import { PublicKey } from '@hiero-ledger/sdk';
 import { ExactHederaScheme } from '@x402/hedera/exact/facilitator';
-import { isKeyListAccount, assertCosignerDistinct } from './cosign';
+import { isKeyListAccount, payerKeyListMembers, assertCosignerDistinct } from './cosign';
 
 // The CAIP-2 network this facilitator settles on.
 export const HEDERA_NETWORK = 'hedera:testnet';
@@ -120,25 +120,28 @@ function cosignSignAndSubmit(
 
 // ---- The co-sign verifyPayerSignature: accept the agent's valid 1-of-2 at verify. ----
 // createHederaVerifyPayerSignature fetches the payer account key and, for a KeyList, requires the FULL
-// threshold — so it REJECTS a 1-of-2. For a co-signed account we instead confirm a KNOWN MEMBER (the agent's
-// public key, COSIGN_AGENT_PUB) signed the tx; the Hedera NETWORK enforces the full threshold at submit.
-function cosignVerifyPayerSignature(): (params: {
+// threshold — so it REJECTS a 1-of-2. For a co-signed account we instead confirm that a NON-COSIGNER member
+// of THIS PAYER ACCOUNT'S actual on-chain KeyList (i.e. the agent) signed the tx; the Hedera NETWORK enforces
+// the full threshold at submit. [Adversarial-review fix] This binds to the payer's real members (fetched from
+// the mirror per-request), NOT a single global `COSIGN_AGENT_PUB` env var — so it is correct for any number of
+// bound agents and honestly proves "a member of THIS account signed", satisfying INVARIANT #8's payer binding.
+function cosignVerifyPayerSignature(cosignerPubRaw: string): (params: {
   payer: string;
   transaction: string;
   network: string;
 }) => Promise<{ ok: boolean; reason?: string; message?: string }> {
-  return async ({ transaction }) => {
-    const agentPubRaw = process.env.COSIGN_AGENT_PUB?.trim();
-    if (!agentPubRaw) {
-      return { ok: false, reason: 'signature_invalid', message: 'no known agent public key configured' };
-    }
+  const cosignerPub = cosignerPubRaw.trim().toLowerCase();
+  return async ({ payer, transaction, network }) => {
     try {
+      // Fetch THIS account's on-chain KeyList members (throws on mirror error -> caught -> reject, fail-closed).
+      const members = await payerKeyListMembers(payer, network);
       const tx = Transaction.fromBytes(Buffer.from(transaction, 'base64'));
-      const agentPub = PublicKey.fromString(agentPubRaw);
-      const signed = agentPub.verifyTransaction(tx); // true iff the agent key (a known KeyList member) signed.
-      return signed
-        ? { ok: true }
-        : { ok: false, reason: 'signature_invalid', message: 'agent 1-of-2 signature not present' };
+      // The agent is any member that is NOT LEASH's cosigner. Require one of them to have signed the 1-of-2.
+      const agentMembers = members.filter((m) => m !== cosignerPub);
+      for (const mHex of agentMembers) {
+        if (PublicKey.fromString(mHex).verifyTransaction(tx)) return { ok: true };
+      }
+      return { ok: false, reason: 'signature_invalid', message: 'no non-cosigner KeyList member signed (agent 1-of-2 absent)' };
     } catch (e) {
       return { ok: false, reason: 'signature_invalid', message: e instanceof Error ? e.message : 'verify error' };
     }
@@ -161,7 +164,7 @@ function typedSigner(
   const cosignerRaw = process.env.LEASH_COSIGNER_KEY?.trim();
   const cosignerKey = cosignerRaw ? PrivateKey.fromStringECDSA(cosignerRaw) : null;
   const coSignAndSubmit = cosignerKey ? cosignSignAndSubmit(build, operatorKey, cosignerKey) : null;
-  const coVerify = cosignVerifyPayerSignature();
+  const coVerify = cosignVerifyPayerSignature(cosignerKey ? cosignerKey.publicKey.toStringRaw() : '');
 
   return toFacilitatorHederaSigner({
     getAddresses: () => [operatorId],

@@ -72,6 +72,19 @@ Product pivot per `docs/REFRAME-SCOPE.md`: LEASH stops *minting* agents → beco
 - **Cosigner shares the operator process/trust-domain** (`LEASH_COSIGNER_KEY≠HEDERA_OPERATOR_KEY` within the process, same host). Separate-trust-domain cosigner service = roadmap (LIMITATIONS).
 - **DEV-D01 follow-up**: anchor the rolling lookback width to the consensus epoch (trivial) for exact consensus-time bounds.
 
+### REFRAME adversarial review (post-code, 2026-09-12)
+Three independent reviewers (security-auditor / code-reviewer / architect) audited the built delta (`4b32bdb..HEAD`), each told to REFUTE the honesty claims. **No BLOCKER.** The honesty properties (F-030/F-031/SR-1) are network-enforced (Hedera KeyList threshold-2), so a bug in LEASH's verify degrades to a network-enforced deny, not fund-loss. 5 real findings fixed:
+
+| # | Sev | Finding | Fix |
+|---|-----|---------|-----|
+| 1 | MAJOR | Rolling-window WIDTH used `Date.now()` while the consensus instant was fetched-then-discarded — a host-clock-AHEAD skew narrows `now−24h/7d`, under-counts recent spend → **silent un-cap** (the "never miss recent" claim was directionally false). | `mirrorConsensusNow` returns `epochSeconds`; `server.ts enrichForDynamicLimits` anchors the lookback width to the consensus epoch. Comment corrected. |
+| 2 | MAJOR | REF-6 module-boundary guard was `*.integration.ts`; CI runs only typecheck+unit → the guard never ran, so INVARIANT #13's "fails CI" was unenforced. | Renamed `facilitator/identity-isolation.integration.ts` → `.test.ts` (unit tier, source-reading, zero-cred) + added an `agent.` code-literal scan of `facilitator/`. Now runs in CI. |
+| 3 | MINOR | `verifyPayerSignature` checked a GLOBAL `COSIGN_AGENT_PUB`, not the payer's real KeyList (worked for one agent only; comment overstated INVARIANT #8 binding). | New `cosign.ts keyListEcdsaMembers`/`payerKeyListMembers`: verify now confirms a NON-COSIGNER member of THIS payer account's on-chain KeyList signed — correct for N agents. |
+| 4 | MINOR | C-13 bundled live-daily + unit-weekly under one PROVEN label. | Split: daily PROVEN live (BEAT-5), weekly PROVEN at unit tier. |
+| 5 | MINOR | INVARIANT #8 "never a caught INVALID_SIGNATURE" contradicted `pay.ts` (which relabels it). | Reworded: the agent-side client relabels the caught `INVALID_SIGNATURE` as `MISSING_COSIGN`. |
+
+Post-fix gate GREEN: typecheck 0, unit 102/102 (REF-6 guard now unit-tier + 2 new cosign member tests), integration 8/8, vm2 6/6, **vm3 7 live + 1 integration** (per-payer verify + consensus-epoch rolling confirmed on the live path). Not-fixed (fail-closed, non-blocking): security F-3 (`assertCosignerDistinct` ECDSA-only — crashes closed on an ED25519 operator key, never a bypass) — noted, whole rail is ECDSA by construction.
+
 ### REFRAME env vars added
 | Key | Source | Value/Description |
 |-----|--------|-------------------|
