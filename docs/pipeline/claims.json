@@ -1,1 +1,89 @@
-{"claims":[]}
+{
+  "schema": "leash.claims.v1",
+  "generatedBy": "hackathon-build @ Task 6.2",
+  "note": "Machine mirror of CLAIMS.md. Every headline claim carries a resolvable pointer and a recompute path. verify-claims.ts re-derives the 'recomputed' fields and diffs them against 'asserted'; it refuses to read back a stored success.",
+  "network": { "evm": "sepolia", "hedera": "testnet" },
+  "claims": [
+    {
+      "id": "C-ENS-CAP-DATA",
+      "leg": "ens",
+      "claim": "The data agent's live leash.policy cap is 5 USDC (raw 5000000, 6 decimals).",
+      "asserted": { "name": "data.acme.leash.eth", "maxPerCallRaw": "5000000", "maxPerCallUsdc": "5" },
+      "recomputePath": "USDC = maxPerCallRaw / 1e6 ; live cross-check reads leash.policy text via POLICY_RESOLVER.text(namehash,'leash.policy')",
+      "pointer": {
+        "kind": "ens_text",
+        "resolver": "0xdC460cd7151D679CF5D1e34595e1ac890A5E4978",
+        "registerTx": "0x28113edcc070c9ce58aeaa7f6c44b7e1089f7b1890aab3a71fed384bac133126",
+        "setTextTx": "0x9245255cff979d9bccc501d574f1991cffd00d1bdaeb724e9276b071b8d7fdfa",
+        "explorer": "https://sepolia.etherscan.io/tx/0x9245255cff979d9bccc501d574f1991cffd00d1bdaeb724e9276b071b8d7fdfa"
+      }
+    },
+    {
+      "id": "C-ENS-CAP-PAYMENTS",
+      "leg": "ens",
+      "claim": "The payments agent's live leash.policy cap is 25 USDC (raw 25000000, 6 decimals).",
+      "asserted": { "name": "payments.acme.leash.eth", "maxPerCallRaw": "25000000", "maxPerCallUsdc": "25" },
+      "recomputePath": "USDC = maxPerCallRaw / 1e6 ; live cross-check reads leash.policy text via POLICY_RESOLVER.text(namehash,'leash.policy')",
+      "pointer": {
+        "kind": "ens_text",
+        "resolver": "0xdC460cd7151D679CF5D1e34595e1ac890A5E4978",
+        "registerTx": "0xc9a05c18e50e08ea5c7756d07b3fefc22ace59ad7b7f4b8ee3b9bee3ce3654c8",
+        "explorer": "https://sepolia.etherscan.io/tx/0xc9a05c18e50e08ea5c7756d07b3fefc22ace59ad7b7f4b8ee3b9bee3ce3654c8"
+      }
+    },
+    {
+      "id": "C-ENS-REVOKE",
+      "leg": "ens",
+      "claim": "Revocation is a real Sepolia transaction: clearPolicy on the data agent removes its leash.policy record on-chain (the org kill switch).",
+      "asserted": { "name": "data.acme.leash.eth", "action": "clearPolicy", "resultsIn": "REVOKED" },
+      "recomputePath": "resolvable Sepolia tx hash; enforcement re-read returns empty policy -> REVOKED",
+      "pointer": {
+        "kind": "evm_tx",
+        "txHash": "0xf03e14d1c0ed8528d90f9d0e5aa4bc55cb2fe29baedea97596d902c427702293",
+        "explorer": "https://sepolia.etherscan.io/tx/0xf03e14d1c0ed8528d90f9d0e5aa4bc55cb2fe29baedea97596d902c427702293"
+      }
+    },
+    {
+      "id": "C-HEDERA-GASFREE",
+      "leg": "hedera",
+      "claim": "Hedera x402 settlement is gas-free for the agent: the agent (0.0.10497601) pays 0 HBAR gas while the facilitator fee-payer (0.0.10487802) covers the tx fee (native x402 fee-payer scheme). The agent is only debited the 3 USDC transfer.",
+      "asserted": { "agent": "0.0.10497601", "agentHbarSpent": "0", "feePayer": "0.0.10487802", "feePayerPaysGas": true, "scheme": "hedera-x402-feepayer" },
+      "recomputePath": "resolvable Mirror Node tx: transfers show the agent account with ZERO HBAR debit; charged_tx_fee is debited from the feePayer (tx id is feePayer@timestamp)",
+      "pointer": {
+        "kind": "hedera_tx",
+        "txId": "0.0.10487802@1789205977.654877070",
+        "mirror": "https://testnet.mirrornode.hedera.com/api/v1/transactions/0.0.10487802-1789205977-654877070",
+        "explorer": "https://hashscan.io/testnet/transaction/0.0.10487802-1789205977-654877070"
+      }
+    },
+    {
+      "id": "C-HCS-AUDIT",
+      "leg": "hedera",
+      "claim": "Every gate decision is written to an immutable HCS audit topic: an ALLOW (seq#1) and a DENY OVER_CAP (seq#2) are both on-chain.",
+      "asserted": { "topicId": "0.0.10496492", "allowSeq": 1, "denyOverCapSeq": 2 },
+      "recomputePath": "resolvable Hedera Mirror Node topic messages list contains an ALLOW at seq 1 and a DENY OVER_CAP at seq 2",
+      "pointer": {
+        "kind": "hedera_topic",
+        "topicId": "0.0.10496492",
+        "explorer": "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10496492/messages"
+      }
+    },
+    {
+      "id": "C-PRIVY-DENY",
+      "leg": "privy",
+      "claim": "The Privy funding rail fails closed: an over-fundingCap transfer from a P-256-owned treasury returns FUNDING_DENIED (Privy policy_violation) with no txHash, before broadcast.",
+      "asserted": { "overCapResult": "FUNDING_DENIED", "privyType": "policy_violation", "txHash": null },
+      "recomputePath": "in-cap fund broadcasts a real USDC transfer (resolvable tx); over-cap returns FUNDING_DENIED with no txHash",
+      "pointer": {
+        "kind": "hedera_tx",
+        "inCapTxHash": "0xb4ec565c2a86f806b69e918632eed796d731d096891e56bbb82db52901053749",
+        "note": "over-cap FUNDING_DENIED returns no txHash by design (fails closed pre-broadcast)"
+      }
+    }
+  ],
+  "contracts": {
+    "sandboxRegistry": "0xB45830aeaf0A00367A450635a110cffA6878A679",
+    "policyResolver": "0xdC460cd7151D679CF5D1e34595e1ac890A5E4978",
+    "orgParentRegistry": "0xb36e0ede0Ed38653c5aB8222B409a6b2Ba78b409"
+  }
+}
