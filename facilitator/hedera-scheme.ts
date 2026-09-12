@@ -30,7 +30,12 @@ export const HEDERA_NETWORK = 'hedera:testnet';
 // fee payer (gas-free for the agent: the agent only partially signs the transfer).
 function buildClient(operatorId: string, operatorKey: PrivateKey): (network: string) => Client {
   return (network: string): Client => {
-    const client = createHederaClient(network, process.env.HEDERA_EVM_RPC);
+    // [DEV-015] createHederaClient's second arg is a CONSENSUS-NODE gRPC address (host:port), NOT an EVM
+    // JSON-RPC URL. Passing HEDERA_EVM_RPC (https://testnet.hashio.io/api) makes the SDK try to parse the
+    // URL as a node address and the settle submit fails "failed to parse address". Pass undefined so the
+    // SDK uses the default testnet consensus network (Client.forTestnet()). The EVM RPC is only for the
+    // Sepolia/viem side; the Hedera native transfer settles over the consensus network.
+    const client = createHederaClient(network);
     client.setOperator(AccountId.fromString(operatorId), operatorKey);
     return client;
   };
