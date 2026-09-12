@@ -159,6 +159,27 @@
     transition: border-color 150ms ease;
   }
   @media (hover: hover) { .link-tx:hover { border-color: var(--color-amber); } }
+
+  /* Console form input (real-console /app). Tokenized, not a flat 1px box: subtle elevation + amber focus ring. */
+  .field {
+    background: var(--color-surface-1);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: 0.55rem 0.75rem;
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-1);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .field::placeholder { color: var(--color-ink-faint); }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-amber);
+    box-shadow: var(--shadow-amber);
+  }
+  .field:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 @layer utilities {
