@@ -1,0 +1,30 @@
+{
+  "phase": "url_preverify",
+  "mode": "inline",
+  "date": "2026-09-12",
+  "verdict": "pass",
+  "deploy_targets": {
+    "github_repo": { "candidate": "github.com/dmustapha/leash", "status": "available", "http": 404 },
+    "render_facilitator": { "candidate": "leash-facilitator.onrender.com", "status": "available", "http": 404, "source": ".env.example FACILITATOR_URL" },
+    "render_resource": { "candidate": "leash-resource.onrender.com", "status": "available", "http": 404, "source": ".env.example RESOURCE_URL" },
+    "vercel_dashboard": {
+      "recommended": "leash-ens.vercel.app",
+      "status": "available",
+      "http": 404,
+      "note": "leash.vercel.app (200) and leash-dashboard.vercel.app (200) are TAKEN; name the Vercel project leash-ens to avoid an auto-suffixed collision URL. Other free alts: leash-x402, leash-console, leashctl."
+    }
+  },
+  "deploy_platforms_reachable": { "github.com": 200, "vercel.com": 200, "render.com": 200 },
+  "external_dependencies_reachable": {
+    "hashio_hedera_testnet_rpc": { "url": "https://testnet.hashio.io/api", "http": 405, "note": "405 on GET = healthy JSON-RPC (wants POST)" },
+    "hedera_mirror_node_testnet": { "url": "https://testnet.mirrornode.hedera.com", "http": 200 },
+    "hashscan_testnet": { "url": "https://hashscan.io/testnet", "http": 200, "note": "root 200; deep-path HEAD 404 is SPA client-routing, not an outage" },
+    "sepolia_etherscan": { "url": "https://sepolia.etherscan.io", "http": 200 },
+    "alchemy_sepolia": { "url": "https://eth-sepolia.g.alchemy.com/v2/", "http": 401, "note": "401 without key = reachable" },
+    "npm_x402_core": { "url": "https://registry.npmjs.org/@x402/core", "http": 200 },
+    "npm_x402_hedera": { "url": "https://registry.npmjs.org/@x402/hedera", "http": 200 },
+    "blocky402": { "url": "https://blocky402.com", "http": 200 },
+    "x402_fork_source": { "url": "https://github.com/x402-foundation/x402", "http": 200 }
+  },
+  "notes": "Names are NOT preallocated (url_preverify only records reachability/availability). Vercel project MUST be created as leash-ens at deploy. All pinned build-time endpoints are live."
+}

@@ -119,3 +119,20 @@
 
 #### Blockers for Downstream
 - None.
+
+### url_preverify (complete, 2026-09-12)
+
+#### Done
+- Inline reachability + name-availability pass (no conductor, run directly). Verdict PASS. Results in .url-preverify-state.json.
+
+#### Active Facts (corrections / new intel)
+- [SKILL] Vercel `leash.vercel.app` and `leash-dashboard.vercel.app` are ALREADY TAKEN (both 200). Deploy MUST name the Vercel project `leash-ens` (free, 404) to avoid an auto-suffixed collision URL. Free alternates: leash-x402, leash-console, leashctl.
+- [SKILL] GitHub `dmustapha/leash` = available (404). Render `leash-facilitator` + `leash-resource` (already in .env.example) = available (404). Names are NOT preallocated; claim at deploy (WS-6).
+- [SKILL] All pinned build-time external endpoints LIVE: Hashio RPC (405 GET = healthy JSON-RPC), Hedera Mirror Node (200), HashScan (200), Sepolia Etherscan (200), Alchemy host (401 = reachable), npm @x402/core + @x402/hedera (200), Blocky402 (200), x402 fork source github.com/x402-foundation/x402 (200). Build will not hit a dead dependency.
+
+#### For Next Skill (build)
+- Use Vercel project name `leash-ens` at deploy (WS-6 / Task 6.1); do NOT use bare `leash`. Render service names in .env.example stand.
+- No dead-domain risk: proceed to WS-0 -> WS-1 (ENS provisioning FIRST, the day-eater) per PLAN. All four PRIZE-COMPLIANCE flags (F1-F4) and DP-0..DP-4 seams still stand.
+
+#### Blockers for Downstream
+- None.
