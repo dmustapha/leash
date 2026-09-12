@@ -1,8 +1,0 @@
-# FINAL VERDICT V2 — ETHOnline 2026
-Winner: **Leash** (Round-0 7.20; selectionPath scored_pool, FLIPPED via cross-exam + challenge). Backup: **Aftermarket** (7.30, viable only as a 2-leg tight-interlock rebuild after its cross-chain HARD-FAIL). Third: Backstock (6.75).
-V2 pipeline: user re-opened warroom with a VERY-DEEP-INTEGRATION mandate + 2 beefed seeds (Callflow/Lifewire). 38 ideas from 5 deep-interlock generators → 7 presented → Dami-confirmed top-3 (Aftermarket/Leash/Backstock) → 3 hands-on fact-checks → cross-exam (FLIP) → 3 challenge registers → selection.
-SEED OUTCOME (the test Dami asked for): Callflow SUPERSEDED (its child Aftermarket carried the thesis, then Aftermarket itself fell to fact-check); Lifewire DIED (U6 unresolved). New idea (Leash) emerged and won.
-Cross-cutting findings (PULSE Active Facts): The Graph does NOT index Hedera (broke Aftermarket/Backstock, would have silently sunk V1 Callflow); ATS = security tokens w/ transfer restrictions (can't be freely-traded utility tokens); Chainlink CRE Confidential = private beta (sank the CRE-dependent ideas on ship-risk).
-YC PQ: Leash 4/6, Aftermarket 4/6, Backstock 3/6 — all above floor.
-Concerns: all [C] addressed for Leash (3 load-bearing sponsors ENS+Hedera-x402+Privy; no-mock honored via real txs + live leaked-key test; differentiated from ChainSight + middle lane; #15 forbidden-shape clear — attenuation-at-grant, Privy kept passive).
-Files: warroom/WINNER-BRIEF.md (Thesis inside), warroom/round-scorecard-v2.md, warroom/demo-scripts-v2.md, warroom/deliberation-transcript.md (V2 sections), research/ideas.md (V1 pool).
