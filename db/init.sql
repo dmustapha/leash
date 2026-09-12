@@ -42,6 +42,13 @@ ALTER TABLE agents ALTER COLUMN privy_wallet_id SET DEFAULT '';
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_type text NOT NULL DEFAULT '';
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS avatar text NOT NULL DEFAULT '';
+-- [REFRAME R2] External-identity binding (register-EXISTING). NULLABLE/defaulted for back-compat with existing
+-- canonical rows. On-chain-RESOLVED, ADVISORY only (INVARIANT #13) — never an enforcement input.
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS external_identity text DEFAULT '';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS identity_type text DEFAULT '';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS erc8004_id text DEFAULT '';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS account_type text DEFAULT 'canonical';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS cosigner_pub text DEFAULT '';
 
 -- [WS-7 A5 / INVARIANT #9] Durable replay guard (dedup only; the authorization decision still reads ENS live).
 CREATE TABLE IF NOT EXISTS seen_payments (
