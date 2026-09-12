@@ -1,0 +1,43 @@
+{
+  "skill": "hackathon-debug",
+  "debugMode": "full",
+  "autonomous_mode": false,
+  "status": "complete",
+  "startedAt": "2026-09-12T16:40:00Z",
+  "lastUpdated": "2026-09-12T16:50:00Z",
+  "currentPhase": 6,
+  "scope": "WS-7 hardening delta (A1-A5/B1-B3/C1/D1/E1-E2). Main build Phases 0-6 frozen + previously orchestrator-verified.",
+  "projectComponents": { "contracts": true, "frontend": true, "api": true, "subgraph": false, "aiAgent": false, "facilitator": true, "hedera": true },
+  "testSourceRatio": { "ratio": 0.88, "sourceCount": 78, "testCount": 69, "status": "PASS", "note": "counts include vendored contracts-v2; LEASH-own ratio also >=0.5", "missingTests": [] },
+  "phases": {
+    "1": { "status": "complete", "baselineSnapshot": { "unitTests": 44, "integrationTests": 8, "unitFiles": 6, "integrationFiles": 4, "typecheck": "PASS", "build": "PASS(5 pages)", "live": "vm2 6/6, vm1 3/3, cohold 3/3", "devServer": "4 pages 200 + /api/feed 200" } },
+    "2": { "status": "complete", "risksTriaged": 6, "cleared": 2, "hardened": 0, "dismissed": 1, "accepted": 3, "note": "DEV-030 CLEARED by A3; DEV-035 DISMISSED (correctly uses authorizeTextRoles); DEV-033/034 ACCEPTED (documented, handed off); A1 IDOR + C1 co-hold CLEARED (tested live)" },
+    "3": { "status": "complete", "handoffEntries": 8, "smoke": "PASS" },
+    "4": { "status": "complete", "secrets": "CLEAN (all 0x64hex are bitmaps/ZERO_BYTES32/public tx hashes; keys only in gitignored .env)", "envTracked": "none", "mockLeaks": 2, "critical": 0, "high": 0, "medium": 2 },
+    "5": { "status": "complete", "backend": { "mustFix": 0, "shouldFix": 5, "note": 3 }, "frontend": { "mustFix": 0, "shouldFix": 5, "note": 2 } },
+    "6": { "status": "complete", "fixed": 6, "note": "relay scope-guard label-boundary; fund route dead agentAddress branch removed; index-hcs per-message try/catch; app-console useCallback lint fix; agent-row loadActivity r.ok check; register-form optional-field guards + co-hold hint" }
+  },
+  "delegationHandoff": [
+    { "owner": "wire", "risk": "auth.test mocks Privy+Neon; real authed console path uncovered", "reason": "prove live signed-in mutation 200 + authed-as-A-targets-B 403 (DH-1)" },
+    { "owner": "wire", "risk": "revoke-sync.test mock-leak", "reason": "prove real revoke->index sync on live Neon (DH-2)" },
+    { "owner": "stress_test", "risk": "A5 durable replay fail-closed on Neon-down (DEV-033)", "reason": "simulate Neon outage -> settle denies REPLAY; replay rejected across restart (DH-3)" },
+    { "owner": "stress_test", "risk": "A4 rate limit burst + XFF bypass (DEV-034)", "reason": "429 before balance drain on demo+console mutations (DH-4)" },
+    { "owner": "stress_test", "risk": "A3 union reconcile keeps prior agents fundable (B-04)", "reason": "2 agents both fund in-cap + over-fund DENY (DH-5)" },
+    { "owner": "verify_milestone", "risk": "C1 co-hold mechanism proven but throwaway revoked (C-6)", "reason": "persistent per-agent co-hold tx on /app register; flip C-6 PROVEN (DH-6)" },
+    { "owner": "stress_test", "risk": "B1/B2 cross-tenant negatives (B-08)", "reason": "403 on A editing/reactivating B's agent; OFF_ALLOWLIST after edit (DH-7)" },
+    { "owner": "demo", "risk": "DEV-014 Blocky402 wording", "reason": "say 'self-hosted @x402/hedera, Blocky402-equivalent', never 'fork' (DH-8)" }
+  ],
+  "unresolvedBugs": [],
+  "infraBlocks": [],
+  "detectiveDispatches": 0,
+  "context_percentage": 0,
+  "confidenceScore": 95,
+  "testFilesWritten": ["web/lib/auth.test.ts", "web/lib/ratelimit.test.ts", "db/replay.integration.ts", "agent/cohold.live.ts", "facilitator/identity-isolation.integration.ts"],
+  "lensContracts": [
+    { "name": "VM-1 (ENS+Hedera hero: spend/refuse/revoke)", "status": "SAME", "expectedChange": false },
+    { "name": "VM-2 (three-prize hero on canonical account)", "status": "SAME", "expectedChange": false },
+    { "name": "/demo four beats (spend/refuse/revoke/deny)", "status": "SAME", "expectedChange": false },
+    { "name": "facilitator authorize() pure gate (unit 22/22)", "status": "SAME", "expectedChange": false },
+    { "name": "co-hold grant/scope-guard (cohold.live 3/3)", "status": "SAME", "expectedChange": false }
+  ]
+}

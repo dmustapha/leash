@@ -25,6 +25,14 @@
 | DS-5 | build (WS-7) | deploy | P1 | Render free tier spins down (no persistent disk) -> facilitator/resource cold-start mid-demo + clears in-memory state. A5 makes replay durable (Neon); deploy must add keep-warm or starter plan. | Facilitator/resource stay warm during judging (keep-warm ping or plan:starter); durable replay survives restart | open |
 | DS-6 | build (WS-7) | demo_rehearsal | P1 | Scene 2 GRANT shot from /app live mint; Scene 6 real-product login (5.4a done). Restore-after-KILL uses direct setPolicy (seed has an idempotency edge, DEV-026). | Demo script covers GRANT via /app + Scene 6 login + a clean re-take restore path | open |
 | DS-7 | build (WS-7) | verify_milestone + stress_test + verify_preflight | P1 | New WS-7 observables F-016..F-024 (authz/IDOR cross-tenant, org-collision, funding reconcile union+non-empty, rate-limit, durable replay fail-closed, allowlist-edit, un-revoke, spend feed, co-hold both-holders, ENS agent-identity) must be scored at EVERY gate, not only preflight. | verify_milestone + stress_test + preflight each assert F-016..F-024 | open |
+| DH-1 | debug | wire | P1 | KNOWN-RISKS handoff: `web/lib/auth.test.ts` mocks Privy + Neon (unit); the REAL authed console path (requireOwner vs a live Privy access token + live Neon) is not automatically covered. | wire proves a live signed-in mutation returns 200 AND an authed-as-A-targets-B call returns 403 against the real DB | open |
+| DH-2 | debug | wire | P2 | KNOWN-RISKS handoff (mock-leak): build's `db/revoke-sync.test.ts` mocks the DB though Neon is available. | wire proves the real revoke -> index status sync against live Neon | open |
+| DH-3 | debug | stress_test | P1 | KNOWN-RISKS handoff (DEV-033): A5 durable replay must FAIL-CLOSED on a Neon outage — a store error denies the settle, never proceeds. | stress simulates Neon-down on the settle path and asserts abort=REPLAY (no settle), plus a genuine replay of the same paymentId is rejected across a facilitator restart | open |
+| DH-4 | debug | stress_test | P2 | KNOWN-RISKS handoff (A4/DEV-034): rate limit must 429 a burst before draining fee-payer/agent balance; XFF-spoof is a known single-instance bypass. | stress bursts /api/demo + a console mutation and asserts 429 before balance drain | open |
+| DH-5 | debug | stress_test | P2 | KNOWN-RISKS handoff (A3/B-04): a SECOND new-agent register must keep the FIRST agent fundable (union preserves existing) and over-fund still DENIES. | stress registers 2 agents and proves both fund in-cap + both over-fund DENY on the real token | open |
+| DH-6 | debug | verify_milestone | P1 | KNOWN-RISKS handoff (C1/C-6): `agent/cohold.live.ts` proves the co-hold MECHANISM but revokes its throwaway grant to preserve demo state — no persistent per-agent co-hold tx yet. | verify_milestone (or the demo GRANT beat) produces a persistent co-hold grant tx on a real `/app`-registered agent; flip CLAIMS C-6 -> PROVEN | open |
+| DH-7 | debug | stress_test | P2 | KNOWN-RISKS handoff (B1/B2/B-08): allowlist-edit + reactivate cross-tenant negatives — A must not edit/reactivate B's agent (requireOwner covers it; confirm end-to-end). | stress asserts 403 on authed-as-A editing/reactivating B's agent, and OFF_ALLOWLIST after an allowlist edit | open |
+| DH-8 | debug | demo | P1 | KNOWN-RISKS handoff (DEV-014): narration must say "self-hosted @x402/hedera facilitator, Blocky402-equivalent", NEVER "Blocky402 fork". | demo script + README use the equivalent-wording; no "fork" claim | open |
 
 ## Skill Sections
 ### forge (complete, 2026-09-12)
@@ -189,3 +197,23 @@
 - [SKILL] B3 fix: the HCS indexer mirror query rejected `sequencenumber=gt:0`; now omits the filter when the index is empty → `/api/feed` returns real ALLOW/DENY (indexed:true).
 - E1/E2: GRANT surface (/app register → real mint+setPolicy+identity+cohold txs) + Privy login surface both render 200; the interactive OAuth login + on-camera register are Dami's browser steps (owned by demo_rehearsal/demo). Surfaces verified ready.
 - PENDING CLAIMS to flip PROVEN as live txs resolve: C1 co-hold tx (already live via cohold.live), D1 identity setText tx (already live via seed), A3 new-agent in-cap fund tx (needs a signed-in console register).
+
+### debug (complete, 2026-09-12)
+
+#### Done
+- Full-mode 6-phase quality gate on the WS-7 delta (main build 0-6 frozen). Confidence 95, PROCEED. DEBUG-REPORT.md + .debug-state.json written.
+- Phase 1 baseline: typecheck PASS, unit 44/44 (6 files), integration 8/8 (4 files), build PASS (5 pages), live vm2 6/6 + vm1 3/3 + cohold 3/3, dev-server 4 pages + /api/feed 200. test:source 0.88.
+- Phase 2 KNOWN-RISKS: DEV-030 CLEARED (A3 union reconcile), DEV-035 DISMISSED (uses authorizeTextRoles), DEV-033/034 ACCEPTED (documented+handed off), A1 IDOR + C1 co-hold CLEARED (tested live).
+- Phase 4 security: secrets CLEAN (all 0x64hex are bitmaps/ZERO_BYTES32/public tx hashes; keys only in gitignored .env), no .env tracked, A4 rate-limiting added, 2 mock-leak MEDIUMs handed off to wire.
+- Phase 5 senior critique (parallel code-reviewer subagents): backend MUST-FIX 0, frontend MUST-FIX 0. Both approved; six B-01..B-05 invariants verified in-code.
+- Phase 6 fix round: 6 SHOULD-FIX hardening fixes applied (relay label-boundary scope guard; removed dead cross-tenant fund `agentAddress` branch; index-hcs per-message try/catch; app-console useCallback lint fix; agent-row loadActivity r.ok; register-form optional-field guards + co-hold hint). Re-verified green. Lens check: 5/5 neighbor contracts SAME (no regression).
+
+#### Active Facts
+- [SKILL] Debug applied 6 fixes ON TOP of the WS-7 commits (not yet separately committed at PULSE-write time; committed immediately after). No functionality changed — hardening only. /demo + 3 prize legs unregressed (INVARIANT #10).
+
+#### For Next Skill (wire, then verify_milestone/stress_test)
+- Read DEBUG-REPORT.md executive summary + the DH-1..DH-8 rows in `## Downstream Items`. wire owns DH-1 (real authed console path: live Privy token + Neon; prove 200 + cross-tenant 403) and DH-2 (revoke-sync mock-leak). Everything else routes to stress_test (DH-3/4/5/7) and verify_milestone (DH-6).
+- The 3 prize legs + VM-1/VM-2 are unchanged and green; wire should re-confirm the LIVE Hedera paid request evidence (HashScan) per the brief.
+
+#### Blockers for Downstream
+- None. Confidence 95, zero unresolved, zero MUST-FIX.
