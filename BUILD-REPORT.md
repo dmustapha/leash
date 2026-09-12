@@ -11,6 +11,7 @@ Every headline number, address, ENS name, tx hash, HCS sequence, and topic id in
 | 0 | 0.1-0.3 | complete | Env + franchise skeleton + WS-0 smokes (DP-0, INVARIANT #5 proven) |
 | 1 | 1.1-1.4 | complete | ENS provisioning: 3-level hierarchy live on Sepolia, enforcement read round-trip + revoke proven (R-2/DP-1/DP-1b resolved), DOMAIN-GUIDE |
 | 2 | 2.1-2.5 | complete | Facilitator enforcement core: pure fail-closed gate (INVARIANT #1 structural), ENS read adapter (byte-identical to proven read), TOCTOU/binding/payer-sig proven (INVARIANT #2/#8), HCS ALLOW/DENY live, [SEC] greps pass. E-1 = self-hosted @x402/hedera (Blocky402-equivalent; fork source not public) |
+| 3 | 3.1-3.3 | complete | Resource server + agent client; FIRST real gas-free paid request (F-001 orchestrator-verified: agent 0 HBAR gas, feePayer paid); over-cap OVER_CAP + replay REPLAY; VM-1 ENS+Hedera hero PASS (grant->spend->refuse->revoke->REVOKED, all real txs) |
 
 ## Known Risks (for debug)
 - POLICY_RESOLVER (PermissionedResolver, DEV-008) is the enforcement read target: facilitator/ens-read.ts (Phase 2) MUST use the identical `text(namehash,'leash.policy')` primitive on POLICY_RESOLVER, or the enforcement path diverges from the proven round-trip.
@@ -39,6 +40,9 @@ Each deviation is a DEV-NNN record. Debug/wire grep `DEV-` to find all deviation
 | DEV-012 | vitest.config.ts | (n/a) | exclude vendored contracts-v2/** from the TS unit gate | its hardhat suite polluted the unit tier | COSMETIC | none |
 | DEV-013 | integration/live tests env load | (n/a) | tests use `import 'dotenv/config'` not --env-file | vitest rejects --env-file (project convention from privy.live.ts) | COSMETIC | none |
 | DEV-014 (E-1) | facilitator lineage | critique E-1: FORK Blocky402, insert ENS gate via onBeforeSettle | self-hosted @x402/core+@x402/hedera facilitator (Blocky402-equivalent) with the official onBeforeVerify/onBeforeSettle hooks; ENS gate in onBeforeSettle pre-settlement | Blocky402 app source (blockydevs/blocky402) is not public/forkable; x402-foundation/x402 is the SDK+reference facilitator, not the app. Live prize bullet = "host a live x402-gated service on Hedera" so self-hosted x402 QUALIFIES; fork was a legibility bonus not a gate | DEGRADED | demo/README (F2, Task 6.3) must say "self-hosted @x402/hedera facilitator, Blocky402-equivalent" NOT "Blocky402 fork" |
+| DEV-015 | facilitator/hedera-scheme.ts client | createHederaClient given HEDERA_EVM_RPC as consensus-node arg | use default testnet consensus network (drop the EVM RPC url) | EVM JSON-RPC url is not a consensus node; caused `failed to parse address` on settle submit | UNTESTED (fixed, real settle now works) | none |
+| DEV-016 | resource-server + agent x402 API/header shapes | ARCHITECTURE pre-install snapshot: X-PAYMENT header, sha384 signable-hash, lowercase httpFacilitatorClient, $-string price, client forwards arbitrary headers | PAYMENT-SIGNATURE header (v2); @x402/hedera createClientHederaSigner builds the signable hash; HTTPFacilitatorClient (from @x402/core/server); raw-unit AssetAmount price; X-Leash-Agent threaded resource->facilitator via createAuthHeaders+AsyncLocalStorage (client does not forward arbitrary headers); client setSpendControls(false) (LEASH enforcement is the facilitator ENS gate) | DP-3 resolution: real @x402/hedera API vs the assumed shapes | DEGRADED (fixed) | wire/agent must use PAYMENT-SIGNATURE header + X-Leash-Agent via auth headers; payload is {transaction: base64} ExactHederaPayloadV2 |
+| DEV-017 | Phase 3 account provisioning | seed placed policy.hederaAccount/allowedPayees/feePayer all on the operator | provisioned distinct agent 0.0.10497601 + receiver 0.0.10497604 (ECDSA, USDC-associated, agent funded); rebound hero policy on data child; feePayer stays operator | gas-free (F-001) is unprovable when agent==feePayer | DEGRADED | seed-demo.ts (Task 5.1) must (re)create these distinct accounts + bind the hero policy to them |
 
 ## Failed Attempts & Resolutions
 | Step | Error | Attempts | Resolution |
@@ -66,6 +70,10 @@ Each deviation is a DEV-NNN record. Debug/wire grep `DEV-` to find all deviation
 | 2 (orchestrator re-run) | `npm run test:integration -- toctou` (INVARIANT #2/#8) | BINDING_MISMATCH + bad-sig gate + TOCTOU REVOKED no-submit | 3/3 pass; mid-flight clearPolicy then no-cache read REVOKED, submitCalled=false | YES |
 | 2 (orchestrator re-run) | mirror-node HCS topic 0.0.10496492 | ALLOW + DENY entries | seq1 ALLOW 3 USDC; seq2 DENY OVER_CAP 50 USDC; seq5 DENY OFF_ALLOWLIST (decoded live) | YES |
 | 2 | ens-read byte-identical to scripts/ens/policy.ts | identical read primitive | subagent-verified BYTE-IDENTICAL true (payments live, data null) via both readPolicyNoCache + readPolicy | YES |
+| 3 (F-001, orchestrator re-run) | mirror-node fee breakdown of settle tx 0.0.10487802-1789205977-654877070 | agent 0 HBAR gas; feePayer pays | result SUCCESS; charged_tx_fee 1475816 paid by 0.0.10487802; agent 0.0.10497601 ZERO HBAR debit, only -3 USDC; receiver +3 USDC | YES |
+| 3 (VM-1 revoke, orchestrator re-run) | Sepolia clearPolicy tx 0xfba1b729... status | status=1 | status=1 (success); revoke->REVOKED mechanism also proven in Phase 1 (null round-trip) + Phase 2 (TOCTOU) | YES |
+| 3 (orchestrator re-run) | offline gate typecheck+unit | tsc 0; 26/26 | typecheck EXIT=0; 26/26 unit | YES |
+| 3 (subagent, in-flight) | over-cap + replay | OVER_CAP no settle; REPLAY no 2nd settle | verify invalidReason OVER_CAP (402, no tx); replay errorReason REPLAY (402, no 2nd settle) | YES |
 
 ## UI Coverage Checklists
 (one table per frontend phase; union check at build completion)
@@ -95,6 +103,13 @@ Each deviation is a DEV-NNN record. Debug/wire grep `DEV-` to find all deviation
 - TOCTOU mid-flight clearPolicy (Sepolia POLICY_RESOLVER 0xdC460cd7...): 0xbfb1be7b1827d3502628e65a2e9f01643af97c86eea3829022b9931a6bdcea10
 - (no ALLOW settle tx yet: pre-submit decision path proven; first real gas-free settle is Phase 3 Task 3.1)
 
+### Phase 3 on-chain proof (for submission/proof.md at Task 6.2)
+- Distinct accounts (gas-free provable): agent 0.0.10497601 (payer, EVM 0x875426a5...), receiver 0.0.10497604 (payTo, EVM 0x654e89f7...), feePayer 0.0.10487802 (operator)
+- In-cap gas-free settle: Hedera tx 0.0.10487802@1789205977.654877070 -> https://hashscan.io/testnet/transaction/0.0.10487802-1789205977-654877070 (mirror: charged_tx_fee 1475816 paid by feePayer, agent 0 HBAR, 3 USDC agent->receiver)
+- VM-1 spend settle: 0.0.10487802@1789206294.372982756
+- Hero policy rebind (Sepolia data child): 0x950ecd1ec279f8b38748281c7db5a96c5dd42b1a224e7159a0efa1c42e615ba7
+- VM-1 revoke (Sepolia clearPolicy): 0xfba1b729cc807ed17f584f4dbb93c7286867698285a754a10c5ffaf43c11e635 -> post-revoke settle reason REVOKED
+
 ## Environment Variables Added
 | Key | Source Step | Value/Description |
 |-----|-----------|-------------------|
@@ -107,3 +122,6 @@ Each deviation is a DEV-NNN record. Debug/wire grep `DEV-` to find all deviation
 | POLICY_RESOLVER | 1.3 | 0xdC460cd7... PermissionedResolver (R-2 fix; enforcement read target) |
 | USDC_TOKEN_ID / USDC_EVM_ADDRESS | 1.2 | 0.0.10496489 / 0x00...a029e9 (own 6-dec HTS) |
 | HCS_TOPIC_ID | 1.2 | 0.0.10496492 (audit topic) |
+| SANDBOX_AGENT_ACCOUNT / SANDBOX_AGENT_EVM / SANDBOX_AGENT_KEY | 3.1 | 0.0.10497601 / 0x875426a5... / ECDSA key (secret) |
+| RECEIVER_ACCOUNT_ID / RECEIVER_EVM / RECEIVER_KEY | 3.1 | 0.0.10497604 / 0x654e89f7... / key (secret) |
+| FACILITATOR_URL / RESOURCE_PORT | 3.1 | http://localhost:8401 / 8402 |
