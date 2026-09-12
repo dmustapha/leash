@@ -1,0 +1,27 @@
+name: CI
+
+# Deterministic, zero-network release gate (C0 rule 20). Runs typecheck + the offline unit test tier ONLY.
+# NO live credentials are present in CI: the live tier (*.live.ts, `npm run test:live`) and any *.integration.ts
+# that needs real dependencies are intentionally excluded here.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install (offline-safe, no scripts)
+        run: npm ci --ignore-scripts
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests (offline, zero-credential)
+        run: npm run test

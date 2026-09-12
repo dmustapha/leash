@@ -1,0 +1,44 @@
+{
+  "name": "leash",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "seed": "tsx scripts/seed-demo.ts",
+    "verify:claims": "tsx scripts/verify-claims.ts",
+    "facilitator": "tsx facilitator/server.ts",
+    "resource": "tsx resource-server/server.ts",
+    "dev": "next dev web",
+    "build": "next build web",
+    "typecheck": "tsc --noEmit",
+    "test": "TEST_TIER=unit vitest run --passWithNoTests",
+    "test:integration": "TEST_TIER=integration vitest run --passWithNoTests",
+    "test:live": "TEST_TIER=live vitest run --passWithNoTests",
+    "verify": "bash scripts/clean-room.sh",
+    "check": "npm run typecheck && npm run test && npm run test:integration"
+  },
+  "dependencies": {
+    "@x402/core": "~2.25",
+    "@x402/hedera": "2.25",
+    "@x402/express": "~2.25",
+    "@hiero-ledger/sdk": "2.85.0",
+    "@hiero-ledger/proto": "2.31.0",
+    "@privy-io/server-auth": "^1.32",
+    "@privy-io/react-auth": "latest",
+    "viem": "^2.56",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "express": "^4",
+    "drizzle-orm": "latest",
+    "pg": "^8"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "tsx": "latest",
+    "vitest": "latest",
+    "dotenv": "latest",
+    "@types/node": "latest",
+    "@types/pg": "latest"
+  }
+}

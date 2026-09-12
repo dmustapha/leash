@@ -10,3 +10,6 @@ dist/
 .DS_Store
 .conductor-lock/
 _prepipeline-archive/
+
+# generated recompute output (baseline committed at verify/deploy)
+evidence/claims-recomputed.json
