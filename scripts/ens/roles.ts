@@ -10,7 +10,16 @@ import { publicClient, walletClient } from './client';
 const registryAbi = parseAbi([
   'function grantRoles(uint256 anyId,uint256 roleBitmap,address account) returns (bool)',
   'function revokeRoles(uint256 anyId,uint256 roleBitmap,address account) returns (bool)',
+  'function hasRoles(uint256 anyId,uint256 roleBitmap,address account) view returns (bool)',
 ]);
+
+// Read whether `account` holds ALL roles in `bitmap` on the name `tokenId` in `registry`. Used by the WS-7 C1
+// co-hold verification (F-023): assert BOTH the user's embedded wallet AND the relayer/agent hold the role.
+export async function hasRoles(registry: `0x${string}`, tokenId: bigint, bitmap: bigint, account: `0x${string}`): Promise<boolean> {
+  return (await publicClient.readContract({
+    address: registry, abi: registryAbi, functionName: 'hasRoles', args: [tokenId, bitmap, account],
+  })) as boolean;
+}
 
 export async function grantRoles(registry: `0x${string}`, tokenId: bigint, bitmap: bigint, account: `0x${string}`): Promise<`0x${string}`> {
   const wallet = walletClient();

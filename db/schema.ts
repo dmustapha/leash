@@ -36,6 +36,20 @@ export const agents = pgTable('agents', {
   status: text('status').notNull().default('active'), // active | revoked
   mintTx: text('mint_tx'),
   policyTx: text('policy_tx'),
+  // [WS-7 D1] Advisory identity mirror of the ENS text records (agent.type / agent.description / avatar). Index
+  // only (INVARIANT #3) and NEVER an enforcement input (INVARIANT #13) - purely for the console/proof UI.
+  agentType: text('agent_type').notNull().default(''),
+  description: text('description').notNull().default(''),
+  avatar: text('avatar').notNull().default(''),
+});
+
+// [WS-7 A5 / INVARIANT #9] Durable replay guard. A settled x402 paymentId is persisted here so a replay is
+// rejected across a facilitator restart (the in-memory Set alone loses this on a Render cold start). This is
+// the ONLY DB the facilitator touches, and ONLY for dedup - the AUTHORIZATION decision still reads ENS live
+// (INVARIANT #3: the pure gate authorize.ts imports no DB). A store error fails CLOSED (deny), never proceed.
+export const seenPayments = pgTable('seen_payments', {
+  paymentId: text('payment_id').primaryKey(),
+  ts: timestamp('ts').defaultNow().notNull(),
 });
 
 export const spendEvents = pgTable('spend_events', {

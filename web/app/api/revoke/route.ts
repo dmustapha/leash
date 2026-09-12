@@ -6,16 +6,21 @@
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '../../../../db/client';
-import { orgs, agents } from '../../../../db/schema';
+import { agents } from '../../../../db/schema';
 import { relay } from '../../../../relayer/relay';
 import { markAgentRevoked } from '../../../../db/client';
 import { publicAgent } from '../../../lib/console';
+import { requireOwner, authErrorResponse } from '../../../lib/auth';
+import { enforceRateLimit } from '../../../lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // the clearPolicy write is a real Sepolia tx
 
 // POST: revoke an agent. Body: { agentId }.
 export async function POST(req: Request) {
+  const limited = enforceRateLimit(req, 'revoke');
+  if (limited) return limited;
+
   let body: { agentId?: string };
   try {
     body = await req.json();
@@ -24,15 +29,21 @@ export async function POST(req: Request) {
   }
   if (!body.agentId) return NextResponse.json({ error: 'agentId required' }, { status: 400 });
 
+  // A1: caller must own the target agent.
+  let ctx;
   try {
-    const rows = await db.select().from(agents).where(eq(agents.id, body.agentId)).limit(1);
-    const agent = rows[0];
-    if (!agent) return NextResponse.json({ error: 'agent not found' }, { status: 404 });
-    const org = await db.select().from(orgs).where(eq(orgs.id, agent.orgId)).limit(1);
-    if (!org[0]) return NextResponse.json({ error: 'org not found' }, { status: 404 });
+    ctx = await requireOwner(req, { agentId: body.agentId });
+  } catch (e) {
+    const err = authErrorResponse(e);
+    if (err) return NextResponse.json(err.body, { status: err.status });
+    throw e;
+  }
+  const agent = ctx.agent!;
+  const org = ctx.org;
 
+  try {
     // Relayer-sponsored on-chain kill: clear the leash.policy text record for this name.
-    const tx = await relay(org[0].ensName, { kind: 'revoke', name: agent.ensName });
+    const tx = await relay(org.ensName, { kind: 'revoke', name: agent.ensName });
     // Index sync (bookkeeping only; enforcement reads the live empty ENS record).
     await markAgentRevoked(agent.ensName);
 

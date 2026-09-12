@@ -130,6 +130,22 @@ export default function ProofPage() {
         </div>
       </section>
 
+      <section aria-labelledby="identity" style={{ marginTop: '2.5rem' }}>
+        <h2 id="identity" style={{ fontSize: 'var(--text-h2)' }}>
+          ENS agent identity (advisory)
+        </h2>
+        <p style={{ maxWidth: '58ch', color: 'var(--color-ink-dim)', marginTop: '0.9rem' }}>
+          Each agent child carries advisory ENS text records alongside its enforcement record{' '}
+          <code className="code">leash.policy</code>:{' '}
+          <code className="code">agent.type</code>, <code className="code">agent.description</code>,{' '}
+          <code className="code">avatar</code>, and an optional <code className="code">erc8004</code> pointer.
+          These are for humans and directories only — the facilitator&rsquo;s enforcement path imports no identity
+          reader (INVARIANT #13, asserted by an import-graph test), so identity can never change a spend decision.
+          Live on each card in <Link className="link-tx" href="/demo">/demo</Link> and{' '}
+          <Link className="link-tx" href="/app">/app</Link>.
+        </p>
+      </section>
+
       <p style={{ marginTop: '2.5rem', color: 'var(--color-ink-faint)', fontSize: '0.85rem' }}>
         Full write-up: <code className="code">submission/proof.md</code>. Machine ledger:{' '}
         <code className="code">docs/pipeline/claims.json</code>.

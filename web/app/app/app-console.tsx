@@ -13,9 +13,22 @@ import { usePrivy } from '@privy-io/react-auth';
 import type { PublicAgent } from '../../lib/console';
 import AgentRow from './_components/agent-row';
 import RegisterAgentForm from './_components/register-agent-form';
+import SpendFeed from './_components/spend-feed';
 
 type Org = { id: string; ensName: string; registryAddress: string };
 type Notice = { kind: 'ok' | 'err'; text: string } | null;
+
+// A fetch that attaches the caller's Privy access token as `Authorization: Bearer` (WS-7 A1). Every console
+// call goes through this so the server can re-derive the caller identity from the token and enforce ownership.
+export type AuthedFetch = (url: string, init?: RequestInit) => Promise<Response>;
+function makeAuthedFetch(getAccessToken: () => Promise<string | null>): AuthedFetch {
+  return async (url, init = {}) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init.headers);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(url, { ...init, headers });
+  };
+}
 
 // The console body once Privy state is known. Split from the provider so the hook is inside PrivyProvider.
 export default function AppConsole({ configured }: { configured: boolean }) {
@@ -57,7 +70,7 @@ function PrivyPending() {
 
 // Signed-in console. Drives Privy login/logout + the org/agent lifecycle.
 function Authed() {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy();
   if (!ready) return <div className="panel" style={{ padding: '1.25rem', color: 'var(--color-ink-dim)' }}>Loading sign-in…</div>;
   if (!authenticated) {
     return (
@@ -71,11 +84,13 @@ function Authed() {
     );
   }
   const email = user?.email?.address ?? user?.google?.email ?? null;
-  return <OrgConsole privyUserId={user!.id} email={email} onLogout={() => void logout()} />;
+  const userAddress = user?.wallet?.address ?? null;
+  return <OrgConsole privyUserId={user!.id} email={email} userAddress={userAddress} onLogout={() => void logout()} getAccessToken={getAccessToken} />;
 }
 
 // The org + agents surface for a signed-in user.
-function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; email: string | null; onLogout: () => void }) {
+function OrgConsole({ privyUserId, email, userAddress, onLogout, getAccessToken }: { privyUserId: string; email: string | null; userAddress: string | null; onLogout: () => void; getAccessToken: () => Promise<string | null> }) {
+  const authedFetch = useCallback(makeAuthedFetch(getAccessToken), [getAccessToken]);
   const [org, setOrg] = useState<Org | null>(null);
   const [agents, setAgents] = useState<PublicAgent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +101,7 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch(`/api/org?privyUserId=${encodeURIComponent(privyUserId)}`, { cache: 'no-store' });
+      const r = await authedFetch('/api/org', { cache: 'no-store' });
       const j = await r.json();
       setOrg(j.org ?? null);
       setAgents(j.agents ?? []);
@@ -95,7 +110,7 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
     } finally {
       setLoading(false);
     }
-  }, [privyUserId]);
+  }, [authedFetch]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -104,9 +119,9 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
     setBusy('org');
     setNotice(null);
     try {
-      const r = await fetch('/api/org', {
+      const r = await authedFetch('/api/org', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ privyUserId, email, orgName }),
+        body: JSON.stringify({ email, orgName }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.message || j.error || `HTTP ${r.status}`);
@@ -117,7 +132,7 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
     } finally {
       setBusy(null);
     }
-  }, [orgName, privyUserId, email]);
+  }, [orgName, email, authedFetch]);
 
   return (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -145,7 +160,7 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
             <div className="code" style={{ color: 'var(--color-ink-faint)' }}>registry {short(org.registryAddress)}</div>
           </section>
 
-          <RegisterAgentForm orgId={org.id} onRegistered={refresh} setNotice={setNotice} />
+          <RegisterAgentForm orgId={org.id} userAddress={userAddress} onRegistered={refresh} setNotice={setNotice} authedFetch={authedFetch} />
 
           <section aria-label="Agents" style={{ display: 'grid', gap: '0.85rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -159,9 +174,11 @@ function OrgConsole({ privyUserId, email, onLogout }: { privyUserId: string; ema
                 No agents yet. Register one above — it mints a child ENS name with its own cap and allowlist.
               </div>
             ) : (
-              agents.map((a) => <AgentRow key={a.id} agent={a} onChanged={refresh} setNotice={setNotice} />)
+              agents.map((a) => <AgentRow key={a.id} agent={a} onChanged={refresh} setNotice={setNotice} authedFetch={authedFetch} />)
             )}
           </section>
+
+          <SpendFeed orgId={org.id} authedFetch={authedFetch} setNotice={setNotice} />
         </>
       )}
     </div>

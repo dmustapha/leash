@@ -17,6 +17,7 @@ import { readPolicy } from '../../../../scripts/ens/policy';
 import { fundAgent } from '../../../../treasury/privy';
 import { config } from '../../../lib/config';
 import { DATA_AGENT, resourcePremiumUrl } from '../../../lib/demo';
+import { enforceRateLimit } from '../../../lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // beats do real on-chain work; give the settle/revoke room
@@ -34,6 +35,10 @@ function agentArgs() {
 }
 
 export async function POST(req: Request) {
+  // A4: throttle rapid beats before any real on-chain work drains the fee-payer/agent balance.
+  const limited = enforceRateLimit(req, 'demo');
+  if (limited) return limited;
+
   let beat: Beat;
   try {
     ({ beat } = (await req.json()) as { beat: Beat });

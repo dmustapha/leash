@@ -52,6 +52,62 @@ export async function createTreasury(policyId: string, ownerPublicKey: string): 
   return wallet.id;
 }
 
+// [WS-7 A3 / B-04] Reconcile the funding policy so a newly-registered console agent's EVM address is in-cap
+// fundable. Privy `updatePolicy` REPLACES the whole rules array, so this is a READ-MODIFY-WRITE UNION: fetch
+// the current allowlist, UNION the new address in (case-insensitive dedupe, existing entries preserved), and
+// re-write the FULL rule. Hard fail-open guards (B-04): the `transfer._to in [...]` condition MUST remain
+// present and NON-EMPTY, and the cap + token conditions MUST survive - writing a permissive/empty rule would
+// fund any address up to the cap (a monetary fail-open, violates INVARIANT #5). MUST be called ONLY behind
+// requireOwner (the register route) so an attacker cannot allowlist their own address for treasury draining.
+export async function reconcileFundingAllowlist(
+  treasuryWalletId: string, newAgentEvm: string,
+): Promise<{ policyId: string; allowlist: string[]; added: boolean }> {
+  const wallet = await privy.walletApi.getWallet({ id: treasuryWalletId });
+  const policyId = (wallet.policyIds ?? [])[0];
+  if (!policyId) throw new Error('treasury wallet has no funding policy bound');
+
+  const policy = await privy.walletApi.getPolicy({ id: policyId });
+  const rule = policy.rules.find((r) => r.conditions?.some((c) => (c as { field?: string }).field === 'transfer._to'));
+  if (!rule) throw new Error('funding policy has no transfer._to allowlist rule');
+  const cond = (field: string) => rule.conditions.find((c) => (c as { field?: string }).field === field) as { value?: unknown } | undefined;
+
+  const toCond = cond('transfer._to');
+  const capCond = cond('transfer._value');
+  const tokenCond = cond('to'); // ethereum_transaction target (the USDC facade); distinct from 'transfer._to'
+  const current: string[] = Array.isArray(toCond?.value) ? (toCond!.value as unknown[]).map(String) : [];
+  const cap = String(capCond?.value ?? '');
+  const token = String(tokenCond?.value ?? '');
+
+  // UNION: preserve every existing entry (F-018: existing agents stay funded), add the new one if absent.
+  const seen = new Set(current.map((a) => a.toLowerCase()));
+  const allowlist = [...current];
+  const added = !seen.has(newAgentEvm.toLowerCase());
+  if (added) allowlist.push(newAgentEvm);
+
+  // B-04 fail-open guards: never write an empty/permissive allowlist or drop the cap/token binding.
+  if (allowlist.length === 0) throw new Error('refusing to write empty funding allowlist (fail-open guard)');
+  if (!cap || !token) throw new Error('refusing to write funding policy with a missing cap/token condition');
+
+  if (added) {
+    await privy.walletApi.updatePolicy({
+      id: policyId,
+      rules: [
+        {
+          name: rule.name || 'allow-capped-agent-funding',
+          method: 'eth_sendTransaction',
+          action: 'ALLOW',
+          conditions: [
+            { fieldSource: 'ethereum_calldata', field: 'transfer._to', abi: ERC20_TRANSFER_ABI, operator: 'in', value: allowlist },
+            { fieldSource: 'ethereum_calldata', field: 'transfer._value', abi: ERC20_TRANSFER_ABI, operator: 'lte', value: cap },
+            { fieldSource: 'ethereum_transaction', field: 'to', operator: 'eq', value: token },
+          ],
+        },
+      ],
+    });
+  }
+  return { policyId, allowlist, added };
+}
+
 // Fund an agent (policy-gated). Returns FUNDING_DENIED when the policy denies (leaked-key over-fund beat).
 export async function fundAgent(treasuryWalletId: string, req: FundingRequest, usdcEvmAddress: string): Promise<FundingResult> {
   const data = encodeErc20Transfer(req.agentAddress, req.amountRaw) as `0x${string}`;

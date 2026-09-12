@@ -23,9 +23,13 @@ import { readPolicyCached, readPolicyNoCache } from './ens-read';
 import { hederaScheme, HEDERA_NETWORK } from './hedera-scheme';
 import { logDecision } from './hcs-log';
 import { toCtx, type HederaHookContext } from './decode-ctx';
+import { isSeen, markSeen } from '../db/replay';
 import type { PaymentContext, GateDecision, AgentPolicy } from '../types';
 
-// Replay guard for settled paymentIds (process memory; LIMITATIONS notes a prod DB/Redis backing).
+// Replay guard for settled paymentIds. In-memory Set = fast path within a process; db/replay = DURABLE backing
+// so a replay is rejected across a facilitator restart (INVARIANT #9, WS-7 A5). NOTE: this is the ONLY DB the
+// enforcement adapter touches, and ONLY for dedup - the AUTHORIZATION decision still reads ENS live via the
+// pure gate authorize.ts, which imports no DB (INVARIANT #3). A store error fails CLOSED (deny), never proceed.
 const seen = new Set<string>();
 
 // ---- agentName threading (DP-2) ----
@@ -91,13 +95,42 @@ export const facilitator = new x402Facilitator()
   .onBeforeSettle(async (hookCtx) => {
     const ctx = safeCtx(hookCtx as unknown as HederaHookContext);
     if (!ctx) return { abort: true, reason: 'RPC_ERROR' };
+
+    // [WS-7 A5] Durable replay PRE-check. A store error fails CLOSED (deny) - a DB outage must NEVER be read as
+    // "not seen, proceed". Seed the in-memory set so the pure gate returns REPLAY for a durably-seen id.
+    try {
+      if (await isSeen(ctx.paymentId)) seen.add(ctx.paymentId);
+    } catch {
+      await logDecision({
+        name: ctx.agentName, decision: 'DENY', amount: ctx.amount.toString(),
+        payTo: ctx.payTo, reason: 'REPLAY', ts: new Date().toISOString(),
+      });
+      return { abort: true, reason: 'REPLAY' }; // fail closed on replay-store error
+    }
+
     const d = await decide(ctx, readPolicyNoCache);
     const allow = 'settle' in d;
+
+    // [WS-7 A5] On an authorized settle, persist the paymentId DURABLY BEFORE proceeding (before the Hedera
+    // submit is treated as consumed). A persist error fails CLOSED (do not proceed); Hedera DUPLICATE_TRANSACTION
+    // is the on-chain backstop.
+    if (allow) {
+      try {
+        await markSeen(ctx.paymentId);
+        seen.add(ctx.paymentId);
+      } catch {
+        await logDecision({
+          name: ctx.agentName, decision: 'DENY', amount: ctx.amount.toString(),
+          payTo: ctx.payTo, reason: 'REPLAY', ts: new Date().toISOString(),
+        });
+        return { abort: true, reason: 'REPLAY' };
+      }
+    }
+
     await logDecision({
       name: ctx.agentName, decision: allow ? 'ALLOW' : 'DENY', amount: ctx.amount.toString(),
       payTo: ctx.payTo, reason: allow ? undefined : d.reason, ts: new Date().toISOString(),
     });
-    if (allow) seen.add(ctx.paymentId); // consume the paymentId ONLY on an authorized settle
     return toHook(d);
   });
 

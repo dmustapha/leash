@@ -15,7 +15,13 @@ import type { AgentPolicy } from '../../../types';
 
 type Beat = 'spend' | 'refuse' | 'revoke' | 'deny';
 
-type PolicyState = { policy: AgentPolicy | null; revoked: boolean; loading: boolean };
+type AgentIdentity = { description?: string; type?: string; avatar?: string; erc8004?: string };
+type PolicyState = { policy: AgentPolicy | null; identity: AgentIdentity | null; revoked: boolean; loading: boolean };
+type AuditRow = { id: string; agentName: string; decision: string; amount: string; payTo: string; reason: string | null; ts: string };
+
+function usdcAmount(raw: string): string {
+  return (Number(raw) / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 });
+}
 
 const BEATS: { id: Beat; n: number; title: string; plain: string; kind: 'primary' | 'default' }[] = [
   { id: 'spend', n: 1, title: 'Spend 3 USDC (in cap)', plain: 'Agent pays a whitelisted API, gas-free.', kind: 'primary' },
@@ -37,22 +43,33 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
   const [running, setRunning] = useState<Beat | null>(null);
   const [log, setLog] = useState<NonNullable<LiveResult>[]>([]);
   const [cards, setCards] = useState<Record<string, PolicyState>>({
-    [dataAgent]: { policy: null, revoked: false, loading: true },
-    [paymentsAgent]: { policy: null, revoked: false, loading: true },
+    [dataAgent]: { policy: null, identity: null, revoked: false, loading: true },
+    [paymentsAgent]: { policy: null, identity: null, revoked: false, loading: true },
   });
+  const [audit, setAudit] = useState<AuditRow[]>([]);
+
+  // [WS-7 B3] Live audit scroll: the actual ALLOW/DENY decisions the facilitator logged to the HCS topic,
+  // indexed and read back through the spend feed. Public ledger data (no auth), refreshed after each beat.
+  const loadAudit = useCallback(async () => {
+    try {
+      const r = await fetch('/api/feed?limit=8', { cache: 'no-store' });
+      const j = await r.json();
+      setAudit(Array.isArray(j.events) ? j.events : []);
+    } catch { /* a mirror/index hiccup must not break the demo */ }
+  }, []);
 
   const loadCard = useCallback(async (name: string) => {
     try {
       const r = await fetch(`/api/policy/${encodeURIComponent(name)}`, { cache: 'no-store' });
       const j = await r.json();
-      setCards((c) => ({ ...c, [name]: { policy: j.policy ?? null, revoked: !!j.revoked, loading: false } }));
+      setCards((c) => ({ ...c, [name]: { policy: j.policy ?? null, identity: j.identity ?? null, revoked: !!j.revoked, loading: false } }));
     } catch {
       setCards((c) => ({ ...c, [name]: { ...c[name], loading: false } }));
     }
   }, []);
 
-  // Load both cards on mount.
-  useEffect(() => { void loadCard(dataAgent); void loadCard(paymentsAgent); }, [loadCard, dataAgent, paymentsAgent]);
+  // Load both cards + the audit scroll on mount.
+  useEffect(() => { void loadCard(dataAgent); void loadCard(paymentsAgent); void loadAudit(); }, [loadCard, dataAgent, paymentsAgent, loadAudit]);
 
   const runBeat = useCallback(
     async (beat: Beat) => {
@@ -68,6 +85,8 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
         setLog((l) => [j, ...l].slice(0, 8));
         // The data agent's on-chain record changed on revoke; refresh its card.
         if (beat === 'revoke') await loadCard(dataAgent);
+        // A new ALLOW/DENY was logged to HCS; pull it into the audit scroll.
+        void loadAudit();
       } catch (e) {
         const err = { beat, error: 'request failed', message: e instanceof Error ? e.message : String(e) } as NonNullable<LiveResult>;
         setResult(err);
@@ -76,7 +95,7 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
         setRunning(null);
       }
     },
-    [loadCard, dataAgent],
+    [loadCard, dataAgent, loadAudit],
   );
 
   return (
@@ -126,8 +145,8 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
             The hierarchy under <code className="code" style={{ display: 'inline' }}>{org}</code> — two children, distinct caps
           </summary>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-            <AgentCard name={dataAgent} label="data · hero agent" policy={cards[dataAgent]?.policy ?? null} revoked={cards[dataAgent]?.revoked ?? false} loading={cards[dataAgent]?.loading} hero />
-            <AgentCard name={paymentsAgent} label="payments" policy={cards[paymentsAgent]?.policy ?? null} revoked={cards[paymentsAgent]?.revoked ?? false} loading={cards[paymentsAgent]?.loading} />
+            <AgentCard name={dataAgent} label="data · hero agent" policy={cards[dataAgent]?.policy ?? null} identity={cards[dataAgent]?.identity ?? null} revoked={cards[dataAgent]?.revoked ?? false} loading={cards[dataAgent]?.loading} hero />
+            <AgentCard name={paymentsAgent} label="payments" policy={cards[paymentsAgent]?.policy ?? null} identity={cards[paymentsAgent]?.identity ?? null} revoked={cards[paymentsAgent]?.revoked ?? false} loading={cards[paymentsAgent]?.loading} />
           </div>
         </details>
       </section>
@@ -144,6 +163,20 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
             </div>
             <a className="btn" href={hcsTopicUrl} target="_blank" rel="noreferrer" style={{ minHeight: 38 }}>View audit log ↗</a>
           </div>
+
+          {/* [WS-7 B3] Compact live audit scroll: the real ALLOW/DENY decisions indexed from the HCS topic. */}
+          {audit.length > 0 && (
+            <ul style={{ listStyle: 'none', margin: '0.75rem 0 0', padding: 0, display: 'grid', gap: '0.35rem' }}>
+              {audit.map((ev) => (
+                <li key={ev.id} className="code panel" style={{ padding: '0.45rem 0.7rem', display: 'flex', gap: '0.6rem', alignItems: 'baseline', flexWrap: 'wrap', fontSize: '0.82rem' }}>
+                  <span className={`pill ${ev.decision === 'ALLOW' ? 'pill-allow' : 'pill-deny'}`} style={{ minWidth: 54, textAlign: 'center' }}>{ev.decision}</span>
+                  <strong>{ev.agentName.split('.')[0]}</strong>
+                  <span>{usdcAmount(ev.amount)} USDC → {ev.payTo}</span>
+                  {ev.reason && <span style={{ color: 'var(--color-deny)' }}>({ev.reason})</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

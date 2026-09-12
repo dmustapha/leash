@@ -5,6 +5,7 @@
 import type { AgentPolicy } from '../../types';
 import { usdc } from '../lib/demo';
 
+type AgentIdentity = { description?: string; type?: string; avatar?: string; erc8004?: string };
 type Props = {
   name: string;
   label: string;
@@ -12,9 +13,10 @@ type Props = {
   revoked: boolean;
   loading?: boolean;
   hero?: boolean;
+  identity?: AgentIdentity | null;
 };
 
-export default function AgentCard({ name, label, policy, revoked, loading, hero }: Props) {
+export default function AgentCard({ name, label, policy, revoked, loading, hero, identity }: Props) {
   return (
     <article
       className="card fade-in"
@@ -39,6 +41,14 @@ export default function AgentCard({ name, label, policy, revoked, loading, hero 
           <span className="pill pill-allow">active</span>
         )}
       </header>
+
+      {/* [WS-7 D1] Advisory ENS identity (agent.type / agent.description) - display only, never enforcement. */}
+      {!loading && identity && (identity.type || identity.description) && (
+        <p style={{ margin: 0, color: 'var(--color-ink-dim)', fontSize: '0.82rem' }}>
+          {identity.type && <span className="pill pill-idle" style={{ marginRight: '0.5rem' }}>{identity.type}</span>}
+          {identity.description}
+        </p>
+      )}
 
       {loading ? (
         <div className="code" style={{ color: 'var(--color-ink-faint)' }}>reading policy from ENS…</div>
