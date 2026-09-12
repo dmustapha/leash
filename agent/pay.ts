@@ -19,7 +19,7 @@
 // amount in the selected requirements before the payload is built (the agent controls the amount; the
 // facilitator's ENS cap is what refuses it), exactly as the resource-server note describes (R-11).
 import 'dotenv/config';
-import { PrivateKey } from '@hiero-ledger/sdk';
+import { PrivateKey, Client, AccountId, TransferTransaction } from '@hiero-ledger/sdk';
 import { ExactHederaScheme, createClientHederaSigner } from '@x402/hedera';
 import { x402Client } from '@x402/core/client';
 import {
@@ -107,6 +107,55 @@ export async function submit(args: PayArgs, paymentB64: string): Promise<PayResu
     }
   }
   return { status: res.status, ok: res.ok, body: await safeJson(res), settle, paymentB64 };
+}
+
+// ============================ REFRAME [SKILL] S3 — agent-alone MISSING_COSIGN beat ============================
+// (per REFRAME-SCOPE §4-S2, MISSING_COSIGN surfacing = option (a): an AGENT-SIDE client error.) This models
+// the VM-3 "agent-alone can't spend" beat HONESTLY: the agent takes its own valid 1-of-2 signature on the
+// KeyList spending account and submits it DIRECTLY to Hedera, bypassing LEASH entirely. Because the account
+// is threshold-2 and only the agent's 1 signature is present, the network rejects it. The client detects the
+// missing 2nd signature (an INVALID_SIGNATURE receipt / precheck) and NAMES the condition MISSING_COSIGN — a
+// CLEAN named client-side condition, NOT a caught raw Hedera INVALID_SIGNATURE bubbled up untyped. It is NOT a
+// GateReason (the pure gate never produces it — the gate passes in-cap; the missing co-sign is a submission
+// condition on the agent's own bypass attempt), so authorize.ts's union is unchanged.
+export type AgentAloneResult =
+  | { settled: true; transactionId: string } // should NOT happen for a threshold-2 account
+  | { settled: false; reason: 'MISSING_COSIGN'; detail: string };
+
+export interface AgentAloneArgs {
+  spendingAccountId: string; // the KeyList threshold-2 spending account ("0.0.N")
+  agentKey: string;          // the agent's ECDSA private key (its 1-of-2 half; SR-1 — held by the agent)
+  tokenId: string;           // HTS token id
+  payToAccountId: string;    // recipient account id
+  amountRaw: string;         // raw smallest-unit amount
+}
+
+// Submit an agent-signed-ONLY (1-of-2) transfer DIRECTLY to Hedera, bypassing LEASH's co-sign. Expected to be
+// rejected for missing the 2nd signature -> MISSING_COSIGN. If it somehow settles, that is a co-ownership
+// failure (F-031) and the caller MUST treat `settled:true` as a red flag.
+export async function payAgentAloneDirect(args: AgentAloneArgs): Promise<AgentAloneResult> {
+  const client = Client.forTestnet();
+  // The agent pays its own gas here (no facilitator fee-payer on this bypass path); it is the operator+signer.
+  const agentPriv = PrivateKey.fromStringECDSA(args.agentKey);
+  client.setOperator(AccountId.fromString(args.spendingAccountId), agentPriv);
+  try {
+    const frozen = await new TransferTransaction()
+      .addTokenTransfer(args.tokenId, AccountId.fromString(args.spendingAccountId), -BigInt(args.amountRaw))
+      .addTokenTransfer(args.tokenId, AccountId.fromString(args.payToAccountId), BigInt(args.amountRaw))
+      .freezeWith(client);
+    const signed = await frozen.sign(agentPriv); // ONLY the agent's 1-of-2 — no LEASH co-signature.
+    const resp = await signed.execute(client);
+    const receipt = await resp.getReceipt(client);
+    client.close();
+    // If a threshold-2 account settles on 1 signature, the co-ownership model is broken. Report as settled.
+    return { settled: true, transactionId: resp.transactionId!.toString() + ' (' + receipt.status.toString() + ')' };
+  } catch (e) {
+    client.close();
+    const msg = e instanceof Error ? e.message : String(e);
+    // The Hedera rejection for a missing threshold signature is INVALID_SIGNATURE (precheck or receipt).
+    // Name it cleanly as MISSING_COSIGN rather than surfacing the raw error.
+    return { settled: false, reason: 'MISSING_COSIGN', detail: msg };
+  }
 }
 
 function stripAuthScheme(header: string): string {

@@ -98,6 +98,35 @@ describe('authorize() - the 7 GateReason abort branches (INVARIANT #1 fail-close
   });
 });
 
+// REFRAME [SKILL] S3 — binding reconcile for a co-signed KeyList spending account (INVARIANT #8 addendum).
+// The binding assertion is `policy.hederaAccount === ctx.payer` — pure account-id-string equality, AGNOSTIC to
+// whether the payer is a single-key or a KeyList threshold-2 account. These tests prove the binding holds
+// UNCHANGED when the payer IS the KeyList spending account, and still trips on a mismatch. (The gate logic is
+// deliberately NOT weakened for the co-sign path; account-type detection lives in the signer, not the gate.)
+describe('authorize() - REFRAME S3 binding reconcile for a KeyList spending account', () => {
+  const KEYLIST_ACCOUNT = '0.0.10500001'; // a 2-of-2 KeyList[agentPub, leashCoSignerPub] spending account id.
+
+  it('KeyList spending account payer == policy.hederaAccount -> binding passes (settles in-cap)', () => {
+    const d = authorize(
+      policy({ hederaAccount: KEYLIST_ACCOUNT }),
+      ctx({ payer: KEYLIST_ACCOUNT }),
+      new Set(),
+    );
+    expectSettle(d);
+    expect(d.auth.amount).toBe(1000000n);
+  });
+
+  it('mismatched payer (not the KeyList spending account) -> BINDING_MISMATCH', () => {
+    const d = authorize(
+      policy({ hederaAccount: KEYLIST_ACCOUNT }),
+      ctx({ payer: '0.0.9999' }), // a different account presenting against the KeyList record.
+      new Set(),
+    );
+    expectAbort(d);
+    expect(d.reason).toBe('BINDING_MISMATCH');
+  });
+});
+
 describe('authorize() - settle happy path (only affirmative proceed)', () => {
   it('returns {settle:true, auth} with amount/payTo/agentName and a policyHash', () => {
     const d = authorize(policy(), ctx(), new Set());
