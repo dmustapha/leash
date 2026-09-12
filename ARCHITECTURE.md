@@ -14,6 +14,15 @@
 ### Purpose
 Turn an org's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents: a self-hosted Hedera x402 facilitator reads each agent's ENS resolver policy record before settling a gas-free payment and refuses over-cap/off-allowlist/revoked payments; Privy is the independent second rail on funding.
 
+> **REFRAME — the current product model (`[SKILL]`, per REFRAME-SCOPE §0/§4-F; product decision `[USER]` 2026-09-12).** LEASH is now the **spend-control plane for agents that already exist** — it no longer *mints* the agent. An external agent's real self — identity, logic, LLM, and its controlling key — lives **outside** LEASH as an EVM address / ERC-8004 registration the agent itself controls. LEASH binds that external identity to five governed things: an **ENS name (the leash)** + a **2-of-2 co-signed Hedera spending account** (the agent holds one key, LEASH the other) + a **policy** (per-call cap, allowlist, rolling daily/weekly caps, time-windows) + **funding** (Privy) + **one-write revoke**. The create-your-own-agent product (LEASH provisions the agent, strategy, LLM, and direction) is the **roadmap ("coming soon")**. The original create-agent text below is retained as design history where relevant; the reframe is the *current* model and is `/app`-only + a **network-typed scheme selection** — `/demo`, `/api/demo`, `provision-canonical.ts`, `ensureCanonicalAgent`, and VM-1/VM-2 are the FROZEN floor and are NO-TOUCH (INVARIANT #10).
+
+### Trust Model (REFRAME — `[SKILL]`, per REFRAME-SCOPE §0 + REF-3; honesty framing `[USER]`-locked)
+The 2-of-2 co-signature is **facilitator-TRUSTED, NOT chain-enforced.** Three properties are DISTINCT and must never be conflated:
+- **Control = TRUE.** LEASH co-controls the agent's spending account: LEASH's policy-checked co-signature is *required* for the account to spend, and LEASH refuses to co-sign anything over policy. Caps and revoke are real. The agent cannot spend without LEASH; LEASH cannot touch the agent's funds without the agent.
+- **Independence = TRUE.** The agent holds its OWN Hedera key on the account (a genuine co-owner, not a delegate), and its identity/logic/LLM are external and self-owned. **SR-1 linchpin:** the AGENT generates its own Hedera keypair and supplies ONLY its PUBLIC key (`agentPub`) at register; `agentPriv` is held by the agent and is NEVER in LEASH's facilitator, DB, or env. If LEASH ever held `agentPriv` the 2-of-2 would be theater and the co-ownership claim false. This Hedera spending key is DISTINCT from the agent's external identity key (ERC-8004/EVM). The x402 client runs **agent-side** (`agent/pay.ts`) and signs with `agentPriv`; the demo/VM-3 agent is an external process holding its own key (SR-2).
+- **Trustless = FALSE (never claim).** The chain enforces "two keys signed," NOT "why." The cap is enforced by LEASH's *decision to co-sign*, not by the chain — the same honest facilitator-trust boundary as INVARIANT #4. The **env-pinned addresses are the trust boundary**: `LEASH_COSIGNER_KEY`, `HEDERA_OPERATOR_KEY`, the ERC-8004 registry address, and the KeyList account id are pinned in env and define who is trusted. A separate-trust-domain cosigner *service* is roadmap.
+> **MUST-NOT-CLAIM:** never write "trustless," "the chain enforces the cap," or "LEASH can't move a co-signed agent's funds once the agent's partial sig is presented." ERC-8004 `ownerOf` is **on-chain-resolved**, NEVER "verified" (`ownerOf` does not prove the registrant controls the address; proof-of-control is roadmap).
+
 ### System Diagram
 ```
  Ethereum Sepolia (ENSv2)                                Hedera testnet
@@ -78,6 +87,7 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       policy.ts                (setPolicy / readPolicy - leash.policy text record)
       identity.ts              (setIdentity - agent-identity text records; WS7 D1, advisory-only)
       reverse.ts               (setName reverse record; also agent reverse name, WS7 D1)
+      erc8004.ts               (REFRAME [SKILL] R1 — pin the ERC-8004 registry 0x8004A818… + REAL registry ABI; resolve external-identity owner; owner-mismatch -> clear error; ADVISORY only, never on enforcement path — INVARIANT #13)
       revoke.ts                (clear policy OR revokeRoles)
     hedera/
       client.ts                (Hedera client from operator env)
@@ -85,12 +95,18 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       associate.ts             (associate token on payer+receiver)
       hcs.ts                   (create topic + submit message)
       fund-agent.ts            (operator-funded HBAR for agent accounts)
+      provision-canonical.ts   (FROZEN — /demo single-key sandbox account; NO-TOUCH, INVARIANT #10)
+      provision-spending-account.ts  (REFRAME [SKILL] S1 — NET-NEW KeyList[agentPub, leashCoSignerPub] threshold-2 account; NO reuse of ensureCanonicalAgent; funds via the account's long-zero EVM address)
   facilitator/
-    authorize.ts               (PURE closed-union gate decision - the enforcement core)
+    authorize.ts               (PURE closed-union gate decision - the enforcement core; REFRAME adds stateless window check + rolling-cap gate reasons)
     ens-read.ts                (getLeashPolicy via viem; no-cache + cached variants)
-    hedera-scheme.ts           (ExactHederaScheme wiring, feePayer)
+    hedera-scheme.ts           (REFRAME [SKILL] S2 — NETWORK-TYPED SCHEME SELECTION: single-key factories UNCHANGED for /demo; co-sign path (custom verifyPayerSignature accepting agent 1-of-2 at verify + custom dual-sign signAndSubmit = operatorKey fee + LEASH_COSIGNER_KEY authority) selected when policy.hederaAccount is a KeyList account. Co-sign emitted at the SINGLE post-gate settle site.)
+    spend-rollup.ts            (REFRAME [SKILL] D3 — DB-FREE rolling-total reader; imports ONLY fetch+types; SUMs ALLOW amounts from the HCS topic via Mirror Node by consensus_timestamp; throws -> RPC_ERROR fail-closed, NEVER defaults to 0)
     hcs-log.ts                 (ALLOW/DENY -> HCS)
-    server.ts                  (x402Facilitator + onBeforeVerify/onBeforeSettle + /verify /settle)
+    server.ts                  (x402Facilitator + onBeforeVerify/onBeforeSettle + /verify /settle; REFRAME onBeforeSettle computes rolling totals only when a cap is declared)
+  agent/
+    pay.ts                     (agent client; REFRAME [SKILL] S3 — agent-side 1-of-2 client signing with agentPriv on the KeyList account)
+    vm3.live.ts                (REFRAME [SKILL] V3 — reframe hero: register-existing -> co-sign in-cap pay -> agent-alone/operator-alone can't spend -> over-cap/daily/window refuse -> mirror-down DENY -> revoke fail-closed)
   resource-server/
     server.ts                  (@x402/express GET /premium pointing at our facilitator)
   agent/
@@ -121,7 +137,8 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
         feed/route.ts          (live per-agent + org-level spend feed from HCS-indexed spend_events; WS7 B3, index-only)
         policy/[name]/route.ts (read live leash.policy for the UI)
     lib/
-      config.ts               (typed env access, shared)
+      config.ts               (typed env access, shared; REFRAME adds LEASH_COSIGNER_KEY + ERC-8004 registry addr)
+      console.ts              (REFRAME [SKILL] R2 — provisionSpendingAccount: register-existing binder that resolves external identity (erc8004.ts) -> provisions the co-signed KeyList account (S1) -> writes on-chain-resolved identity keys -> writes leash.policy LAST -> Privy funding UNION to the long-zero EVM)
       auth.ts                 (verifyAuthToken: Privy token verify + tenant derivation; WS7 A1, INVARIANT #11)
       ratelimit.ts            (per-IP/session token bucket -> 429; WS7 A4)
     components/
@@ -848,6 +865,12 @@ Mint the own HTS USDC, associate it, create the HCS topic, fund agent accounts.
 ### Dependencies
 `@hiero-ledger/sdk` 2.85.0 (NEVER @hashgraph/sdk), operator env.
 
+### REFRAME — 2-of-2 co-signed spending account (`[SKILL]`, per REFRAME-SCOPE §4-S1 + REF-2)
+For a `/app` register-existing agent, `scripts/hedera/provision-spending-account.ts` creates a **NET-NEW** `KeyList[agentPub, leashCoSignerPub]` **threshold-2** Hedera account. This is a distinct provisioning path — it **does NOT reuse `ensureCanonicalAgent` and does NOT touch `provision-canonical.ts`** (the frozen `/demo` single-key floor stays untouched, INVARIANT #10). `agentPub` is the agent's own PUBLIC key (SR-1 linchpin: `agentPriv` never enters LEASH); `leashCoSignerPub` derives from `LEASH_COSIGNER_KEY`.
+- **Funding target = the account's long-zero EVM address (REF-2).** A KeyList (threshold-key) account has **no key-derived EVM alias**, so there is no canonical funding==payer==binding alias to reuse. The account is funded via its **long-zero EVM address** (the deterministic `0x0…{entityNum}` facade), which is also the Privy funding target and the ENS `agentEvm` record. `reconcileFundingAllowlist` retargets to it; `isCanonical`'s key-derived-alias assertion is replaced by a **KeyList-shape** assertion for this path.
+- **`LEASH_COSIGNER_KEY` is a raw Hedera ECDSA key** in the operator trust domain — DISTINCT from `HEDERA_OPERATOR_KEY` (the fee-payer). The two are **asserted ≠ at process start** (throw if equal) so "LEASH's authority key ≠ its gas key" is literally true within the process (REF-3). The co-signer is NOT Privy-held and NOT the Privy P-256 owner (INVARIANT #6 unchanged). A separate-trust-domain cosigner service is roadmap.
+- USDC is associated on the new account exactly as for any account (`associate.ts`).
+
 ### Code
 
 #### File: `scripts/hedera/client.ts`
@@ -1352,8 +1375,14 @@ export const config = {
   usdcEvmAddress: process.env.USDC_EVM_ADDRESS!,
   treasuryWalletId: process.env.TREASURY_WALLET_ID!,
   sandboxRegistry: process.env.SANDBOX_REGISTRY as `0x${string}`,
+  // REFRAME [SKILL] (per REFRAME-SCOPE §4-S1/config) — env-pinned trust boundary additions:
+  leashCosignerKey: process.env.LEASH_COSIGNER_KEY!,          // raw Hedera ECDSA authority key; asserted !== HEDERA_OPERATOR_KEY at process start
+  erc8004Registry: process.env.ERC8004_REGISTRY_ADDRESS ??    // ERC-8004 Identity Registry (Ethereum Sepolia); ADVISORY read only
+    '0x8004A818BFB912233c491871b3d84c89A494BD9e',
 };
 ```
+
+> **REFRAME env-pinned trust boundary (`[SKILL]`, per REF-3).** `.env(.example)` gains `LEASH_COSIGNER_KEY` (asserted `!== HEDERA_OPERATOR_KEY` at process start — throw if equal) and `ERC8004_REGISTRY_ADDRESS=0x8004A818BFB912233c491871b3d84c89A494BD9e`. These pinned addresses ARE the trust boundary of the co-sign model (Trust Model §1): they define which authority key co-signs and which registry is resolved. The registry address is used only by `scripts/ens/erc8004.ts` for the ADVISORY on-chain-resolved identity read; the facilitator enforcement path reads EXACTLY `leash.policy` and never `agent.*` (INVARIANT #13, CI module-boundary guard).
 
 #### File: `web/app/layout.tsx`
 [ASSUMED] - root layout
@@ -1841,6 +1870,8 @@ Generation: `screenshots/` (demo phase), `proof.md` (build post-hero-run via `ve
 | Privy B2B $2,500 | `treasury/privy.ts` + `/app` login | P-256-owner org wallet + funding policy (cap+allowlist) + live leaked-key DENY + embedded-wallet login | `FUNDING_DENIED` on camera; policy id |
 
 Primary depth = ENS (the load-bearing interlock). The three integration points are physically distinct directories (repo-layout discipline).
+
+> **REFRAME impact on the three tracks (`[SKILL]`, per REFRAME-SCOPE §4-F).** All three survive the reframe and Hedera deepens. ENS gains **registry-resolution** (external ERC-8004 identity resolved and written as on-chain-resolved text records). Hedera goes deeper via **native threshold keys** — the `/app` spending account is a `KeyList[agentPub, leashCoSignerPub]` threshold-2 account co-signed at settle. Privy **funds the co-signed spending account at its long-zero EVM address**; the leaked-key over-fund `FUNDING_DENIED` beat is preserved. The frozen `/demo` single-key path continues to serve all three tracks unchanged.
 
 ## N+4. Safety Architecture (tiered defenses)
 - **Layer 1 - Input validation:** `authorize.ts` rejects malformed policy (`MALFORMED_POLICY`), binding mismatch, off-token; header is treated as untrusted (only names the record). Prevents spoofed/garbage-policy spend.
