@@ -76,7 +76,8 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       roles.ts                 (grantRoles / revokeRoles - the kill switch)
       subname.ts               (mint child name; owner=agent address)
       policy.ts                (setPolicy / readPolicy - leash.policy text record)
-      reverse.ts               (setName reverse record)
+      identity.ts              (setIdentity - agent-identity text records; WS7 D1, advisory-only)
+      reverse.ts               (setName reverse record; also agent reverse name, WS7 D1)
       revoke.ts                (clear policy OR revokeRoles)
     hedera/
       client.ts                (Hedera client from operator env)
@@ -97,9 +98,10 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
   treasury/
     privy.ts                   (P-256-owner wallet + funding policy + policy-gated fund + DENY)
   db/
-    schema.ts                  (drizzle: users, orgs, agents, spend_events)
+    schema.ts                  (drizzle: users, orgs, agents, spend_events, seen_payments [WS7 A5])
     client.ts                  (Neon pg pool)
-    index-hcs.ts               (poll HCS -> spend_events; index layer only)
+    index-hcs.ts               (poll HCS -> spend_events; index layer only; consumed by /app feed, WS7 B3)
+    replay.ts                  (Neon-backed durable seen paymentId set; WS7 A5, replay-guard only, INVARIANT #14)
   relayer/
     relay.ts                   (deployer sponsors a user's ENS op, scoped to their org subname)
   web/
@@ -109,14 +111,19 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       demo/page.tsx            (JUDGE SANDBOX hero flow - server-orchestrated)
       app/page.tsx             (REAL CONSOLE - Privy login + multi-tenant)
       api/
-        demo/route.ts          (sandbox orchestration: grant/spend/refuse/revoke/deny beats)
-        agents/route.ts        (real: mint+setPolicy+DB record, relayer-sponsored)
-        revoke/route.ts        (real+demo: clear policy / revokeRoles)
-        pay/route.ts           (trigger an agent payment)
-        fund/route.ts          (Privy policy-gated funding + leaked-key DENY)
+        demo/route.ts          (sandbox orchestration: grant/spend/refuse/revoke/deny beats; rate-limited, WS7 A4)
+        agents/route.ts        (real: verifyAuthToken -> mint+setPolicy+setIdentity+funding-allowlist add+DB, relayer-sponsored; WS7 A1/A2/A3/D1/C1)
+        agents/allowlist/route.ts (real: edit allowedPayees -> rewrite leash.policy on-chain; WS7 B1, authz-guarded)
+        agents/reactivate/route.ts (real: un-revoke -> setPolicy rebind + DB status active; WS7 B2, authz-guarded)
+        revoke/route.ts        (real+demo: clear policy / revokeRoles; authz-guarded on /app path, WS7 A1)
+        pay/route.ts           (trigger an agent payment; rate-limited, WS7 A4)
+        fund/route.ts          (Privy policy-gated funding + leaked-key DENY; authz-guarded + rate-limited, WS7 A1/A4)
+        feed/route.ts          (live per-agent + org-level spend feed from HCS-indexed spend_events; WS7 B3, index-only)
         policy/[name]/route.ts (read live leash.policy for the UI)
     lib/
       config.ts               (typed env access, shared)
+      auth.ts                 (verifyAuthToken: Privy token verify + tenant derivation; WS7 A1, INVARIANT #11)
+      ratelimit.ts            (per-IP/session token bucket -> 429; WS7 A4)
     components/
       SplitScreen.tsx         (A/B resolver-record | live-402 view)
       AgentCard.tsx           (cap + allowlist + status)
@@ -145,8 +152,12 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
 | 6 | Agent client | module | `agent/pay.ts` | build+sign+pay | @privy-io/server-auth, @x402/hedera, types |
 | 7 | Treasury (Privy) | module | `treasury/privy.ts` | org wallet + funding policy + DENY | @privy-io/server-auth, types |
 | 8 | Web dashboard | Next.js | `web/*` | /demo sandbox + /app console + API routes | next, viem, @privy-io/react-auth |
-| 9 | Database | data | `db/*` | index layer (never enforcement) | drizzle, pg, types |
-| 10 | Relayer | module | `relayer/relay.ts` | scoped gas sponsor for user ENS ops | viem, types |
+| 9 | Database | data | `db/*` | index layer (never enforcement) + durable replay `seen` set (WS7 A5) | drizzle, pg, types |
+| 10 | Relayer | module | `relayer/relay.ts` | scoped gas sponsor for user ENS ops; also grants the co-hold role to the user (WS7 C1) | viem, types |
+| 11 | Authz helper (WS7 A1) | module | `web/lib/auth.ts` (`verifyAuthToken`) | verify the Privy auth token on every `/app` route; derive `privyUserId` from the token, never client input; foreign-id → 401/403 (INVARIANT #11) | @privy-io/server-auth, types |
+| 12 | Spend-feed indexer surface (WS7 B3) | data + UI | `db/index-hcs.ts` consumed by `web/app/api/feed/route.ts` + `/app` feed UI | expose HCS-indexed `spend_events` as a live per-agent + org-level feed (index only, never enforcement) | drizzle, pg, Mirror Node |
+| 13 | Durable replay store (WS7 A5) | data | `db/replay.ts` (Neon-backed `seen` paymentId set) | persist consumed paymentIds so `REPLAY` survives a facilitator restart (INVARIANT #14); replay-guard path ONLY, not a policy read | drizzle, pg, types |
+| 14 | ENS agent-identity write path (WS7 D1) | scripts | `scripts/ens/identity.ts` (`setIdentity`) + `scripts/ens/reverse.ts` | write advisory agent-identity text records + reverse name; NEVER read on the enforcement path (INVARIANT #13) | viem, types |
 
 ### Data Flow (with types)
 `AgentPolicy` (from ENS) + decoded `PaymentContext` (from x402) → `authorize(): GateDecision` → HCS `LogEntry` + Hedera settle. Funding: `FundingRequest` → Privy policy eval → allow/`FUNDING_DENIED`. Index: HCS messages → `SpendEvent` rows (DB, read-only for the UI, never for enforcement).
@@ -824,6 +835,8 @@ export async function revokeAgent(registry: `0x${string}`, tokenId: bigint, agen
 ### Key Decisions
 - `readPolicy` in `policy.ts` uses the SAME `namehash` + `PublicResolverV2.text` primitives as the facilitator's `ens-read.ts`, so the WS-1 read-back test exercises the real enforcement read path (PRD-W5).
 - Two revocation modes: clearing the record is the fast demo kill; role revoke is the structural kill demoed for ENS depth.
+- **Co-hold role grant (WS7 C1, INVARIANT #12):** on org provision + agent register, `grantRoles` grants the EAC role that gates `setText`/revoke to the signed-in user's Privy embedded-wallet address ALONGSIDE the relayer. The user gains genuine on-chain revoke authority; the relayer stays a delegated operator for gasless ops and is never the SOLE holder for a user-owned org.
+- **Agent-identity writes (WS7 D1, INVARIANT #13):** `scripts/ens/identity.ts` (`setIdentity`) writes advisory agent-identity text records (`agent.description`/`agent.type`/`avatar`/optional ERC-8004 pointer) and `scripts/ens/reverse.ts` sets the agent's reverse name. These use the same resolver `setText` primitive as `policy.ts` but write SEPARATE keys; `facilitator/authorize.ts` + `ens-read.ts` read ONLY `leash.policy`, never an identity key (grep-provable, F-024).
 
 ---
 
@@ -1269,6 +1282,8 @@ export async function indexTopic(topicId: string, sinceSeq = 0): Promise<number>
 
 ### Key Decisions
 - The DB mirrors HCS for fast UI reads only. Enforcement always reads ENS live (INVARIANT #3).
+- **Durable replay store (WS7 A5, INVARIANT #14):** `db/replay.ts` persists consumed paymentIds in a `seen_payments` table so a replayed `X-PAYMENT` is rejected `REPLAY` even after a facilitator restart (Render spin-down). This is the ONE exception where the facilitator touches the DB, and it is on the replay-guard path ONLY (a membership check on a paymentId), never a policy/cap/allowlist read - INVARIANT #3 stays intact because enforcement still reads live ENS. `authorize.ts` stays pure; the caller injects the durable `seen` set (same `Set`-shaped interface, DB-backed).
+- **Spend-feed surface (WS7 B3):** `db/index-hcs.ts` output (`spend_events`) is exposed via `web/app/api/feed/route.ts` to the `/app` live per-agent + org-level feed. Read-only index layer; a feed read never gates a payment.
 
 ---
 
@@ -1309,6 +1324,7 @@ export async function relay(orgSubname: string, op: RelayOp): Promise<string> {
 
 ### Key Decisions
 - Scope check (`target.endsWith(orgSubname)`) prevents the deployer key from being an open relay (R-13 boundary).
+- **Co-hold role grant (WS7 C1, INVARIANT #12):** the relayer, on provision/register for an authenticated user, also grants the kill-switch EAC role to the user's Privy embedded-wallet address (a new `grant` RelayOp scoped to the caller's org subname). The relayer keeps sponsoring gas as a delegated operator but is never the sole role holder for a user-owned org; the user can revoke their own agents with real on-chain authority (F-023).
 
 ---
 
@@ -1988,6 +2004,11 @@ Startup cmds: facilitator `tsx facilitator/server.ts` (health `/health`); resour
 | ENS scripts/relayer | Sepolia | RPC eth_sendRawTx | `LEASH_DEPLOYER_KEY` | `cast balance 0x72A9…` | CRITICAL |
 | db/index-hcs | Hedera Mirror | HTTP | none | Mirror reachable | STANDARD |
 | web | db | pg | `DATABASE_URL` | `SELECT 1` | STANDARD |
+| web (`/app` routes) | Privy (verifyAuthToken) | HTTPS SDK | `PRIVY_APP_ID/SECRET` (+ verification key) | verifyAuthToken rejects a missing/foreign token (401/403) | CRITICAL (WS7 A1) |
+| web/agents route | Privy (funding-policy update) | HTTPS SDK | `PRIVY_APP_ID/SECRET` | `updatePolicy` adds new agent to allowlist; in-cap fund ALLOW, over-fund DENY | CRITICAL (WS7 A3) |
+| facilitator | Neon (durable replay store) | pg | `DATABASE_URL` | replayed paymentId rejected `REPLAY` after restart | CRITICAL (WS7 A5, replay-guard only, INVARIANT #14) |
+| ENS scripts/relayer | Sepolia (agent-identity + reverse writes) | RPC eth_sendRawTx | `LEASH_DEPLOYER_KEY` | `text(node,'agent.type')` non-empty; reverse name resolves | STANDARD (WS7 D1, advisory-only, off enforcement) |
+| relayer | Sepolia (grant co-hold role) | RPC eth_sendRawTx | `LEASH_DEPLOYER_KEY` | user address present in the agent tokenId role bitmap | CRITICAL (WS7 C1, INVARIANT #12) |
 
 ## Security spec (for build's SECURITY.md)
 Build fills `SECURITY.md` at C0 to this shape:
