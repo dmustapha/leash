@@ -146,6 +146,43 @@ export default function ProofPage() {
         </p>
       </section>
 
+      <section aria-labelledby="reframe" style={{ marginTop: '2.5rem' }}>
+        <h2 id="reframe" style={{ fontSize: 'var(--text-h2)' }}>
+          Govern existing agents (reframe)
+        </h2>
+        <p style={{ maxWidth: '58ch', color: 'var(--color-ink-dim)', marginTop: '0.9rem' }}>
+          LEASH doesn&rsquo;t mint agents — it binds ones that already exist and puts a spend-control plane around them.
+          Each property below is honest about its boundary: LEASH co-controls spend, but the cap is enforced by
+          LEASH&rsquo;s decision to co-sign, <strong>not</strong> by the chain (a facilitator-trusted boundary — never trustless).
+        </p>
+        <ul style={{ marginTop: '0.9rem', display: 'grid', gap: '0.6rem', listStyle: 'none', padding: 0 }}>
+          <li className="card" style={{ padding: '0.9rem 1.1rem' }}>
+            <strong>2-of-2 co-signed spending account.</strong>{' '}
+            <span style={{ color: 'var(--color-ink-dim)' }}>
+              The agent holds one Hedera key, LEASH the other. The agent alone can&rsquo;t spend
+              (<code className="code">MISSING_COSIGN</code>); LEASH alone can&rsquo;t move the agent&rsquo;s funds (it never holds the
+              agent&rsquo;s private key). Facilitator-trusted co-sign, not chain-enforced.
+            </span>
+          </li>
+          <li className="card" style={{ padding: '0.9rem 1.1rem' }}>
+            <strong>On-chain-resolved external identity.</strong>{' '}
+            <span style={{ color: 'var(--color-ink-dim)' }}>
+              Register resolves an ERC-8004 <code className="code">agentId</code> / EVM address against the Identity Registry
+              (<code className="code">0x8004A818…</code>) and writes advisory ENS records. Labeled
+              &ldquo;on-chain-resolved&rdquo;, not &ldquo;verified&rdquo; — <code className="code">ownerOf</code> is not proof-of-control.
+            </span>
+          </li>
+          <li className="card" style={{ padding: '0.9rem 1.1rem' }}>
+            <strong>Rolling &amp; window limits.</strong>{' '}
+            <span style={{ color: 'var(--color-ink-dim)' }}>
+              Rolling daily / weekly caps (<code className="code">OVER_DAILY_CAP</code> / <code className="code">OVER_WEEKLY_CAP</code>) and a
+              stateless UTC time-window (<code className="code">OUTSIDE_WINDOW</code>). The rolling caps are SOFT budgets over the
+              lagging HCS mirror index; the per-call cap stays the hard bound.
+            </span>
+          </li>
+        </ul>
+      </section>
+
       <p style={{ marginTop: '2.5rem', color: 'var(--color-ink-faint)', fontSize: '0.85rem' }}>
         Full write-up: <code className="code">submission/proof.md</code>. Machine ledger:{' '}
         <code className="code">docs/pipeline/claims.json</code>.

@@ -168,7 +168,8 @@ function OrgConsole({ privyUserId, email, userAddress, onLogout, getAccessToken 
               <div className="panel" style={{ padding: '1.25rem', color: 'var(--color-ink-dim)' }}>Loading agents…</div>
             ) : agents.length === 0 ? (
               <div className="panel" style={{ padding: '1.25rem', color: 'var(--color-ink-dim)' }}>
-                No agents yet. Register one above — it mints a child ENS name with its own cap and allowlist.
+                No agents yet. Bind an existing agent above — it binds your agent&rsquo;s on-chain identity to a
+                co-signed spending account with its own cap, allowlist, and dynamic limits.
               </div>
             ) : (
               agents.map((a) => <AgentRow key={a.id} agent={a} onChanged={refresh} setNotice={setNotice} authedFetch={authedFetch} />)

@@ -16,10 +16,11 @@ import { reconcileFundingAllowlist } from '../../../../treasury/privy';
 import { hasPolicyCohold } from '../../../../scripts/ens/cohold';
 import { writeIdentity } from '../../../../scripts/ens/identity';
 import { resolveExternalIdentity } from '../../../../scripts/ens/erc8004';
+import { readPolicy } from '../../../../scripts/ens/policy';
 import { config } from '../../../lib/config';
 import { requireOwner, authErrorResponse } from '../../../lib/auth';
 import { enforceRateLimit } from '../../../lib/ratelimit';
-import type { AgentPolicy } from '../../../../types';
+import type { AgentPolicy, TimeWindow } from '../../../../types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // registration provisions an account, mints a subname, and writes a policy
@@ -28,6 +29,42 @@ function toLabel(raw: string): string {
   const label = raw.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
   if (!label) throw new Error('agent name must contain at least one letter or digit');
   return label;
+}
+
+// [REFRAME D4] Parse + validate the OPTIONAL dynamic-limit inputs into the AgentPolicy shape. Caps are raw
+// smallest-unit integer strings; windows are minute-of-day UTC (start-incl 0..1439, end-excl 1..1440), optional
+// UTC days 0=Sun..6=Sat. Any present-but-malformed field throws (route maps to 400 — never silently dropped, so
+// a bad limit can't ship as "no limit"). Returns the subset to spread onto a policy in CANONICAL field order.
+type DynamicLimitInput = { dailyCap?: string; weeklyCap?: string; allowedWindows?: unknown };
+function parseDynamicLimits(input: DynamicLimitInput): Pick<AgentPolicy, 'dailyCap' | 'weeklyCap' | 'allowedWindows'> {
+  const out: Pick<AgentPolicy, 'dailyCap' | 'weeklyCap' | 'allowedWindows'> = {};
+  for (const key of ['dailyCap', 'weeklyCap'] as const) {
+    const v = input[key];
+    if (v === undefined || v === null || v === '') continue;
+    if (typeof v !== 'string' || !/^\d+$/.test(v)) throw new Error(`${key} must be a raw smallest-unit integer string`);
+    out[key] = v;
+  }
+  if (input.allowedWindows !== undefined && input.allowedWindows !== null) {
+    if (!Array.isArray(input.allowedWindows)) throw new Error('allowedWindows must be an array');
+    const windows: TimeWindow[] = [];
+    for (const raw of input.allowedWindows) {
+      const w = raw as Partial<TimeWindow>;
+      const s = w?.startMinuteUtc, e = w?.endMinuteUtc;
+      if (!Number.isInteger(s) || !Number.isInteger(e) || (s as number) < 0 || (s as number) > 1439 || (e as number) < 1 || (e as number) > 1440 || (s as number) >= (e as number)) {
+        throw new Error('each allowedWindows entry needs integer startMinuteUtc (0..1439) < endMinuteUtc (1..1440)');
+      }
+      const win: TimeWindow = { startMinuteUtc: s as number, endMinuteUtc: e as number };
+      if (w.days !== undefined) {
+        if (!Array.isArray(w.days) || !w.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)) {
+          throw new Error('allowedWindows[].days must be an array of UTC weekdays 0..6');
+        }
+        win.days = w.days;
+      }
+      windows.push(win);
+    }
+    if (windows.length) out.allowedWindows = windows;
+  }
+  return out;
 }
 
 // POST: register a new agent under the org. Body: { orgId, label, maxPerCall, allowedPayees?, fundRaw? }.
@@ -42,6 +79,8 @@ export async function POST(req: Request) {
     userAddress?: string; description?: string; agentType?: string; avatar?: string; erc8004?: string;
     // [REFRAME R2] register-EXISTING (bind) inputs: bind an external identity to a 2-of-2 co-signed account.
     bindExisting?: boolean; externalEvm?: string; erc8004Id?: string; agentPub?: string;
+    // [REFRAME D4] optional dynamic limits (rolling SOFT caps + stateless time-windows) written into leash.policy.
+    dailyCap?: string; weeklyCap?: string; allowedWindows?: unknown;
   };
   try {
     body = await req.json();
@@ -53,6 +92,14 @@ export async function POST(req: Request) {
   }
   if (!/^\d+$/.test(body.maxPerCall)) {
     return NextResponse.json({ error: 'maxPerCall must be a raw smallest-unit integer string' }, { status: 400 });
+  }
+
+  // [REFRAME D4] Validate optional dynamic limits up front (malformed ⇒ 400, never silently dropped).
+  let limits;
+  try {
+    limits = parseDynamicLimits(body);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'malformed dynamic limits' }, { status: 400 });
   }
 
   // A1: assert the caller owns the target org BEFORE any provisioning (else an attacker registers agents,
@@ -75,7 +122,7 @@ export async function POST(req: Request) {
     !!body.erc8004Id?.trim() ||
     !!body.agentPub?.trim();
   if (bindTriggered) {
-    return bindExistingAgent(body, org);
+    return bindExistingAgent(body, org, limits);
   }
 
   try {
@@ -101,6 +148,7 @@ export async function POST(req: Request) {
       allowedPayees,
       hederaAccount: account.accountId,
       token: config.usdcTokenId,
+      ...limits, // [REFRAME D4] optional dailyCap/weeklyCap/allowedWindows in canonical field order (stable hash)
     };
     const policyTx = await relay(org.ensName, { kind: 'setPolicy', registry, label, name, policy });
 
@@ -188,6 +236,7 @@ async function bindExistingAgent(
     externalEvm?: string; erc8004Id?: string; agentPub?: string;
   },
   org: OrgRow,
+  limits: Pick<AgentPolicy, 'dailyCap' | 'weeklyCap' | 'allowedWindows'>,
 ): Promise<NextResponse> {
   if (!body.label || !body.maxPerCall) {
     return NextResponse.json({ error: 'label and maxPerCall are required' }, { status: 400 });
@@ -254,6 +303,7 @@ async function bindExistingAgent(
       allowedPayees,
       hederaAccount: account.accountId, // the 2-of-2 spending account (payer == binding, INVARIANT #8)
       token: config.usdcTokenId,
+      ...limits, // [REFRAME D4] optional dailyCap/weeklyCap/allowedWindows in canonical field order (stable hash)
     };
     const policyTx = await relay(org.ensName, { kind: 'setPolicy', registry, label, name, policy });
 
@@ -294,12 +344,15 @@ async function bindExistingAgent(
   }
 }
 
-// PUT: set an agent's cap. Body: { agentId, maxPerCall }. Rewrites the ENS policy (relayer) + updates the index.
+// PUT: set an agent's cap and/or its dynamic limits. Body: { agentId, maxPerCall?, dailyCap?, weeklyCap?,
+// allowedWindows? }. Rewrites the ENS policy (relayer) + updates the index. maxPerCall stays required for the
+// legacy set-cap surface, but the dynamic limits ([REFRAME D4]) can be edited alongside it. Untouched limit
+// fields are preserved from the LIVE on-chain policy so editing one limit never silently wipes the others.
 export async function PUT(req: Request) {
   const limited = enforceRateLimit(req, 'agents');
   if (limited) return limited;
 
-  let body: { agentId?: string; maxPerCall?: string };
+  let body: { agentId?: string; maxPerCall?: string; dailyCap?: string; weeklyCap?: string; allowedWindows?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -310,6 +363,16 @@ export async function PUT(req: Request) {
   }
   if (!/^\d+$/.test(body.maxPerCall)) {
     return NextResponse.json({ error: 'maxPerCall must be a raw smallest-unit integer string' }, { status: 400 });
+  }
+
+  // [REFRAME D4] Validate optional dynamic limits (malformed ⇒ 400). Only fields PRESENT in the body override;
+  // absent fields fall back to the live on-chain policy so a targeted edit never clobbers the untouched limits.
+  const limitFieldsPresent = body.dailyCap !== undefined || body.weeklyCap !== undefined || body.allowedWindows !== undefined;
+  let limits;
+  try {
+    limits = parseDynamicLimits(body);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'malformed dynamic limits' }, { status: 400 });
   }
 
   // A1: caller must own the target agent.
@@ -327,11 +390,29 @@ export async function PUT(req: Request) {
   try {
     const label = agent.ensName.split('.')[0];
 
+    // Preserve the live on-chain dynamic limits, then override only the fields present in this request.
+    let baseLimits: Pick<AgentPolicy, 'dailyCap' | 'weeklyCap' | 'allowedWindows'> = {};
+    if (limitFieldsPresent) {
+      const live = await readPolicy(agent.ensName);
+      if (live) {
+        if (live.dailyCap !== undefined) baseLimits.dailyCap = live.dailyCap;
+        if (live.weeklyCap !== undefined) baseLimits.weeklyCap = live.weeklyCap;
+        if (live.allowedWindows !== undefined) baseLimits.allowedWindows = live.allowedWindows;
+      }
+      // Body-present fields OVERRIDE (including explicit clears: '' / [] were dropped by parse ⇒ field removed).
+      if (body.dailyCap !== undefined) { baseLimits.dailyCap = limits.dailyCap; }
+      if (body.weeklyCap !== undefined) { baseLimits.weeklyCap = limits.weeklyCap; }
+      if (body.allowedWindows !== undefined) { baseLimits.allowedWindows = limits.allowedWindows; }
+      // Drop any field that resolved to undefined (canonical order re-applied on spread below).
+      baseLimits = Object.fromEntries(Object.entries(baseLimits).filter(([, v]) => v !== undefined)) as typeof baseLimits;
+    }
+
     const policy: AgentPolicy = {
       maxPerCall: body.maxPerCall,
       allowedPayees: JSON.parse(agent.allowedPayees) as string[],
       hederaAccount: agent.hederaAccount,
       token: config.usdcTokenId,
+      ...baseLimits, // [REFRAME D4] canonical field order (stable hash)
     };
     const policyTx = await relay(org.ensName, {
       kind: 'setPolicy', registry: org.registryAddress as `0x${string}`, label, name: agent.ensName, policy,
