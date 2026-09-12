@@ -7,3 +7,4 @@
 2026-09-08T22:37:31Z | intel | START | intel | Dispatching intel
 2026-09-08T22:37:51Z | intel | START | intel | Dispatching intel
 2026-09-08T22:37:52Z | intel | COMPLETE | intel | gate=pass verdict=pass
+2026-09-08T22:39:12Z | warroom | START | warroom | Dispatching warroom

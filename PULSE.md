@@ -3,6 +3,7 @@
 ## Active Facts
 | Fact | Source | Phase |
 |------|--------|-------|
+| The Graph does NOT index Hedera (no subgraph/Substreams/Token-API support; Hedera data only via Mirror Node REST, which doesn't satisfy the Graph bounty) | fact-check [A1] thegraph.com/docs/supported-networks | warroom-v2 |
 
 ## Decisions Log
 | Decision | Rationale | Phase |

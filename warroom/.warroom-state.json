@@ -1,0 +1,483 @@
+{
+ "version": "3.0",
+ "status": "in-progress",
+ "hackathon_name": "ETHOnline 2026",
+ "warroom_iteration": 2,
+ "current_phase": "phase_5_v2",
+ "expected_phases": [
+  "phase_0",
+  "phase_0b",
+  "phase_0c",
+  "generation_parallel",
+  "synthesis",
+  "pool_gates",
+  "round_0",
+  "demo_scripts",
+  "pool_checkpoint",
+  "fact_check",
+  "cross_exam",
+  "challenge",
+  "phase_5"
+ ],
+ "phase_ledger": [
+  {
+   "phase": "phase_0",
+   "started_at": "2026-09-08T22:49:51Z",
+   "completed_at": "2026-09-08T22:49:51Z",
+   "evidence": "config loaded; TASTE C-AI1/C-DF1/C-IN1 selected; concerns snapshot warroom/concerns-snapshot-V1.md; builder history parsed (23 projects, forbidden-shapes list in warroom/base-stack.md sec 5); V1"
+  },
+  {
+   "phase": "phase_0b",
+   "started_at": "2026-09-08T22:49:51Z",
+   "completed_at": "2026-09-08T22:49:51Z",
+   "evidence": "4 agents auto-approved [AUTO] (SPEC/DEPTH/CRAFT/WILD) in .warroom-state.json agents[]"
+  },
+  {
+   "phase": "phase_0c",
+   "started_at": "2026-09-08T22:49:51Z",
+   "completed_at": "2026-09-08T22:49:51Z",
+   "evidence": "warroom/WARROOM-V1-BRIEF.md + gap-map.md (10 whitespaces, 4 missing outcomes) + primitives-sheet.md (10 families, injection-lint exit 0)"
+  },
+  {
+   "phase": "generation_parallel",
+   "started_at": "2026-09-08T22:57:34Z",
+   "completed_at": "2026-09-08T22:57:34Z",
+   "evidence": "5 generators returned 36 conforming ideas (G1:7 G2:7 G3:8 G4:7 G5:7) \u2014 full returns in warroom/deliberation-transcript.md"
+  },
+  {
+   "phase": "synthesis",
+   "started_at": "2026-09-08T22:57:34Z",
+   "completed_at": "2026-09-08T22:57:34Z",
+   "evidence": "7 merge clusters + 4 hybrids + 1 [HISTORY]; transcript \u00a7synthesis"
+  },
+  {
+   "phase": "pool_gates",
+   "started_at": "2026-09-08T22:57:34Z",
+   "completed_at": "2026-09-08T22:57:34Z",
+   "evidence": "research/ideas.md written: 15 kills recorded, 88% lever map, presented pool 7, ceiling PASS (Novel 5 present)"
+  },
+  {
+   "phase": "round_0",
+   "started_at": "2026-09-08T23:00:04Z",
+   "completed_at": "2026-09-08T23:00:04Z",
+   "evidence": "4 independent scorers on stripped randomized pool; merged table + warroom/round-scorecard.md; top: Callflow 7.73"
+  },
+  {
+   "phase": "demo_scripts",
+   "started_at": "2026-09-08T23:00:04Z",
+   "completed_at": "2026-09-08T23:00:04Z",
+   "evidence": "warroom/demo-scripts.md \u2014 7 timestamped scripts; verdicts 5 strong / 2 thin (Undertow, Settle402), 0 hollow"
+  },
+  {
+   "phase": "pool_checkpoint",
+   "started_at": "2026-09-09T18:54:11Z",
+   "completed_at": "2026-09-09T18:54:11Z",
+   "evidence": "7-finalist presentation delivered in-session; Dami selected Top 3 (Recommended) via AskUserQuestion"
+  },
+  {
+   "phase": "fact_check",
+   "started_at": "2026-09-09T18:58:55Z",
+   "completed_at": "2026-09-09T18:58:55Z",
+   "evidence": "3 hands-on fact-checks with cited URLs in warroom/deliberation-transcript.md \u00a7fact_check; 0 HARD-FAILs; build specs extracted for Callflow (splitter contract) + Floatline (immutable-schedule inversion)"
+  },
+  {
+   "phase": "cross_exam",
+   "started_at": "2026-09-09T19:01:17Z",
+   "completed_at": "2026-09-09T19:01:17Z",
+   "evidence": "2 adversarial attack sets + adjudication in transcript \u00a7cross_exam; NO FLIP; Callflow amendment adopted (permissionless per-call distribute)"
+  },
+  {
+   "phase": "challenge",
+   "started_at": "2026-09-09T19:03:18Z",
+   "completed_at": "2026-09-09T19:03:18Z",
+   "evidence": "3 challenge registers in transcript \u00a7challenge; severities adjudicated in WINNER-BRIEF risks"
+  },
+  {
+   "phase": "v2_kickoff",
+   "started_at": "2026-09-10T10:48:36Z",
+   "completed_at": "2026-09-10T10:48:36Z",
+   "evidence": "V1 verdict (Callflow) NOT locked per Dami; V2 launched with deep-integration mandate + 2 seeds \u2014 warroom/.warroom-state.json user_overrides"
+  },
+  {
+   "phase": "v2_round_0+demo_scripts",
+   "started_at": "2026-09-10T11:02:13Z",
+   "completed_at": "2026-09-10T11:02:13Z",
+   "evidence": "V2: 38 ideas\u21927 presented\u21924-scorer round0 (warroom/round-scorecard-v2.md)+demo scripts (warroom/demo-scripts-v2.md); seeds superseded/died; top2 Aftermarket 7.30 / Leash 7.20, both zero-beta"
+  },
+  {
+   "phase": "pool_checkpoint_v2",
+   "started_at": "2026-09-10T11:03:45Z",
+   "completed_at": "2026-09-10T11:03:45Z",
+   "evidence": "V2 7-finalist scorecard presented in-session; Dami selected top-3 (Aftermarket/Leash/Backstock) via AskUserQuestion"
+  },
+  {
+   "phase": "fact_check_v2",
+   "started_at": "2026-09-10T11:10:19Z",
+   "completed_at": "2026-09-10T11:10:19Z",
+   "evidence": "3 hands-on fact-checks (transcript \u00a7V2 fact_check); cross-cutting: The Graph does NOT index Hedera (PULSE Active Facts); Leash CLEAN, Aftermarket HARD-FAIL-recoverable, Backstock SOFT-FAIL x2"
+  },
+  {
+   "phase": "v2_selection+phase_5",
+   "started_at": "2026-09-10T11:19:33Z",
+   "completed_at": "2026-09-10T11:19:33Z",
+   "evidence": "WINNER=Leash; warroom/WINNER-BRIEF.md (Thesis present) + FINAL-VERDICT-V2.md written; cross-exam FLIP + challenge severity adjudicated in transcript"
+  }
+ ],
+ "context_percentage": 0,
+ "working_dir": "/Users/MAC/ethonline-2026",
+ "autonomous_mode": true,
+ "taste_blocks_selected": [
+  "C-AI1",
+  "C-DF1",
+  "C-IN1"
+ ],
+ "inspirationRepos": [],
+ "agents": [
+  {
+   "codename": "SPEC",
+   "full_name": "The Spec Literalist",
+   "lens": "Scores each idea against the literal sponsor prize bullets and the max-3 stacking cap; sponsor engineers grep repos.",
+   "criteria_alignment": [
+    "Practicality",
+    "Sponsor-track fit"
+   ],
+   "bias": "Distrusts anything the prize text does not explicitly ask for.",
+   "evaluates": "substitution-test load-bearing-ness, live-not-mocked proof, combo coherence",
+   "attacks": "bolted-on integrations, mock demos, 4-sponsor fantasies"
+  },
+  {
+   "codename": "DEPTH",
+   "full_name": "The Technicality Assessor",
+   "lens": "Problem complexity and solution sophistication; is the hardest guarantee real?",
+   "criteria_alignment": [
+    "Technicality"
+   ],
+   "bias": "Overvalues protocol-level work vs product polish.",
+   "evaluates": "mechanism depth, native-primitive use, defensibility in Q&A",
+   "attacks": "SDK decoration, shallow wrappers, hand-waved crypto"
+  },
+  {
+   "codename": "CRAFT",
+   "full_name": "The Product Craftsman",
+   "lens": "Usability + Practicality: would a judge feel a real product in 3 minutes without explanation?",
+   "criteria_alignment": [
+    "Usability",
+    "Practicality",
+    "WOW"
+   ],
+   "bias": "Penalizes cerebral wedges with high explanation cost (L14).",
+   "evaluates": "demo legibility, first-60s oh-moment, hero-flow clarity",
+   "attacks": "dashboards, invisible value, setup-heavy demos"
+  },
+  {
+   "codename": "WILD",
+   "full_name": "The Contrarian X-Factor",
+   "lens": "Originality + WOW: is this genuinely unseen, or the modal shape wearing a costume?",
+   "criteria_alignment": [
+    "Originality",
+    "WOW"
+   ],
+   "bias": "Bored by safe medians; must disagree when the field converges.",
+   "evaluates": "novelty vs saturation tiers + loss exemplars, question-shift quality (L9), name-collision (L12)",
+   "attacks": "clone-tier shapes, organizer-suggested ideas, house attractors (U4)"
+  }
+ ],
+ "ideas": {
+  "alive": [
+   "Aftermarket",
+   "Leash",
+   "Backstock",
+   "Proofstream",
+   "Rebate",
+   "Streamvault",
+   "Escrow-in-the-dark"
+  ],
+  "killed": [
+   {
+    "name": "Meterwage",
+    "cause": "not_ecosystem_native",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Mandate",
+    "cause": "organizer_suggested",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Streamsmith",
+    "cause": "organizer_suggested",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Cachet",
+    "cause": "critical_concern_C13",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Splitbrain",
+    "cause": "L11_weight_inversion",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Factstake",
+    "cause": "score_floor_adjacent",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Molt",
+    "cause": "score_floor",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Blackbox",
+    "cause": "ship_risk",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Meshwork Escrow",
+    "cause": "continuity_ev_benchmark",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "TrueDelta",
+    "cause": "cluster_outscored",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "AquaSieve",
+    "cause": "cluster_outscored",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Hydra",
+    "cause": "cluster_outscored",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Glasspool",
+    "cause": "spike_reserve_1",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Tollbooth",
+    "cause": "spike_reserve_2",
+    "phase": "pool_gates"
+   },
+   {
+    "name": "Subkey/Narrowcast",
+    "cause": "spike_reserve_3",
+    "phase": "pool_gates"
+   }
+  ]
+ },
+ "pool_stats": {
+  "raw_generated": 36,
+  "hybrids_created": 4,
+  "late_entrants_seed": 0,
+  "late_entrants_history": 1,
+  "killed_by_kill_list": 5,
+  "killed_by_concerns": 0,
+  "killed_by_demo_test": 0,
+  "killed_by_score_floor": 4,
+  "killed_by_anti_attractor": 0,
+  "brief_levers_total": 20,
+  "brief_levers_unmapped": 2,
+  "regeneration_rounds": 0,
+  "rescued": 0,
+  "presented": 7
+ },
+ "round_0_scores": {
+  "Callflow": 7.73,
+  "Lifewire": 7.63,
+  "Floatline": 7.45,
+  "Headcount": 7.18,
+  "Undertow": 6.93,
+  "BotTax": 6.93,
+  "Settle402": 6.48,
+  "high_divergence": [
+   "Lifewire",
+   "Settle402"
+  ]
+ },
+ "demo_script_verdicts": {
+  "Floatline": "strong",
+  "BotTax": "strong",
+  "Callflow": "strong",
+  "Headcount": "strong",
+  "Lifewire": "strong",
+  "Undertow": "thin",
+  "Settle402": "thin"
+ },
+ "pool_checkpoint": {
+  "decision": "top3_round0 (Callflow, Lifewire, Floatline)",
+  "auto": false,
+  "user_confirmed": true
+ },
+ "fact_check_results": {
+  "Callflow": {
+   "verdict": "PROCEED",
+   "claims": [
+    "SOFT-FAIL c1: no atomic split at settlement (x402 spec mandates bare TransferTransaction; Circle owns USDC fee keys; fractional fees max 10 fixed collectors) \u2014 WORKAROUND = payTo splitter contract + ATS snapshot pull-claims ('skimming has no code path')",
+    "VERIFIED c2: ATS ERC-1400 + snapshots + Mass Payout + hosted UI",
+    "VERIFIED c3: forkable x402 PoC, Blocky402 testnet free/no-signup"
+   ]
+  },
+  "Lifewire": {
+   "verdict": "PROCEED",
+   "claims": [
+    "VERIFIED c1: Circle Nanopayments (Gateway) live testnet+mainnet; off-chain EIP-3009 vouchers batched on-chain; official arc-nanopayments starter kit",
+    "VERIFIED c2: Arc testnet RPC 5042002 + faucet + USDC-native-gas; mainnet bonus +$2.5K per prize (not separate track)",
+    "VERIFIED c3: <1s kill truthful (off-chain enforcement; frame honestly)"
+   ]
+  },
+  "Floatline": {
+   "verdict": "GO",
+   "claims": [
+    "VERIFIED c1: HIP-423 Final v0.57 mainnet; wait_for_expiry=true; 62-day max horizon; sigs must be attached at create",
+    "SOFT-FAIL c2: ScheduleDelete needs admin key (trust hole) \u2014 WORKAROUND = immutable schedule + settlement empties per-session escrow E (1-of-2: buyer key OR settlement-contract contractId key); refund fires harmlessly if settled",
+    "SOFT-FAIL c3: x402 rail forkable <1 day; spending ceiling + HCS receipts = own half-day build (not in PoC)"
+   ]
+  }
+ },
+ "cross_exam_verdict": {
+  "flip": false,
+  "winner_held": "Callflow",
+  "callflow_kb": "demo-spec-level, answered via permissionless per-call distribute() amendment",
+  "lifewire_kb": "identity-level U6 collapse, stands",
+  "residue": [
+   "Callflow: C13 investor realism, Graph >=2 products",
+   "Lifewire: U6 depth, 1-of-3 bullets"
+  ]
+ },
+ "challenge_registers": {
+  "Callflow": "CRITICAL mitigable (headline rewrite, gated \u2014 DONE in WINNER-BRIEF)",
+  "Lifewire": "R1 CRITICAL partially unmitigable (U6 hollow)",
+  "Floatline": "CRITICAL crowding, unmitigable-by-building"
+ },
+ "selected_idea": "Leash",
+ "thesis_present": true,
+ "gapMap": {
+  "path": "warroom/gap-map.md",
+  "whitespaces": 10,
+  "missingOutcomes": 4
+ },
+ "injection": {
+  "pack_version": 1,
+  "event_class": "sponsor_track",
+  "event_class_source": "declared",
+  "quota": {
+   "whitespace": 2,
+   "sponsor_newest": 2,
+   "cross_pollination": 2,
+   "total_families": 10,
+   "whitespace_waived": false,
+   "sponsor_newest_waived": false
+  },
+  "lint": "pass"
+ },
+ "whitespaceOccupied": "W7+W6: revocable name-scoped spend authority for agent fleets (org ENS hierarchy = treasury permission graph)",
+ "roundScorecardEmitted": true,
+ "selectionPath": "scored_pool",
+ "corrections": [
+  "[AUTO] contextual concerns derived (AI-active-careful, stacking-active, CRE-privacy-light, Ledger-hardware-flag)",
+  "[USER] hard stop: present final ideas to Dami before proceeding past warroom",
+  "[AUTO] concern #2 mocks-OK overridden by sponsor no-mock texts",
+  "[USER V2] VERY DEEP integration is now a first-class gate: product must be impossible if any load-bearing sponsor is removed; the COMPOSITION of primitives must be the novel mechanism, not a single SDK call. Decorative integration = auto-kill.",
+  "[USER V2] Callflow + Lifewire re-enter as [SEED] (beefed-up), zero protection.",
+  "[USER V2] Raise novelty ceiling: prefer unique/impressive multi-primitive interlocks over safe single-sponsor depth."
+ ],
+ "user_overrides": [
+  {
+   "phase": "dispatch",
+   "type": "constraint",
+   "content": "Present final ideas to Dami before anything proceeds past warroom; optimize prize-EV x low crowding x feasible integration x load-bearing product; premium quality"
+  },
+  {
+   "phase": "pool_checkpoint",
+   "type": "keep",
+   "content": "Dami confirmed top-3 advance: Callflow, Lifewire, Floatline"
+  },
+  {
+   "phase": "pool_checkpoint_post_verdict",
+   "type": "redirect",
+   "content": "Dami: do NOT lock winner. Run Warroom V2. Callflow + Lifewire enter beefed-up as [SEED]s (no protection). NEW MANDATE all V2 ideas: VERY DEEP integration (composition-of-primitives IS the mechanism; each of <=3 prize sponsors passes substitution test; extra integrations load-bearing only). Unique + impressive. See if seeds survive or new ideas emerge."
+  },
+  {
+   "phase": "pool_checkpoint_v2",
+   "type": "keep",
+   "content": "Dami confirmed V2 top-3 advance: Aftermarket, Leash, Backstock"
+  },
+  {
+   "phase": "naming",
+   "type": "constraint",
+   "content": "Project renamed Leash -> LEASH (Dami, locked)"
+  }
+ ],
+ "phases_complete": [
+  "phase_0",
+  "phase_0b",
+  "phase_0c",
+  "generation_parallel",
+  "synthesis",
+  "pool_gates",
+  "round_0",
+  "demo_scripts",
+  "pool_checkpoint",
+  "fact_check",
+  "cross_exam",
+  "challenge"
+ ],
+ "round_0_scores_v2": {
+  "Aftermarket": 7.3,
+  "Leash": 7.2,
+  "Backstock": 6.75,
+  "Proofstream": 6.6,
+  "Rebate": 6.4,
+  "Streamvault": 6.3,
+  "Escrow-in-the-dark": 6.3
+ },
+ "demo_script_verdicts_v2": {
+  "Aftermarket": "strong",
+  "Proofstream": "strong",
+  "Leash": "strong",
+  "Escrow-in-the-dark": "strong",
+  "Backstock": "strong",
+  "Streamvault": "thin",
+  "Rebate": "strong"
+ },
+ "pool_checkpoint_v2": {
+  "decision": "top3 (Aftermarket, Leash, Backstock)",
+  "auto": false,
+  "user_confirmed": true
+ },
+ "fact_check_results_v2": {
+  "Leash": {
+   "verdict": "CLEAN/GO",
+   "note": "all 3 verified; ENSv2 Sepolia beta live, forkable Hedera facilitator /verify hook (code written), Privy policy caps+allowlist; NO Graph dep, NO beta dep; caveat: facilitator-trusted not chain-trustless (framable + Privy 2nd rail)"
+  },
+  "Aftermarket": {
+   "verdict": "HARD-FAIL recoverable",
+   "note": "ATS=ERC-1400 security w/ transfer controls blocks bonding curve + bounty ranks utility-credit below real securities (HARD-FAIL); credit-burn redemption SOFT-FAIL (reframe transfer-to-treasury); Graph does NOT index Hedera (SOFT-FAIL, curve must live on Base/Arbitrum). Workaround = cross-chain split: HTS credit + EVM curve + ATS tokenizes receivable-book + x402 Hedera. Heavier."
+  },
+  "Backstock": {
+   "verdict": "SOFT-FAIL x2",
+   "note": "first-lien NOT protocol-enforceable (borrower controls payTo; needs controlled-endpoint+escrow redesign); Graph-on-Hedera false (needs Base); ATS-bond VERIFIED (deployBond/setCoupon verbatim fit)"
+  }
+ },
+ "cross_exam_verdict_v2": {
+  "flip": true,
+  "winner_held": "Leash",
+  "aftermarket_kb": "structural \u2014 3-chain rebuild + relay, fails deep-integration mandate",
+  "leash_kb": "framing \u2014 facilitator-trusted, mitigable via honest dual-rail"
+ },
+ "challenge_registers_v2": {
+  "Leash": "1 CRITICAL mitigable (honest dual-rail framing)",
+  "Aftermarket": "2 CRITICAL, one largely unmitigable (ATS-appendage)",
+  "Backstock": "1 CRITICAL mitigable-only-by-conceding-novelty + Graph HARD-FAIL"
+ },
+ "winner_notes": {
+  "prior_art": "known-pattern-with-genuine-twist: specific interlock (ENS resolver read by facilitator as settlement policy) unbuilt; each leg live in prod; ENS blog argues against payment-layer enforcement (Q&A risk); ENSv2 write is alpha -> ENSv1 NameWrapper fallback; use coinbase/x402 not Blocky402 fork"
+ },
+ "project_name": "Leash",
+ "checkpoints_answered": {}
+}
