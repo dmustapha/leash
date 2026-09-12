@@ -320,3 +320,17 @@
 
 #### Blockers for Downstream
 - None.
+
+### design_forge (complete, 2026-09-12)
+
+#### Done
+- **formalize:** wrote DESIGN_SYSTEM.md (Identity/Tokens/Status-Legend/Craft/Primitives/Motion + paste-ready @theme + Do/Don't) and brand.json — extracted from the LIVE `globals.css` tokens (not invented). Invariant phrase = "LEASH is the ENS name that can un-pay it." Status legend maps jade=ALLOW / garnet=DENY·REVOKED / amber=PENDING to the real rejection tokens.
+- **refine:** tsc+build green; craft audit run — 3 MAJOR (hover) + 1 easing flagged, ALL verified FALSE POSITIVES (the `:hover` rules ARE inside `@media(hover:hover)` — the audit line-regex misses the same-line wrapper; `.spin` linear is correct for a continuous spinner). No globals.css edit (shared with frozen /demo; code is correct). Landing was a11y/contrast/hierarchy-audited in the design phase.
+- **logo_forge:** fal (primary) failed HTTP 401 (unauthenticated) → SVG last-resort (`logo_provider: svg_fallback`, surfaced honestly). 3 variants (logomark = open collar/leash ring with a revocation cut + agent node; wordmark; combination) + rasterized `logo.png`(512) + `logo-{16,32,64,256}.png` + `favicon.ico`(16/32/48) + `favicon.svg` + `og-image.png` (via sharp/imagemagick). Wired into `layout.tsx` metadata (icons + openGraph + twitter, metadataBase leash.ink). Logomark verified legible at 256px.
+- Gate: `npm run build` green; only `layout.tsx` (metadata only) changed in code — frozen /demo behavior + globals.css UNTOUCHED (git diff verified).
+
+#### For Next Skill (stress_test → deploy → livetest)
+- brand.json + DESIGN_SYSTEM.md are downstream contracts (deploy renders invariant phrase; demo-video consumes palette). Logo assets in web/public. Deploy may re-rasterize/optimize but the set is submission-ready. Honesty locks intact.
+
+#### Blockers for Downstream
+- None. (Advisory: logo is svg_fallback because fal was down — acceptable; a crafted geometric mark is 16px-legible. If an image generator becomes available, deploy/package could regenerate.)
