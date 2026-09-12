@@ -11,10 +11,11 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../../../../db/client';
 import { agents } from '../../../../db/schema';
 import { relay } from '../../../../relayer/relay';
-import { provisionAgentAccount, publicAgent } from '../../../lib/console';
+import { provisionAgentAccount, provisionSpendingAccount, publicAgent } from '../../../lib/console';
 import { reconcileFundingAllowlist } from '../../../../treasury/privy';
 import { hasPolicyCohold } from '../../../../scripts/ens/cohold';
 import { writeIdentity } from '../../../../scripts/ens/identity';
+import { resolveExternalIdentity } from '../../../../scripts/ens/erc8004';
 import { config } from '../../../lib/config';
 import { requireOwner, authErrorResponse } from '../../../lib/auth';
 import { enforceRateLimit } from '../../../lib/ratelimit';
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
   let body: {
     orgId?: string; label?: string; maxPerCall?: string; allowedPayees?: string[]; fundRaw?: number;
     userAddress?: string; description?: string; agentType?: string; avatar?: string; erc8004?: string;
+    // [REFRAME R2] register-EXISTING (bind) inputs: bind an external identity to a 2-of-2 co-signed account.
+    bindExisting?: boolean; externalEvm?: string; erc8004Id?: string; agentPub?: string;
   };
   try {
     body = await req.json();
@@ -61,6 +64,18 @@ export async function POST(req: Request) {
     const err = authErrorResponse(e);
     if (err) return NextResponse.json(err.body, { status: err.status });
     throw e;
+  }
+
+  // [REFRAME R2] BIND branch: register-EXISTING binds an external identity (EVM and/or ERC-8004 agentId) to a
+  // 2-of-2 co-signed spending account. Triggered when the body carries any external-identity signal. Runs AFTER
+  // requireOwner (A1). Falls through to the UNCHANGED mint path otherwise.
+  const bindTriggered =
+    body.bindExisting === true ||
+    !!body.externalEvm?.trim() ||
+    !!body.erc8004Id?.trim() ||
+    !!body.agentPub?.trim();
+  if (bindTriggered) {
+    return bindExistingAgent(body, org);
   }
 
   try {
@@ -158,6 +173,124 @@ export async function POST(req: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: 'agent registration failed', message }, { status: 500 });
+  }
+}
+
+// [REFRAME R2] Bind an EXISTING external identity to a NEW 2-of-2 co-signed spending account. Write order is
+// REF-7-pinned so a partial register is inert/fail-closed: resolve → provision co-signed account → ENS mint →
+// on-chain-resolved identity records → **leash.policy LAST** (the spend authority is the final on-chain step) →
+// Privy funding UNION (behind the same requireOwner) → index row. Honest: "on-chain-resolved", never "verified".
+type OrgRow = { id: string; ensName: string; registryAddress: string };
+async function bindExistingAgent(
+  body: {
+    label?: string; maxPerCall?: string; allowedPayees?: string[]; userAddress?: string; fundRaw?: number;
+    description?: string; agentType?: string; avatar?: string;
+    externalEvm?: string; erc8004Id?: string; agentPub?: string;
+  },
+  org: OrgRow,
+): Promise<NextResponse> {
+  if (!body.label || !body.maxPerCall) {
+    return NextResponse.json({ error: 'label and maxPerCall are required' }, { status: 400 });
+  }
+  if (!/^\d+$/.test(body.maxPerCall)) {
+    return NextResponse.json({ error: 'maxPerCall must be a raw smallest-unit integer string' }, { status: 400 });
+  }
+  const agentPub = body.agentPub?.trim();
+  if (!agentPub) {
+    // SR-1: the agent MUST supply its own Hedera public key; LEASH never generates one for a co-signed account.
+    return NextResponse.json({ error: 'agentPub (the agent-supplied Hedera public key) is required to bind' }, { status: 400 });
+  }
+
+  const label = toLabel(body.label);
+  const name = `${label}.${org.ensName}`;
+  const registry = org.registryAddress as `0x${string}`;
+
+  const dup = await db.select().from(agents).where(eq(agents.ensName, name)).limit(1);
+  if (dup[0]) return NextResponse.json({ error: `agent ${name} already exists` }, { status: 409 });
+
+  // 1) Resolve the external identity (R1). Owner-mismatch / unknown agentId ⇒ 4xx, NO provisioning (REF-5/REF-7).
+  let resolved;
+  try {
+    resolved = await resolveExternalIdentity({ agentId: body.erc8004Id?.trim() || undefined, evmAddress: body.externalEvm?.trim() || undefined });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: 'identity resolution failed', message }, { status: 400 });
+  }
+
+  try {
+    // 2) Provision the 2-of-2 co-signed spending account (SR-1-pure: LEASH holds only its cosigner key + agentPub).
+    const account = await provisionSpendingAccount(agentPub, body.fundRaw ?? 20_000_000);
+
+    // 3) Relayer-sponsored ENS mint: child owned by the account's long-zero EVM facade (the payer == funding == binding address).
+    const expires = BigInt(Math.floor(Date.now() / 1000) + 31_536_000);
+    const mintTx = await relay(org.ensName, {
+      kind: 'mint', registry, label, agentAddress: account.longZeroEvm as `0x${string}`, expires,
+    });
+
+    // 4) ADVISORY on-chain-RESOLVED identity records (INVARIANT #13) — agent.address (resolved EVM) + erc8004 (CAIP).
+    // Never an enforcement input; labeled "on-chain-resolved", not "verified". Non-fatal (identity is a nicety).
+    const agentType = (body.agentType || 'external x402 agent (bound)').slice(0, 60);
+    const description = (body.description || `External agent bound under ${org.ensName}; on-chain-resolved identity, ENS-declared spend policy.`).slice(0, 200);
+    const avatar = (body.avatar || '').slice(0, 400);
+    let identityTxs: { key: string; tx: string }[] = [];
+    let identityWarning: string | null = null;
+    try {
+      identityTxs = await writeIdentity(name, {
+        type: agentType,
+        description,
+        avatar: avatar || undefined,
+        address: resolved.resolvedOwner,
+        erc8004: resolved.caip || undefined,
+      });
+    } catch (e) {
+      identityWarning = e instanceof Error ? e.message : String(e);
+    }
+
+    // 5) leash.policy LAST (REF-7): the spend authority is the FINAL on-chain write, so any earlier partial
+    // failure leaves the register inert/fail-closed (no policy ⇒ the facilitator settles nothing).
+    const allowedPayees = body.allowedPayees?.length ? body.allowedPayees : [process.env.RECEIVER_ACCOUNT_ID!];
+    const policy: AgentPolicy = {
+      maxPerCall: body.maxPerCall,
+      allowedPayees,
+      hederaAccount: account.accountId, // the 2-of-2 spending account (payer == binding, INVARIANT #8)
+      token: config.usdcTokenId,
+    };
+    const policyTx = await relay(org.ensName, { kind: 'setPolicy', registry, label, name, policy });
+
+    // 6) Privy funding UNION (behind the same requireOwner, A1) — target the account's long-zero EVM facade.
+    // Non-fatal warning on failure (mirrors the mint path); the agent exists on-chain regardless.
+    let fundingAllowlisted = false;
+    let fundingWarning: string | null = null;
+    try {
+      const r = await reconcileFundingAllowlist(config.treasuryWalletId, account.longZeroEvm);
+      fundingAllowlisted = r.added || r.allowlist.some((a) => a.toLowerCase() === account.longZeroEvm.toLowerCase());
+    } catch (e) {
+      fundingWarning = e instanceof Error ? e.message : String(e);
+    }
+
+    // 7) Index the agent row (co-signed marker + on-chain-resolved external identity, advisory).
+    const inserted = await db.insert(agents).values({
+      orgId: org.id, ensName: name, maxPerCall: policy.maxPerCall,
+      allowedPayees: JSON.stringify(allowedPayees), hederaAccount: account.accountId,
+      agentEvm: account.longZeroEvm, agentKey: '', mintTx, policyTx,
+      agentType, description, avatar,
+      externalIdentity: resolved.resolvedOwner,
+      identityType: resolved.source, // 'erc8004' | 'evm'
+      erc8004Id: resolved.agentId ?? '',
+      accountType: 'cosigned',
+      cosignerPub: account.cosignerPub,
+    }).returning();
+
+    return NextResponse.json({
+      agent: publicAgent(inserted[0]),
+      bound: true,
+      identity: { source: resolved.source, resolvedOwner: resolved.resolvedOwner, agentId: resolved.agentId, caip: resolved.caip, label: 'on-chain-resolved' },
+      cosigned: { accountId: account.accountId, longZeroEvm: account.longZeroEvm, cosignerPub: account.cosignerPub },
+      mintTx, policyTx, fundingAllowlisted, fundingWarning, identityTxs, identityWarning,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: 'bind-existing registration failed', message }, { status: 500 });
   }
 }
 

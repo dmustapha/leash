@@ -15,13 +15,17 @@ export const IDENTITY_KEYS = {
   type: 'agent.type',
   avatar: 'avatar',
   erc8004: 'erc8004',
+  // [REFRAME R2] the on-chain-RESOLVED external EVM owner/wallet (advisory, INVARIANT #13). "on-chain-resolved",
+  // NOT "verified" — ownerOf does not prove control. Written on the register-EXISTING (bind) path only.
+  address: 'agent.address',
 } as const;
 
 export interface AgentIdentity {
   description?: string;
   type?: string;
   avatar?: string;
-  erc8004?: string; // optional ERC-8004 identity-registry pointer (advisory)
+  erc8004?: string; // optional ERC-8004 identity-registry pointer (CAIP; advisory)
+  address?: string; // optional on-chain-resolved external EVM address (advisory)
 }
 
 const resolverAbi = parseAbi([

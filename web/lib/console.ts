@@ -14,13 +14,14 @@
 // This module is server-only by construction: it is imported ONLY by the console route handlers (which never
 // run on the client) and it pulls in the Hedera SDK + viem wallet client. It is never imported by any 'use
 // client' component, so no 'server-only' guard package is required.
-import { AccountId, TransferTransaction, TokenId } from '@hiero-ledger/sdk';
+import { AccountId, TransferTransaction, TokenId, AccountCreateTransaction, KeyList, PublicKey, Hbar } from '@hiero-ledger/sdk';
 import type { agents as agentsTable } from '../../db/schema';
 import { deploySubregistry } from '../../scripts/ens/subregistry';
 import { mintSubname } from '../../scripts/ens/subname';
 import { tokenIdOf } from '../../scripts/ens/register-2ld';
 import { ensureCanonicalAgent } from '../../scripts/hedera/provision-canonical';
 import { hederaClient } from '../../scripts/hedera/client';
+import { ensureCosignerKey, longZeroEvm } from '../../scripts/hedera/provision-spending-account';
 import { publicClient } from '../../scripts/ens/client';
 import { parseAbi } from 'viem';
 import { config } from './config';
@@ -80,6 +81,65 @@ export async function provisionAgentAccount(fundRaw = 50_000_000): Promise<Provi
   );
   await fundAgentUsdc(account.accountId, tokenId, fundRaw);
   return { accountId: account.accountId, keyDer: account.keyDer, evmAddress: account.evmAddress };
+}
+
+export interface CosignedSpendingAccount {
+  accountId: string;      // "0.0.N" — the KeyList threshold-2 spending account (payer + policy binding)
+  longZeroEvm: string;    // long-zero EVM facade (Privy funding target + ENS agentEvm)
+  agentPub: string;       // the agent's PUBLIC key (the ONLY agent key LEASH holds — SR-1)
+  cosignerPub: string;    // LEASH's co-signer public key
+}
+
+// [REFRAME R2 / SR-1-PURE] Provision a NET-NEW 2-of-2 co-signed spending account for the register-EXISTING (bind)
+// flow. DISTINCT from provisionAgentAccount (the canonical mint path, untouched): LEASH holds ONLY its cosigner
+// key + the agent's PUBLIC key (`agentPub`). It NEVER generates or holds `agentPriv` — if it did, the 2-of-2 is
+// theater and F-031 ("LEASH-alone can't move funds") is false (INVARIANT #15). Because LEASH lacks `agentPriv`
+// it CANNOT sign a threshold-2 token-associate, so the account is created with
+// `setMaxAutomaticTokenAssociations(>=1)` and then FUNDED with USDC — the incoming transfer AUTO-ASSOCIATES the
+// token with NO agent signature required. ensureCanonicalAgent is NOT called; the KeyList logic is not
+// duplicated (longZeroEvm + ensureCosignerKey reused from the S1 primitive).
+export async function provisionSpendingAccount(agentPub: string, fundRaw = 20_000_000): Promise<CosignedSpendingAccount> {
+  const trimmed = agentPub?.trim();
+  if (!trimmed) {
+    // NEVER silently generate a key — that breaks SR-1 (the agent must supply its own public key).
+    throw new Error('provisionSpendingAccount: agentPub (the agent-supplied Hedera public key) is required');
+  }
+  let agentPublicKey: PublicKey;
+  try {
+    agentPublicKey = PublicKey.fromString(trimmed);
+  } catch {
+    throw new Error(`provisionSpendingAccount: agentPub "${trimmed}" is not a valid Hedera public key`);
+  }
+
+  const tokenId = config.usdcTokenId;
+  const cosigner = ensureCosignerKey(); // LEASH's own authority key (asserted != operator/gas key, REF-3)
+  const client = hederaClient();
+  try {
+    // KeyList[agentPub, leashCoSignerPub], threshold = 2 (2-of-2). Order stable (agent first). No key-derived
+    // alias (setKeyWithoutAlias, REF-2) ⇒ the long-zero facade IS the account's EVM address. Auto-assoc slot so
+    // funding alone associates the token (no agent 1-of-2 needed at provision — SR-1: LEASH lacks agentPriv).
+    const keyList = new KeyList([agentPublicKey, cosigner.publicKey], 2);
+    const createResp = await new AccountCreateTransaction()
+      .setKeyWithoutAlias(keyList)
+      .setInitialBalance(new Hbar(5))
+      .setMaxAutomaticTokenAssociations(1)
+      .execute(client);
+    const accountId = (await createResp.getReceipt(client)).accountId!.toString();
+    const evm = longZeroEvm(accountId);
+
+    // Fund from the operator/treasury. The incoming USDC transfer AUTO-ASSOCIATES the token (auto-assoc slot),
+    // so no threshold-2 association signature is required — LEASH funds it alone.
+    const fundResp = await new TransferTransaction()
+      .addTokenTransfer(TokenId.fromString(tokenId), AccountId.fromString(process.env.HEDERA_OPERATOR_ID!), -BigInt(fundRaw))
+      .addTokenTransfer(TokenId.fromString(tokenId), AccountId.fromString(accountId), BigInt(fundRaw))
+      .execute(client);
+    const receipt = await fundResp.getReceipt(client);
+    if (receipt.status.toString() !== 'SUCCESS') throw new Error(`fund cosigned ${accountId}: ${receipt.status.toString()}`);
+
+    return { accountId, longZeroEvm: evm, agentPub: trimmed, cosignerPub: cosigner.publicKey.toStringRaw() };
+  } finally {
+    client.close();
+  }
 }
 
 // Read an account's raw USDC balance from the mirror node (0 if not associated / not indexed yet).

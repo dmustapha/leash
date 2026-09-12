@@ -41,6 +41,13 @@ export const agents = pgTable('agents', {
   agentType: text('agent_type').notNull().default(''),
   description: text('description').notNull().default(''),
   avatar: text('avatar').notNull().default(''),
+  // [REFRAME R2] External-identity binding (register-EXISTING flow). All NULLABLE/defaulted for back-compat with
+  // the existing canonical (mint-path) rows. On-chain-RESOLVED, ADVISORY only (INVARIANT #13) — never enforced.
+  externalIdentity: text('external_identity').default(''), // the on-chain-resolved EVM owner/wallet (advisory)
+  identityType: text('identity_type').default(''),         // 'evm' | 'erc8004' | ''
+  erc8004Id: text('erc8004_id').default(''),               // the ERC-8004 agentId (decimal string) when bound via id
+  accountType: text('account_type').default('canonical'),  // 'canonical' (mint) | 'cosigned' (2-of-2 bind)
+  cosignerPub: text('cosigner_pub').default(''),            // LEASH co-signer public key for cosigned accounts
 });
 
 // [WS-7 A5 / INVARIANT #9] Durable replay guard. A settled x402 paymentId is persisted here so a replay is
