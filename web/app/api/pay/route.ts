@@ -8,11 +8,10 @@
 // funding rail only and never co-signs. INVARIANT #3: no DB read gates the spend - the facilitator reads ENS
 // live; this route only fetches the agent's own account/key material to build the signed payload.
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { db } from '../../../../db/client';
-import { agents } from '../../../../db/schema';
 import { pay } from '../../../../agent/pay';
 import { resourcePremiumUrl } from '../../../lib/demo';
+import { requireOwner, authErrorResponse } from '../../../lib/auth';
+import { enforceRateLimit } from '../../../lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // a real settle round-trips the facilitator + Hedera
@@ -20,6 +19,9 @@ export const maxDuration = 120; // a real settle round-trips the facilitator + H
 // POST: pay from an agent. Body: { agentId, amountRawOverride? }. Default price is the endpoint's in-cap price;
 // pass amountRawOverride (e.g. "50000000") to force an over-cap attempt the facilitator must refuse.
 export async function POST(req: Request) {
+  const limited = enforceRateLimit(req, 'pay');
+  if (limited) return limited;
+
   let body: { agentId?: string; amountRawOverride?: string };
   try {
     body = await req.json();
@@ -28,10 +30,17 @@ export async function POST(req: Request) {
   }
   if (!body.agentId) return NextResponse.json({ error: 'agentId required' }, { status: 400 });
 
+  // A1: caller must own the target agent (else A pays from B's custody account).
+  let agent;
   try {
-    const rows = await db.select().from(agents).where(eq(agents.id, body.agentId)).limit(1);
-    const agent = rows[0];
-    if (!agent) return NextResponse.json({ error: 'agent not found' }, { status: 404 });
+    agent = (await requireOwner(req, { agentId: body.agentId })).agent!;
+  } catch (e) {
+    const err = authErrorResponse(e);
+    if (err) return NextResponse.json(err.body, { status: err.status });
+    throw e;
+  }
+
+  try {
     if (!agent.agentKey || !agent.hederaAccount) {
       return NextResponse.json({ error: 'agent has no custody key on this index (re-register)' }, { status: 409 });
     }

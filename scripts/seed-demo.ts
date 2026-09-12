@@ -20,6 +20,7 @@ import 'dotenv/config';
 import { AccountId, TransferTransaction, TokenId } from '@hiero-ledger/sdk';
 import { mintSubname } from './ens/subname';
 import { setPolicy, readPolicy } from './ens/policy';
+import { writeIdentity } from './ens/identity';
 import { associate } from './hedera/associate';
 import { hederaClient } from './hedera/client';
 import { ensureCanonicalAgent } from './hedera/provision-canonical';
@@ -38,11 +39,15 @@ interface DemoAgent {
   idEnv: string;
   keyEnv: string;
   evmEnv: string;
+  type: string;                  // [WS-7 D1] advisory ENS identity (agent.type)
+  description: string;           // [WS-7 D1] advisory ENS identity (agent.description)
 }
 
 const AGENTS: DemoAgent[] = [
-  { label: 'data', capRaw: '5000000', idEnv: 'SANDBOX_AGENT_ACCOUNT', keyEnv: 'SANDBOX_AGENT_KEY', evmEnv: 'SANDBOX_AGENT_EVM' },
-  { label: 'payments', capRaw: '25000000', idEnv: 'SANDBOX_AGENT2_ACCOUNT', keyEnv: 'SANDBOX_AGENT2_KEY', evmEnv: 'SANDBOX_AGENT2_EVM' },
+  { label: 'data', capRaw: '5000000', idEnv: 'SANDBOX_AGENT_ACCOUNT', keyEnv: 'SANDBOX_AGENT_KEY', evmEnv: 'SANDBOX_AGENT_EVM',
+    type: 'data buyer', description: 'Buys premium API data within a 5 USDC per-call cap declared on ENS.' },
+  { label: 'payments', capRaw: '25000000', idEnv: 'SANDBOX_AGENT2_ACCOUNT', keyEnv: 'SANDBOX_AGENT2_KEY', evmEnv: 'SANDBOX_AGENT2_EVM',
+    type: 'payments agent', description: 'Settles vendor payments within a 25 USDC per-call cap declared on ENS.' },
 ];
 
 // Read an account's real USDC balance (raw) from the mirror node; 0 if not associated / not found yet.
@@ -149,6 +154,11 @@ async function main(): Promise<void> {
   console.log('3/4 binding ENS policies (distinct caps, canonical hederaAccount)...');
   for (const agent of AGENTS) {
     await ensureAgentPolicy(agent, tokenId);
+    // [WS-7 D1] Write advisory ENS identity records alongside the policy (never an enforcement input).
+    const name = `${agent.label}.${process.env.SANDBOX_ORG_NAME!}`;
+    await writeIdentity(name, { type: agent.type, description: agent.description }).catch((e: unknown) => {
+      console.warn(`  identity write skipped for ${name}: ${e instanceof Error ? e.message : String(e)}`);
+    });
   }
 
   console.log('4/4 verifying demo state...');

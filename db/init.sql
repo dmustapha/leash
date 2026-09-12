@@ -38,6 +38,16 @@ CREATE TABLE IF NOT EXISTS agents (
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_evm text NOT NULL DEFAULT '';
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_key text NOT NULL DEFAULT '';
 ALTER TABLE agents ALTER COLUMN privy_wallet_id SET DEFAULT '';
+-- [WS-7 D1] Advisory identity mirror (INVARIANT #3 index-only, INVARIANT #13 never an enforcement input).
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_type text NOT NULL DEFAULT '';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS avatar text NOT NULL DEFAULT '';
+
+-- [WS-7 A5 / INVARIANT #9] Durable replay guard (dedup only; the authorization decision still reads ENS live).
+CREATE TABLE IF NOT EXISTS seen_payments (
+  payment_id text PRIMARY KEY,
+  ts         timestamp NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS spend_events (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

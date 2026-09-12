@@ -26,7 +26,9 @@ export default function AppPage() {
       config={{
         loginMethods: ['email', 'google'],
         appearance: { theme: 'dark', accentColor: '#f2a63b' },
-        embeddedWallets: { ethereum: { createOnLogin: 'off' } },
+        // [WS-7 C1] Create an embedded wallet on login so the user HAS an EVM address to receive the co-hold
+        // kill-switch role on their agents (additive with the relayer). No seed phrase for the user to manage.
+        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
       }}
     >
       <AppConsole configured />

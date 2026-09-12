@@ -7,7 +7,7 @@
 // activity feed; a stale/missing row can never change a spend decision.
 import { db } from './client';
 import { spendEvents } from './schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq, like } from 'drizzle-orm';
 import type { LogEntry } from '../types';
 
 const MIRROR = 'https://testnet.mirrornode.hedera.com';
@@ -25,7 +25,10 @@ async function lastIndexedSeq(): Promise<number> {
 // high-water sequence. Idempotent by high-water mark: re-running never double-inserts an already-seen message.
 export async function indexTopic(topicId: string, sinceSeq?: number): Promise<number> {
   const from = sinceSeq ?? (await lastIndexedSeq());
-  const res = await fetch(`${MIRROR}/api/v1/topics/${topicId}/messages?sequencenumber=gt:${from}&limit=100`);
+  // [WS-7 B3] The mirror rejects `sequencenumber=gt:0` (sequence numbers start at 1). When the index is empty
+  // (from=0) fetch from the start with no filter; otherwise only pull messages newer than the high-water mark.
+  const seqFilter = from > 0 ? `sequencenumber=gt:${from}&` : '';
+  const res = await fetch(`${MIRROR}/api/v1/topics/${topicId}/messages?${seqFilter}order=asc&limit=100`);
   if (!res.ok) throw new Error(`mirror node ${res.status} for topic ${topicId}`);
   const json = (await res.json()) as MirrorResponse;
 
@@ -48,4 +51,20 @@ export async function indexTopic(topicId: string, sinceSeq?: number): Promise<nu
 // The console activity feed: the most recent indexed spend events (index-only, never gates a payment).
 export async function recentSpendEvents(limit = 20) {
   return db.select().from(spendEvents).orderBy(desc(spendEvents.hcsSequence)).limit(limit);
+}
+
+// [WS-7 B3] Recent events for a SINGLE agent (its full ENS name), for the /app agent drill-down + the /demo
+// audit scroll. Index-only (INVARIANT #3).
+export async function recentSpendEventsForAgent(agentName: string, limit = 20) {
+  return db.select().from(spendEvents)
+    .where(eq(spendEvents.agentName, agentName))
+    .orderBy(desc(spendEvents.hcsSequence)).limit(limit);
+}
+
+// [WS-7 B3] Recent events across a whole ORG (every agent whose ENS name ends with the org subname), for the
+// org-level spend feed. Index-only (INVARIANT #3).
+export async function recentSpendEventsForOrg(orgEnsName: string, limit = 50) {
+  return db.select().from(spendEvents)
+    .where(like(spendEvents.agentName, `%.${orgEnsName}`))
+    .orderBy(desc(spendEvents.hcsSequence)).limit(limit);
 }

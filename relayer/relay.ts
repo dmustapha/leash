@@ -17,12 +17,17 @@
 import { mintSubname } from '../scripts/ens/subname';
 import { setPolicy } from '../scripts/ens/policy';
 import { clearPolicy } from '../scripts/ens/revoke';
+import { grantPolicyCohold } from '../scripts/ens/cohold';
 import type { AgentPolicy } from '../types';
 
 export type RelayOp =
   | { kind: 'mint'; registry: `0x${string}`; label: string; agentAddress: `0x${string}`; expires: bigint }
   | { kind: 'setPolicy'; registry: `0x${string}`; label: string; name: string; policy: AgentPolicy }
-  | { kind: 'revoke'; name: string };
+  | { kind: 'revoke'; name: string }
+  // [WS-7 C1 / B-02] Additive co-hold grant. Goes through this scope-guarded relayer (NOT a bare route call)
+  // so the deployer/admin key can only grant a role on a name UNDER the caller's verified org subname - it can
+  // never grant A a role on B's agent. `name` is the full agent name (scope-checked); `account` is the grantee.
+  | { kind: 'grant'; registry: `0x${string}`; name: string; account: `0x${string}` };
 
 // orgSubname = the authenticated user's org, e.g. "acme.leash.eth". Every op's target name must end with it,
 // so the sponsor key can only ever act inside the caller's own namespace.
@@ -38,5 +43,9 @@ export async function relay(orgSubname: string, op: RelayOp): Promise<string> {
       return setPolicy(op.name, op.policy, op.registry, op.label);
     case 'revoke':
       return clearPolicy(op.name);
+    case 'grant':
+      // Additive co-hold: grant ROLE_SET_TEXT on the agent's leash.policy part-resource to `account`. The
+      // relayer keeps it via ROOT, so both hold the kill switch after. Confined to this name's policy key.
+      return grantPolicyCohold(op.name, op.account);
   }
 }

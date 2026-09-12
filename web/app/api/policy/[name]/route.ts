@@ -5,6 +5,7 @@
 // When the record is empty (post-revoke) readPolicy returns null -> { revoked: true }.
 import { NextResponse } from 'next/server';
 import { readPolicy } from '../../../../../scripts/ens/policy';
+import { readIdentity } from '../../../../../scripts/ens/identity';
 
 export const dynamic = 'force-dynamic'; // never cache: the panel must reflect the on-chain record live
 
@@ -12,10 +13,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ name: string }
   const { name: raw } = await ctx.params;
   const name = decodeURIComponent(raw);
   try {
-    const policy = await readPolicy(name);
+    // [WS-7 D1] Also read the ADVISORY identity records (agent.type/description/avatar). Read on the SAME
+    // resolver, but a SEPARATE key namespace - never mixed into the enforcement policy (INVARIANT #13).
+    const [policy, identity] = await Promise.all([readPolicy(name), readIdentity(name)]);
     return NextResponse.json({
       name,
       policy,
+      identity,
       revoked: policy === null,
       source: 'ENS eth_call: PermissionedResolver.text(namehash(name), "leash.policy")',
       readAt: new Date().toISOString(),

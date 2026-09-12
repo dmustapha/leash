@@ -5,9 +5,9 @@
 'use client';
 
 import { useState } from 'react';
-import type { Notice } from '../app-console';
+import type { Notice, AuthedFetch } from '../app-console';
 
-type Props = { orgId: string; onRegistered: () => void; setNotice: (n: Notice) => void };
+type Props = { orgId: string; userAddress: string | null; onRegistered: () => void; setNotice: (n: Notice) => void; authedFetch: AuthedFetch };
 
 // USDC (6 decimals) display string -> raw smallest-unit string. "5" -> "5000000". Returns null if invalid.
 function toRaw(usdc: string): string | null {
@@ -16,10 +16,12 @@ function toRaw(usdc: string): string | null {
   return (BigInt(whole) * 1_000_000n + BigInt(frac.padEnd(6, '0'))).toString();
 }
 
-export default function RegisterAgentForm({ orgId, onRegistered, setNotice }: Props) {
+export default function RegisterAgentForm({ orgId, userAddress, onRegistered, setNotice, authedFetch }: Props) {
   const [label, setLabel] = useState('');
   const [cap, setCap] = useState('5');
   const [payees, setPayees] = useState('');
+  const [agentType, setAgentType] = useState('');
+  const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -30,13 +32,14 @@ export default function RegisterAgentForm({ orgId, onRegistered, setNotice }: Pr
     setNotice(null);
     try {
       const allowedPayees = payees.split(',').map((s) => s.trim()).filter(Boolean);
-      const r = await fetch('/api/agents', {
+      const r = await authedFetch('/api/agents', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ orgId, label, maxPerCall, allowedPayees: allowedPayees.length ? allowedPayees : undefined }),
+        body: JSON.stringify({ orgId, label, maxPerCall, allowedPayees: allowedPayees.length ? allowedPayees : undefined, userAddress: userAddress ?? undefined, agentType: agentType.trim() || undefined, description: description.trim() || undefined }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.message || j.error || `HTTP ${r.status}`);
-      setNotice({ kind: 'ok', text: `Registered ${j.agent.ensName} (mint ${j.mintTx.slice(0, 12)}…, policy ${j.policyTx.slice(0, 12)}…)` });
+      const cohold = j.coholdVerified ? ' · you co-hold the kill switch' : '';
+      setNotice({ kind: 'ok', text: `Registered ${j.agent.ensName} (mint ${j.mintTx.slice(0, 12)}…, policy ${j.policyTx.slice(0, 12)}…)${cohold}` });
       setLabel('');
       onRegistered();
     } catch (e) {
@@ -60,11 +63,21 @@ export default function RegisterAgentForm({ orgId, onRegistered, setNotice }: Pr
         </label>
       </div>
       <details>
-        <summary style={{ cursor: 'pointer', color: 'var(--color-ink-faint)' }}>Advanced · allowlist (Hedera account ids)</summary>
-        <label style={{ display: 'grid', gap: '0.3rem', marginTop: '0.5rem' }}>
-          <span className="eyebrow">allowed payees · comma separated · defaults to the org receiver</span>
-          <input className="field" placeholder="0.0.123, 0.0.456" value={payees} onChange={(e) => setPayees(e.target.value)} disabled={busy} />
-        </label>
+        <summary style={{ cursor: 'pointer', color: 'var(--color-ink-faint)' }}>Advanced · allowlist + ENS identity</summary>
+        <div style={{ display: 'grid', gap: '0.6rem', marginTop: '0.5rem' }}>
+          <label style={{ display: 'grid', gap: '0.3rem' }}>
+            <span className="eyebrow">allowed payees · comma separated · defaults to the org receiver</span>
+            <input className="field" placeholder="0.0.123, 0.0.456" value={payees} onChange={(e) => setPayees(e.target.value)} disabled={busy} />
+          </label>
+          <label style={{ display: 'grid', gap: '0.3rem' }}>
+            <span className="eyebrow">agent type · advisory ENS identity (agent.type)</span>
+            <input className="field" placeholder="data buyer" value={agentType} onChange={(e) => setAgentType(e.target.value)} disabled={busy} />
+          </label>
+          <label style={{ display: 'grid', gap: '0.3rem' }}>
+            <span className="eyebrow">description · advisory ENS identity (agent.description)</span>
+            <input className="field" placeholder="Buys premium API data within a 5 USDC cap" value={description} onChange={(e) => setDescription(e.target.value)} disabled={busy} />
+          </label>
+        </div>
       </details>
       <button className="btn btn-primary" style={{ justifySelf: 'start' }} onClick={() => void submit()} disabled={busy} aria-busy={busy}>
         {busy ? 'Registering (provisioning account + ENS)…' : 'Register agent'}
