@@ -1,0 +1,29 @@
+{
+  "name": "LEASH",
+  "tagline": "The ENS name that can un-pay it.",
+  "colorMode": "dark-only",
+  "brandColor": "#f2a63b",
+  "accent": "#f2a63b",
+  "ink": ["#0b0b0d", "#141417", "#1c1c21", "#2a2a31", "#f4f1ea"],
+  "inkText": { "primary": "#f4f1ea", "dim": "#a8a29a", "faint": "#6b665e" },
+  "semantic": {
+    "success": "#4fae7a",
+    "warning": "#f2a63b",
+    "danger": "#d16060"
+  },
+  "fonts": {
+    "display": "system-ui",
+    "body": "ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif",
+    "mono": "ui-monospace, SF Mono, JetBrains Mono, Menlo, monospace"
+  },
+  "radii": { "sm": 6, "md": 10, "lg": 16, "full": 999 },
+  "shadowPhilosophy": "pure-glow",
+  "signatureElement": "Muted jewel-tone verdict pills (jade ALLOW / garnet DENY-REVOKED) with a mono code face, over a near-black base warmed by a faint amber+jade radial vignette.",
+  "invariantPhrase": "LEASH is the ENS name that can un-pay it.",
+  "statusLegend": [
+    { "color": "#4fae7a", "token": "ALLOW", "meaning": "policy check passed; the co-signed payment settled on Hedera" },
+    { "color": "#d16060", "token": "DENY / REVOKED", "meaning": "blocked at the payment rail — OVER_CAP / OVER_DAILY_CAP / OVER_WEEKLY_CAP / OUTSIDE_WINDOW / OFF_ALLOWLIST / MISSING_COSIGN / RPC_ERROR, or the ENS policy record was revoked" },
+    { "color": "#f2a63b", "token": "PENDING / IDLE", "meaning": "accent — an action in flight or an awaiting-input state (not a settled verdict)" }
+  ],
+  "logoPath": "public/logo.svg"
+}

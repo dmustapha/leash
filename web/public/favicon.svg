@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LEASH logomark">
+  <rect width="512" height="512" rx="112" fill="#0b0b0d"/>
+  <!-- open collar ring (leash), cut at top-right = revocable -->
+  <path d="M256 116a140 140 0 1 0 99 41" fill="none" stroke="#f2a63b" stroke-width="46" stroke-linecap="round"/>
+  <!-- the cut spark -->
+  <circle cx="355" cy="157" r="24" fill="#0b0b0d"/>
+  <circle cx="355" cy="157" r="13" fill="#f2a63b"/>
+  <!-- agent node held inside the ring -->
+  <circle cx="256" cy="256" r="34" fill="#f2a63b"/>
+</svg>
