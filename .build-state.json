@@ -720,19 +720,100 @@
       "E1",
       "E2"
     ],
-    "completed": ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "D1", "A4", "A5", "E1", "E2"],
+    "completed": [
+      "A1",
+      "A2",
+      "A3",
+      "B1",
+      "B2",
+      "B3",
+      "C1",
+      "D1",
+      "A4",
+      "A5",
+      "E1",
+      "E2"
+    ],
     "gate": "after EVERY group: npm run test:live -- vm2 PASS + npm run test:live -- vm1 PASS + npm run build PASS + npm run check PASS + spot-check one /demo settle on mirror node; revert on any fail",
     "gate_results": "ALL GATES GREEN. Group A / Group B / C1(own) / D1 / A4+A5 each: vm2 6/6, vm1 3/3, npm run build PASS, npm run check PASS (typecheck 0 + unit + integration). No regression to /demo or the 3 prize legs.",
     "review": "3 independent adversarial reviews applied (architect/security/code-reviewer); security refinements baked into spec + INVARIANTS #11/#12/#14. See scope doc 'Adversarial review outcomes'. All B-01..B-08 refinements implemented.",
     "new_files": [
-      "web/lib/auth.ts (+auth.test.ts F-016 IDOR)", "web/lib/ratelimit.ts (+ratelimit.test.ts F-019)",
-      "db/replay.ts (+db/replay.integration.ts F-025)", "scripts/ens/cohold.ts", "scripts/ens/identity.ts",
-      "web/app/api/agents/allowlist/route.ts", "web/app/api/agents/reactivate/route.ts", "web/app/api/feed/route.ts",
-      "web/app/app/_components/spend-feed.tsx", "agent/cohold.live.ts (C1 on-chain 3/3)",
+      "web/lib/auth.ts (+auth.test.ts F-016 IDOR)",
+      "web/lib/ratelimit.ts (+ratelimit.test.ts F-019)",
+      "db/replay.ts (+db/replay.integration.ts F-025)",
+      "scripts/ens/cohold.ts",
+      "scripts/ens/identity.ts",
+      "web/app/api/agents/allowlist/route.ts",
+      "web/app/api/agents/reactivate/route.ts",
+      "web/app/api/feed/route.ts",
+      "web/app/app/_components/spend-feed.tsx",
+      "agent/cohold.live.ts (C1 on-chain 3/3)",
       "facilitator/identity-isolation.integration.ts (INVARIANT #13 module-boundary guard)"
     ],
     "onchain_evidence": "C1 co-hold grant proven on-chain via agent/cohold.live.ts (additive: user+relayer both hold ROLE_SET_TEXT on the agent's leash.policy part-resource; scope-guard rejects out-of-org grant). D1 identity setText written+read-back on data.acme.leash.eth + payments.acme.leash.eth (agent.type/agent.description). A5 durable replay round-trip verified on Neon seen_payments. Feed indexer wired live (indexed:true, real ALLOW/DENY from HCS topic 0.0.10496492).",
     "e1_e2_note": "E1 GRANT surface (/app register -> real mint+setPolicy+identity setText+cohold grant txs) + E2 login surface both render 200. The interactive OAuth login click-through + on-camera register are Dami's browser steps (owned by demo-rehearsal/demo). Surfaces are ready + verified.",
     "note": "MAIN build Phases 0-6 GREEN + FROZEN as regression gate. Nothing regressed /demo or the 3 prize legs (INVARIANT #10). WS-7 COMPLETE; next pipeline phase = hackathon-debug with all canonical docs coherent."
+  },
+  "reframeDelta": {
+    "status": "complete",
+    "scope": "docs/REFRAME-SCOPE.md",
+    "groups": {
+      "F": "complete",
+      "S": "complete",
+      "S-GATE": "pass (no fallback)",
+      "R": "complete",
+      "D": "complete",
+      "R3+D4": "complete",
+      "V": "complete"
+    },
+    "commits": [
+      "cb53436",
+      "d683930",
+      "a5081a8",
+      "18ff320",
+      "d09fb0f",
+      "aebe474",
+      "5d286f8"
+    ],
+    "proofs": {
+      "s_gate_settle_tx": "0.0.10487802@1789241326.656309368",
+      "cosign_account": "0.0.10508343",
+      "cosign_long_zero_evm": "0x0000000000000000000000000000000000a05837",
+      "vm3": "7 live + 1 integration PASS",
+      "erc8004_live": "3/3 (agentId 7395 -> 0x92AAe0857979a139344f5b6F008e71F27A507522)"
+    },
+    "regression": {
+      "vm2": "6/6",
+      "vm1": "3/3",
+      "unit": "97/97",
+      "integration": "10/10",
+      "build": "ok"
+    },
+    "claims_proven": [
+      "C-9",
+      "C-10",
+      "C-11",
+      "C-12",
+      "C-13",
+      "C-14",
+      "C-15"
+    ],
+    "new_observables": [
+      "F-026",
+      "F-027",
+      "F-028",
+      "F-029",
+      "F-030",
+      "F-031",
+      "F-032"
+    ],
+    "downstream": [
+      "RF-1",
+      "RF-2",
+      "RF-3",
+      "RF-4"
+    ],
+    "frozen_floor": "untouched",
+    "timestamp": "2026-09-12T21:30:00Z"
   }
 }

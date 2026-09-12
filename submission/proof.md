@@ -77,3 +77,16 @@ The treasury is a **P-256-owner** Privy wallet driven via `@privy-io/server-auth
 `npm run verify:claims` re-derives each headline number from a committed source (USDC = raw / 1e6) and, when a Sepolia RPC is configured, live-reads the `leash.policy` caps via the PermissionedResolver. It writes the result to `evidence/claims-recomputed.json` and diffs it against the asserted values in `docs/pipeline/claims.json`. It refuses to read back a stored success. A non-zero exit means an asserted number did not recompute.
 
 Judge proof surface (rendered live): **`/proof`** on the deployed app.
+
+## REFRAME — 2-of-2 co-signed spending account (on-chain proof)
+
+LEASH governs **external** agents: it binds an ERC-8004 identity + an ENS name to a **2-of-2 co-signed Hedera spending account** (`KeyList[agentPub, leashCoSignerPub]`, threshold 2). The agent holds its own key (SR-1); LEASH holds only its co-signer key + the agent's **public** key. Control = TRUE (LEASH's policy-checked co-signature is required), Independence = TRUE, **Trustless = FALSE** — the chain enforces "two keys signed", not the policy reason (facilitator-trusted, corporate-card model).
+
+- **Co-signed spending account:** `0.0.10508343` — mirror shows a threshold-2 `KeyList`; long-zero EVM `0x0000000000000000000000000000000000a05837` (a KeyList account has no key-derived alias; Privy funds this long-zero address).
+- **S-GATE proto (on-chain 2-of-2 proof):**
+  - Co-signed (agent + LEASH cosigner) → **SETTLE SUCCESS** `0.0.10487802@1789241326.656309368`
+  - Agent-alone (1-of-2, no LEASH) → **REJECTED `INVALID_SIGNATURE`** (agent can't spend alone — F-030)
+  - LEASH-alone (operator + cosigner, both LEASH-held, no agent) → **REJECTED `INVALID_SIGNATURE`** (LEASH can't move the agent's funds — F-031 / SR-1)
+- **VM-3 hero (`npm run test:live -- vm3`, 7 live + 1 integration):** co-signed in-cap settle → agent-alone `MISSING_COSIGN` → LEASH-alone can't move → over-cap `OVER_CAP` → over-daily `OVER_DAILY_CAP` → outside-window `OUTSIDE_WINDOW` → revoke fail-closed `REVOKED`. Mirror-down `RPC_ERROR` proven at integration tier (`spend-rollup.integration`; fail-closed, never default-0).
+- **On-chain-resolved external identity (ERC-8004):** registry `0x8004A818BFB912233c491871b3d84c89A494BD9e` (Ethereum Sepolia) — `ownerOf(7395)` → `0x92AAe0857979a139344f5b6F008e71F27A507522` (`erc8004.live.ts` 3/3; owner-mismatch + unknown agentId throw). Labeled **on-chain-resolved**, not "verified".
+- **Dynamic limits:** rolling daily/weekly caps summed from the HCS topic via the mirror node, windowed by `consensus_timestamp` — a **SOFT budget** (lagging index; worst case ≈ C×maxPerCall), NOT settle-authoritative. `maxPerCall` (live ENS) is the hard per-call bound.

@@ -35,6 +35,10 @@
 | DH-6 | debug | verify_milestone | P1 | KNOWN-RISKS handoff (C1/C-6): `agent/cohold.live.ts` proves the co-hold MECHANISM but revokes its throwaway grant to preserve demo state — no persistent per-agent co-hold tx yet. | verify_milestone (or the demo GRANT beat) produces a persistent co-hold grant tx on a real `/app`-registered agent; flip CLAIMS C-6 -> PROVEN | open |
 | DH-7 | debug | stress_test | P2 | KNOWN-RISKS handoff (B1/B2/B-08): allowlist-edit + reactivate cross-tenant negatives — A must not edit/reactivate B's agent (requireOwner covers it; confirm end-to-end). | stress asserts 403 on authed-as-A editing/reactivating B's agent, and OFF_ALLOWLIST after an allowlist edit | open |
 | DH-8 | debug | demo | P1 | KNOWN-RISKS handoff (DEV-014): narration must say "self-hosted @x402/hedera facilitator, Blocky402-equivalent", NEVER "Blocky402 fork". | demo script + README use the equivalent-wording; no "fork" claim | open |
+| RF-1 | build (REFRAME) | wire | P1 | Register-existing END-TO-END smoke deferred: `/api/agents` bind branch needs a live Privy owner token (same headless-auth constraint as DH-1). R1 resolve + co-signed account model already proven (erc8004.live + S-GATE); the authed bind POST → co-signed-agent round-trip needs a captured token. | re-wire proves an authed bind POST returns 200 with a co-signed KeyList account + on-chain-resolved identity + leash.policy | open |
+| RF-2 | build (REFRAME) | demo | P1 | Demo must show the REFRAME hero (bind existing → co-signed pay → agent-alone can't spend → LEASH-alone can't move → over-cap/daily/window refuse → revoke), NOT the old create-agent mint story. VM-3 is the script spine. | demo script covers the 2-of-2 co-sign veto + honest "facilitator-trusted, not trustless" framing | open |
+| RF-3 | build (REFRAME) | verify_milestone + stress_test + verify_preflight | P1 | New REFRAME observables F-026..F-032 + claims C-9..C-15 must be scored at every gate (co-signed settle, agent-alone/LEASH-alone DENY, on-chain-resolved identity, rolling/window DENY, mirror-down RPC_ERROR). | each gate asserts F-026..F-032; C-9..C-15 stay PROVEN | open |
+| RF-4 | build (REFRAME) | stress_test | P2 | BEAT-7 mirror-down is integration-tier (no env-configurable mirror base; hardcoded const in spend-rollup.ts/cosign.ts). A live kill-endpoint beat needs the mirror base made env-configurable. Also DEV-D01: rolling lookback width uses Date.now() (membership stays consensus). | mirror base env-configurable → a live mirror-down RPC_ERROR beat; rolling width anchored to consensus epoch | open |
 
 ## Skill Sections
 ### forge (complete, 2026-09-12)
@@ -199,6 +203,22 @@
 - [SKILL] B3 fix: the HCS indexer mirror query rejected `sequencenumber=gt:0`; now omits the filter when the index is empty → `/api/feed` returns real ALLOW/DENY (indexed:true).
 - E1/E2: GRANT surface (/app register → real mint+setPolicy+identity+cohold txs) + Privy login surface both render 200; the interactive OAuth login + on-camera register are Dami's browser steps (owned by demo_rehearsal/demo). Surfaces verified ready.
 - PENDING CLAIMS to flip PROVEN as live txs resolve: C1 co-hold tx (already live via cohold.live), D1 identity setText tx (already live via seed), A3 new-agent in-cap fund tx (needs a signed-in console register).
+
+### build — REFRAME delta (complete, 2026-09-12)
+
+#### Done
+- Product pivot LANDED (`docs/REFRAME-SCOPE.md`): LEASH governs EXTERNAL agents via a **2-of-2 co-signed Hedera spending account**. Groups F→S→S-GATE→R→D→R3+D4→V all built + committed + regression-gated (vm2 6/6, vm1 3/3, build, check re-run after every group; frozen floor untouched). Commits `cb53436`(F) `d683930`(S) `a5081a8`(S-GATE) `18ff320`(R) `d09fb0f`(D) `aebe474`(R3+D4) `5d286f8`(V).
+- **S-GATE proto PASS on-chain (no fallback)**: co-signed settle `0.0.10487802@1789241326.656309368`; agent-alone + LEASH-alone (operator+cosigner) both REJECTED `INVALID_SIGNATURE`. KeyList threshold-2 acct `0.0.10508343` (long-zero EVM `0x00..a05837`). REF-1 dual-sign + REF-2 long-zero funding confirmed live.
+- **VM-3 hero PASS (7 live + 1 integration)**: co-signed settle → agent-alone MISSING_COSIGN → LEASH-alone can't move (F-031/SR-1) → over-cap → over-daily → outside-window → revoke fail-closed; BEAT-7 mirror-down at integration tier (spend-rollup.integration → RPC_ERROR, no live injection point, not faked). Test name `vm3cosign.acme.leash.eth` (net-new); `/demo` HERO `data` untouched (still `0.0.10499595`).
+- **R1 live**: `erc8004.live.ts` 3/3 resolves agentId 7395 → `0x92AAe0857979a139344f5b6F008e71F27A507522` on registry `0x8004A818…`; mismatch + unknown throw. Labeled on-chain-resolved, never verified.
+- CLAIMS C-9..C-15 (+claims.json) flipped PENDING→PROVEN with per-beat evidence.
+
+#### Honesty locks (NEVER drift)
+- Control=TRUE, Independence=TRUE (SR-1: agent holds its own Hedera key; facilitator/config never read `agentPriv` — grep-proven), **Trustless=FALSE** (facilitator-trusted co-sign; never "chain enforces the cap"). ERC-8004 = on-chain-resolved, never "verified". Rolling caps = SOFT budget (worst case C×maxPerCall). `LEASH_COSIGNER_KEY ≠ HEDERA_OPERATOR_KEY` asserted at startup.
+
+#### For Next Skill (re-wire → verify → design_forge → demo → package)
+- Act on RF-1..RF-4 in `## Downstream Items`. Canonical docs are COHERENT with the reframe (Group F amended all 9). The old create-agent story is roadmap ("coming soon") — do NOT resurrect it as the headline.
+- Re-wire owns RF-1 (authed bind POST e2e with a live Privy token). Demo owns RF-2 (reframe hero script = VM-3 spine, human voice, no TTS per brief). verify/stress own RF-3 (score F-026..F-032 every gate).
 
 ### debug (complete, 2026-09-12)
 
