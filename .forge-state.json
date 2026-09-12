@@ -1,0 +1,80 @@
+{
+  "version": "1.1",
+  "hackathon_name": "ETHOnline 2026",
+  "project_name": "leash",
+  "working_dir": "/Users/MAC/ethonline-2026",
+  "doc_layout": "flat-at-root (git repo IS the project; build populates repo root per master doc §12; no nested project subdir)",
+  "winning_idea": "LEASH — an org's ENSv2 name hierarchy as a live, revocable spend-permission graph for a fleet of paying AI agents; forked Hedera x402 facilitator reads the ENS resolver record pre-settlement; Privy is the independent second rail on funding.",
+  "source": "warroom",
+  "status": "in-progress",
+  "current_phase": "phase-2",
+  "current_substep": null,
+  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5"],
+  "documents_carry_warnings": {
+    "for_architecture": [
+      "PRD-W3: USDC needs BOTH its HTS id AND its EVM-facade address; Privy funding policy gates the EVM-facade ERC-20 transfer(_to,_value); read decimals() off the facade (master §4.3).",
+      "PRD-W5: getEnsText on a 3-level name (data.<org>.<root>.eth) minted into a self-deployed UserRegistry via UniversalResolverV2 is the least-tested ENSv2-alpha path; ARCHITECTURE must use the SAME read code path in the facilitator and in a WS-1 read-back check.",
+      "INV-W1(closed): onBeforeSettle is the authoritative no-cache read; onBeforeVerify advisory. Encode this in the facilitator component code, not just prose.",
+      "ENS names are runtime placeholders; ENS_PARENT_NAME 3-level, root resolved WS-1; no custom Solidity."
+    ],
+    "for_plan": [
+      "PRD-W5: WS-1 acceptance must include a 3-level-name text read-back via the facilitator's exact code path (distinct from the setText round-trip).",
+      "PRD-W4/R-3: WS-0 smoke #1 must re-prove the Privy owner-policy DENY against the INSTALLED pinned @privy-io/server-auth version, not the forge-time live test.",
+      "PRD-W1: wall-clock tripwires (T-4h submission lockdown; real-console cutoff ~T-6h; WS-1 ENS budget cutoff) — deterministic, not relative hours."
+    ]
+  },
+  "phase_ledger": [
+    { "phase": "phase_0", "started_at": "2026-09-12T00:00:00Z", "completed_at": "2026-09-12T00:10:00Z", "evidence": "config+warroom+research+concerns loaded; concerns.md written (7 [C]); .forge-state.json created; entry-gate checklist 5/5 (.forge-state entryGateChecklist)" },
+    { "phase": "phase_0b", "started_at": "2026-09-12T00:10:00Z", "completed_at": "2026-09-12T00:15:00Z", "evidence": "spike = master doc transcription; platform probe Privy owner+auth-sig CONFIRMED live (.forge-state technical_spike.platformProbe); ENSv2 read-back = secondary [UNVERIFIED-build-gate]" },
+    { "phase": "phase_1", "started_at": "2026-09-12T00:15:00Z", "completed_at": "2026-09-12T01:10:00Z", "evidence": "PRD.md (10 sections, 16 risks) + INVARIANTS.md (10 NON-NEGOTIABLES) written; 6 PRD metrics PASS (self + independent architect re-count)" },
+    { "phase": "phase_1.5", "started_at": "2026-09-12T01:10:00Z", "completed_at": "2026-09-12T01:40:00Z", "evidence": "adversarial gate: PRD PASS zero-blockers (architect agent ac36ba19); INVARIANTS 4 BLOCKERS fixed + re-review PASS (security-auditor a8f123af); W-1 PRD onBeforeSettle alignment landed" }
+  ],
+  "expected_phases": ["phase_0_5","phase_0","phase_0a","phase_0b","phase_1","phase_1_5","phase_2","phase_2_5","phase_3","phase_3_5","phase_4"],
+  "autonomous_mode": false,
+  "run_model": "supervised-inline: autonomous by default, Dami at keyboard; STOP-and-ask INLINE only on a genuine blocker (adversarial-gate BLOCKER, credential/human step, thesis/identity/naming decision, hard-to-reverse). No skill PAUSE 'type approve' points; per-doc adversarial review gate replaces them (FORGE-KICKOFF-HANDOFF §4).",
+  "timestamps": { "started": "2026-09-12T00:00:00Z" },
+  "quality_scores": { "prd": "6/6 metrics PASS", "architecture": null, "implementation_plan": null, "cross_doc_audit": null },
+  "documents": {
+    "prd": "/Users/MAC/ethonline-2026/PRD.md",
+    "architecture": null,
+    "architecture_sections_complete": [],
+    "implementation_plan": null,
+    "mini_verdict": null,
+    "deep_research": null
+  },
+  "corrections": [
+    "PRD: folded HCS logger into Facilitator component (Metric 1 8==8); added Flow→Scene map + real-product beat (Metric 2 3==3); schedule realism 15h + wall-clock tripwires; runtime-placeholder ENS names + no-Solidity note; onBeforeSettle authoritative (W-1).",
+    "INVARIANTS: 4 adversarial BLOCKERS fixed — structural closed decision union (#1), settle-time TOCTOU read (#2), replay+aggregate scope (#9), Privy fail-open promoted to NON-NEGOTIABLE #5 + self-broadcast forbidden (D-10); plus EAC-rooted binding (#8), MALFORMED_POLICY, real-path staleness disclosure, other-facilitator honest-scope bullet."
+  ],
+  "tech_stack": {
+    "family": "Full-Stack Web (primary) + Backend/API services",
+    "languages": ["TypeScript"],
+    "frameworks": ["Next.js (App Router)", "@x402/core", "@x402/hedera", "@x402/express", "@hiero-ledger/sdk", "@privy-io/server-auth", "@privy-io/react-auth", "viem", "Postgres (Neon)"],
+    "deploy_target": "Vercel (dashboard) + Render (facilitator/resource-server) + local setup script (ENS 2LD commit-reveal)"
+  },
+  "technical_spike": {
+    "needed": true,
+    "unknowns": [],
+    "verified_patterns": [],
+    "unverified_patterns": [],
+    "assumed_patterns": [],
+    "platformProbe": {
+      "invariant": "Privy enforces wallet spend policy (cap+allowlist) ONLY via a P-256-owner wallet driven with a privy-authorization-signature (server-auth SDK); raw API calls fail-OPEN.",
+      "probeCommand": "live Privy API test 2026-09-12 with real app creds: deny-all policy on an owner-less wallet did NOT block eth_sendTransaction on chain 296 or Sepolia (both reached broadcast); chain 296 accepted + simulated.",
+      "result": "CONFIRMED — the Privy prize DENY demo requires owner+authorization-signature via @privy-io/server-auth; this is now a build INVARIANT + WS-0 smoke test #1. Chain-296 support GONE as a risk."
+    },
+    "secondaryProbeTarget": "ENSv2 setText→text round-trip on Sepolia alpha contracts (pinned 2026-06-29 set) — [UNVERIFIED-build-gate], the WS-1 day-0 probe (G1 day-eater). ETHRegistry bytecode already confirmed reachable via SEPOLIA_RPC (29424 chars)."
+  },
+  "scope_mode": "full",
+  "scope_mode_note": "OVERRIDE of auto-detection (which would say 'emergency' at ~30h). Master doc §5/§13.6 mandates full scope, LEASH's core invariant forbids fabricated/mocked demo state (emergency [MOCK] labeling contraindicated), and Dami's standing rule = scope-over-timeboxes. Timeline managed via judge-sandbox-first sequencing + minimum-eligible tripwire (ENS+Hedera two-prize, Privy cut-first), NOT via mocking.",
+  "invariantsArtifact": { "path": "INVARIANTS.md", "nonNegotiables": 10, "judgeAttackPairs": 10, "sourceLockRows": 12, "headlineEnforcement": "structural", "adversarialReview": "security-auditor 2026-09-12: 4 BLOCKERS + 4 strong WARNINGS all resolved (structural decision-union, TOCTOU settle-time read, replay/aggregate, Privy fail-open promoted to NON-NEGOTIABLE #5 + self-broadcast forbidden D-10, EAC-rooted binding #8, MALFORMED_POLICY, other-facilitator honest-scope). Re-review PASS." },
+  "custodyProduct": true,
+  "keysOffHostDemoPath": "/demo server-orchestrated hero flow (server-side pre-seeded keys on Render env, scoped+rate-limited; funds/root key never on Vercel host)",
+  "franchiseSkeleton": { "claimsLedger": false, "recomputeVerifier": false, "securityMd": false, "honestyLedger": false },
+  "docSuite": { "decisionsDoc": "DECISIONS.md", "decisionsAdrs": 0, "limitationsDoc": "LIMITATIONS.md", "securityMdSpec": false },
+  "entryGateChecklist": { "met": 0, "total": 5, "unmet": [] },
+  "externalScopeIngested": "docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope; ingested as the transcription source, not re-derived)",
+  "project_type": null,
+  "feature_observables": [],
+  "errors": []
+}
