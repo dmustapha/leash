@@ -1,8 +1,8 @@
-# LEASH — Product Requirements Document
+# LEASH - Product Requirements Document
 
 **Hackathon:** ETHOnline 2026
 **Track:** Building from Scratch (Classic)
-**Deadline:** 2026-09-13 16:00 UTC (Sun, 12:00 PM EDT) — no late submissions
+**Deadline:** 2026-09-13 16:00 UTC (Sun, 12:00 PM EDT) - no late submissions
 **Prizes targeted (max 3):** ENS Best Use of ENSv2 $4,500 + Hedera AI & Agentic Payments (x402) $6,000 + Privy Best B2B Financial Product $2,500 = $13,000 addressable
 **Version:** V1
 **Source:** warroom V2 winner (WINNER-BRIEF.md) + docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope)
@@ -14,13 +14,16 @@
 ## 1. Project Overview
 
 ### One-Liner
-LEASH turns an organization's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents — cutting off any agent everywhere is one on-chain write.
+<!-- [CRITIQUE E-4] Headline escapes the crowded x402-payer lane and enforces the thesis drift-tripwire ("an agent that pays" must NOT be the headline). No trustless/chain-enforce claim. -->
+Not another agent that pays an API. LEASH is the ENS name that can un-pay it: cut one resolver record and that agent's spending dies everywhere, in one on-chain write.
+
+LEASH turns an organization's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents. Cutting off any agent everywhere is one on-chain write.
 
 ### Problem Statement
 Teams now deploy fleets of AI agents that spend money per call over x402. The only spend control today is a raw private key per agent: no per-agent cap, no payee scoping, no hierarchy, and revocation means rotating keys across every downstream service by hand. A leaked or rogue agent has no single, instant, org-wide off-switch. **The shocking number: cutting off a leaked agent today means touching every downstream service one-by-one; LEASH cuts it everywhere in ONE transaction.**
 
 ### Solution
-Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text record `leash.policy` encodes its spend capability: per-call cap, allowed payees, its Hedera account, and the token. A self-hosted (forked) Hedera x402 facilitator reads that record via viem `eth_call` **before settling** each gas-free payment and refuses anything over-cap or off-allowlist. Privy holds the org treasury as a policy-gated server wallet and gates how agents get funded — an independent second rail on the funding flow, never a per-transaction co-signer. Revoking the ENS text record or the EAC role kills that agent's spend everywhere in one Sepolia write. **The name is the leash: cut it, the spending dies.**
+Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text record `leash.policy` encodes its spend capability: per-call cap, allowed payees, its Hedera account, and the token. A self-hosted (forked) Hedera x402 facilitator reads that record via viem `eth_call` **before settling** each gas-free payment and refuses anything over-cap or off-allowlist. Privy holds the org treasury as a policy-gated server wallet and gates how agents get funded - an independent second rail on the funding flow, never a per-transaction co-signer. Revoking the ENS text record or the EAC role kills that agent's spend everywhere in one Sepolia write. **The name is the leash: cut it, the spending dies.**
 
 ### Why This Wins
 | Judging Criterion | Weight | How We Excel |
@@ -33,7 +36,7 @@ Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text recor
 
 ### Prize Alignment (satisfy each literal bullet)
 - **ENS ENSv2 $4,500:** ENSv2 on Sepolia central (hierarchy + EAC roles + Permissioned Resolver + reverse), no hard-coded values (runtime address load / pinned set), policy lives in the resolver, revoke = `revokeRoles`/clear-record. 3-level multi-tenant hierarchy (`leash.eth` → `<org>.leash.eth` → `data.<org>.leash.eth`) deepens ENS depth.
-- **Hedera x402 $6,000:** live x402-gated service, ≥1 real paid request e2e, gas-free native scheme via self-hosted facilitator, HCS audit trail, real value (own HTS USDC) settled on testnet, HashScan-verified.
+- **Hedera x402 $6,000:** live x402-gated service, ≥1 real paid request e2e, gas-free native scheme via self-hosted facilitator, HCS audit trail, real value (own HTS USDC) settled on testnet, HashScan-verified. <!-- [CRITIQUE E-1] VERIFIED 2026-09-12: Blocky402 is open-source (MIT) + self-hostable (Docker/Node) on Hedera testnet, built on the same @x402/core + @x402/hedera stack this design uses; onBeforeVerify/onBeforeSettle are official x402 hooks. DECISION: FORK Blocky402 and add the ENS gate via onBeforeSettle so "via the Blocky402 facilitator" is literally true. Build (Task 2.2) confirms the fork exposes the hook; fallback = self-hosted @x402/core+@x402/hedera (Blocky402-equivalent, stated in README). No second non-ENS facilitator path. -->
 - **Privy B2B $2,500:** org/server wallets as the treasury, policy engine control (cap + allowlist on funding calldata), live leaked-key over-fund DENY, a real B2B funding flow. Deepened via Privy embedded-wallet login (email/Google) in the real multi-tenant console.
 
 ---
@@ -74,7 +77,7 @@ Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text recor
 ```
 
 ### Component Table
-> **ENS names are runtime placeholders.** `leash.eth` / `acme.leash.eth` throughout this doc are illustrative. WS-1 resolves the actual free root 2LD FIRST (`leash.eth` or a free fallback e.g. `leashorg.eth`); every `*.leash.eth` string is runtime-substituted from `ENS_PARENT_NAME` (updated to the 3-level shape; the stale `ENS_PARENT_NAME=acme.eth` in the master doc §8 is superseded). No custom Solidity is in scope — ENS (external) + the facilitator ARE the enforcement (master §12 `contracts/` is "if needed", not needed).
+> **ENS names are runtime placeholders.** `leash.eth` / `acme.leash.eth` throughout this doc are illustrative. WS-1 resolves the actual free root 2LD FIRST (`leash.eth` or a free fallback e.g. `leashorg.eth`); every `*.leash.eth` string is runtime-substituted from `ENS_PARENT_NAME` (updated to the 3-level shape; the stale `ENS_PARENT_NAME=acme.eth` in the master doc §8 is superseded). No custom Solidity is in scope - ENS (external) + the facilitator ARE the enforcement (master §12 `contracts/` is "if needed", not needed).
 
 | Component | Type | Purpose | Key Dependencies |
 |-----------|------|---------|-----------------|
@@ -88,7 +91,7 @@ Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text recor
 | Relayer | Node (Vercel API route) | Gas sponsor: deployer pays Sepolia gas for a user's ENS ops, scoped to that user's org subname | viem, LEASH_DEPLOYER_KEY |
 
 ### Data Flow
-An org mints a child ENS name for each agent and writes its `leash.policy` text record. The same ECDSA keypair owns the ENS child on Sepolia and is the agent's account on Hedera — this binding is what lets the facilitator tie a Hedera payer to a Sepolia policy. When the agent calls the x402-gated API, the resource server returns 402 with PaymentRequirements. The agent builds a partially-signed native Hedera TransferTransaction and retries with the `X-PAYMENT` payload + `X-Leash-Agent: data.acme.leash.eth`. `onBeforeVerify` runs an ADVISORY pre-screen (may use a ≤30s cache) reading the ENS record and checking `hederaAccount === payer` (anti-spoof), `amount <= maxPerCall` (BigInt), `payTo in allowedPayees`. The AUTHORITATIVE decision is made in `onBeforeSettle`: it re-reads the ENS record via viem with NO cache immediately before adding the fee-payer signature, so a revoke landing between verify and settle fails the in-flight payment closed (`REVOKED`). The gate returns a closed `{settle:true,auth} | {abort:true,reason}` decision (INVARIANTS #1/#2); ALLOW/DENY is logged to HCS; settle adds the fee-payer signature only on `{settle:true}`. Separately, the org treasury (a Privy P-256-owner server wallet) funds agents via ERC-20 USDC transfers that Privy's policy engine gates. Revocation clears the text record or revokes the EAC role in one Sepolia tx; the facilitator's next read (cache TTL ≤ 30s, and NO cache on the demo revoke path) sees empty policy and aborts all that agent's payments.
+An org mints a child ENS name for each agent and writes its `leash.policy` text record. The same ECDSA keypair owns the ENS child on Sepolia and is the agent's account on Hedera - this binding is what lets the facilitator tie a Hedera payer to a Sepolia policy. When the agent calls the x402-gated API, the resource server returns 402 with PaymentRequirements. The agent builds a partially-signed native Hedera TransferTransaction and retries with the `X-PAYMENT` payload + `X-Leash-Agent: data.acme.leash.eth`. `onBeforeVerify` runs an ADVISORY pre-screen (may use a ≤30s cache) reading the ENS record and checking `hederaAccount === payer` (anti-spoof), `amount <= maxPerCall` (BigInt), `payTo in allowedPayees`. The AUTHORITATIVE decision is made in `onBeforeSettle`: it re-reads the ENS record via viem with NO cache immediately before adding the fee-payer signature, so a revoke landing between verify and settle fails the in-flight payment closed (`REVOKED`). The gate returns a closed `{settle:true,auth} | {abort:true,reason}` decision (INVARIANTS #1/#2); ALLOW/DENY is logged to HCS; settle adds the fee-payer signature only on `{settle:true}`. Separately, the org treasury (a Privy P-256-owner server wallet) funds agents via ERC-20 USDC transfers that Privy's policy engine gates. Revocation clears the text record or revokes the EAC role in one Sepolia tx; the facilitator's next read (cache TTL ≤ 30s, and NO cache on the demo revoke path) sees empty policy and aborts all that agent's payments.
 
 > **Enforcement trust model (say it plainly):** enforcement is FACILITATOR-TRUSTED, not chain-trustless. The facilitator is operator-run software (true of every x402 facilitator by design). ENS is the org-controlled source-of-truth config the facilitator reads. Never claim the chain enforces the cap.
 
@@ -96,21 +99,21 @@ An org mints a child ENS name for each agent and writes its `leash.policy` text 
 
 ## 3. User Flows
 
-### Flow 1: Judge Sandbox hero flow (`/demo`, zero-setup, SCORED) — the demo path
+### Flow 1: Judge Sandbox hero flow (`/demo`, zero-setup, SCORED) - the demo path
 1. Judge opens `/demo`. Pre-seeded `acme.leash.eth` with 2 child agents renders, each showing its cap + allowlist read live from ENS Sepolia. No login, no wallet, no ETH.
 2. Judge (or auto-play) triggers **SPEND**: agent 1 pays a whitelisted API 3 USDC. Facilitator reads ENS + binding check → settles gas-free → HashScan receipt + HCS log line appear.
 3. Judge triggers **REFUSE**: same agent tries 50 USDC → facilitator aborts `over_cap`, shown beside the 3-USDC success (A/B split-screen: resolver record | live 402).
-4. Judge triggers **KILL**: org clears the record / `revokeRoles` (one real Sepolia tx). The agent's next 3-USDC call — identical to the one that worked — now fails closed. Split-screen resolver ↔ 402 flips pass→fail.
+4. Judge triggers **KILL**: org clears the record / `revokeRoles` (one real Sepolia tx). The agent's next 3-USDC call - identical to the one that worked - now fails closed. Split-screen resolver ↔ 402 flips pass→fail.
 5. Judge triggers **SECOND RAIL**: a leaked key tries to over-fund an agent from the treasury → Privy policy DENY. HCS audit trail scrolls.
 
 ### Flow 2: Real console onboarding (`/app`, bring-your-own-org, multi-tenant)
 1. User signs in with Privy email/Google (embedded wallet, no MetaMask).
 2. LEASH provisions their org subname `<org>.leash.eth` under `leash.eth` (gas sponsored by the relayer, scoped to that subname).
 3. User registers an agent: LEASH mints `data.<org>.leash.eth`, sets its `leash.policy`, records it in Postgres.
-4. User sets caps/allowlists, funds the agent from the Privy treasury (policy-gated), watches live spend, and revokes with one click — all gas-sponsored.
+4. User sets caps/allowlists, funds the agent from the Privy treasury (policy-gated), watches live spend, and revokes with one click - all gas-sponsored.
 
 ### Flow 3: Revocation (shared mechanism, both paths)
-1. Org clears the text record (`setText('leash.policy','')`) OR `revokeRoles(tokenId, SET_RESOLVER|SET_SUBREGISTRY, agentAddr)` — one Sepolia tx.
+1. Org clears the text record (`setText('leash.policy','')`) OR `revokeRoles(tokenId, SET_RESOLVER|SET_SUBREGISTRY, agentAddr)` - one Sepolia tx.
 2. Facilitator's next read (no cache on demo path) sees empty policy → aborts all that agent's payments (`revoked`).
 3. Optional watcher syncs Privy to freeze that agent's treasury funding.
 
@@ -123,7 +126,7 @@ Agent      -> ResourceServer: retry + X-PAYMENT payload + header X-Leash-Agent: 
 ResourceServer -> Facilitator: /verify
 Facilitator -> Sepolia(viem): getEnsText(name,'leash.policy')  [onBeforeVerify: advisory pre-screen, ≤30s cache OK]
 Facilitator -> Facilitator: assert hederaAccount===payer; amount<=maxPerCall (BigInt); payTo in allowedPayees
-Facilitator -> Sepolia(viem): getEnsText(name,'leash.policy')  [onBeforeSettle: AUTHORITATIVE, NO cache — closes TOCTOU]
+Facilitator -> Sepolia(viem): getEnsText(name,'leash.policy')  [onBeforeSettle: AUTHORITATIVE, NO cache - closes TOCTOU]
 Facilitator -> Facilitator: authorize() -> {settle:true,auth} | {abort:true,reason}
 Facilitator -> HCS: append ALLOW/DENY
 Facilitator -> Hedera: add feePayer sig + submit (gas-free)  [only on {settle:true}]
@@ -137,7 +140,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 
 ### ENS provisioning layer
 - **Purpose:** provision + control the org naming hierarchy and per-agent policy records on ENSv2 Sepolia.
-- **Interface:** scripts/functions — `register2LD`, `deployUserRegistry`, `grantRole`, `mintSubname`, `setPolicy`, `setReverse`, `readPolicy`, `revoke`, `loadAddresses`.
+- **Interface:** scripts/functions - `register2LD`, `deployUserRegistry`, `grantRole`, `mintSubname`, `setPolicy`, `setReverse`, `readPolicy`, `revoke`, `loadAddresses`.
 - **Key data structures:** `leash.policy` JSON `{ "maxPerCall": "5000000", "allowedPayees": ["0.0.PAYEE"], "hederaAccount": "0.0.AGENT", "token": "0.0.USDC" }` (amounts raw smallest-unit; USDC 6 decimals).
 - **Dependencies:** viem ^2.56, Sepolia RPC, pinned ENSv2 addresses (2026-06-29 set) or runtime load from `contracts-v2/deployments/sepolia/*.json`.
 - **Constraints:** commit-reveal 2LD registration needs ~60s wait → local setup script only (exceeds serverless timeouts). Runtime ops (mint subname, setText, revoke) are single fast txs → fine in Vercel API routes.
@@ -162,7 +165,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 ### Treasury (Privy) layer
 - **Purpose:** org treasury + funding policy + leaked-key DENY.
 - **Interface:** `walletApi.createPolicy(...)`, `walletApi.createWallet({chainType:'ethereum', owner:<P-256>, policyIds:[id]})`, `walletApi.ethereum.sendTransaction(...)` with `caip2:'eip155:296'`.
-- **Key data structures:** funding policy — ALLOW `eth_sendTransaction` where ERC-20 `transfer._to in [agentAddrs]` AND `transfer._value lte fundingCap`; default DENY.
+- **Key data structures:** funding policy - ALLOW `eth_sendTransaction` where ERC-20 `transfer._to in [agentAddrs]` AND `transfer._value lte fundingCap`; default DENY.
 - **Constraints:** wallet MUST have a P-256 owner and be driven via the SDK (raw calls fail-OPEN). `fundingCap` pinned raw units, distinct from per-call `maxPerCall`.
 
 ### Web dashboard (two paths)
@@ -177,7 +180,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Constraint (INVARIANT):** ENS remains the on-chain source of truth; the facilitator reads ENS LIVE at settlement, NEVER the DB. The DB is never the enforcement authority.
 
 ### Relayer
-- **Purpose:** gasless onboarding — deployer key sponsors a user's ENS ops.
+- **Purpose:** gasless onboarding - deployer key sponsors a user's ENS ops.
 - **Constraint:** SCOPED to that user's own org subname (not an open relay). Judge mode needs no relayer (server-side, pre-funded).
 
 ---
@@ -204,7 +207,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Endpoints:** `/verify`, `/settle` (x402 facilitator protocol). `onBeforeVerify`/`onBeforeSettle` hooks carry the ENS gate.
 
 ### Our resource server
-- `GET /premium` — x402-gated demo endpoint (network `hedera:testnet`).
+- `GET /premium` - x402-gated demo endpoint (network `hedera:testnet`).
 
 ---
 
@@ -213,7 +216,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 **Total Duration:** 3:00. **Format:** screen recording, human voice only (no AI voiceover/TTS), 720p+, intro <20s. Real on-chain txs throughout.
 
 ### Scene 1: World + dashboard (0:00–0:20)
-**Screen:** `/demo` — `acme.leash.eth` with 2 child agents, each showing cap + allowlist (live ENS Sepolia).
+**Screen:** `/demo` - `acme.leash.eth` with 2 child agents, each showing cap + allowlist (live ENS Sepolia).
 **Voiceover:** "Acme runs a fleet of paying agents. Keys have no limits and no off-switch. LEASH fixes that: your ENS name is your revocable spend policy."
 **Action:** dashboard renders live records.
 
@@ -224,17 +227,18 @@ ResourceServer -> Agent: paid data | 402 with reason
 
 ### Scene 3: SPEND, gas-free (1:00–1:40)
 **Screen:** agent pays a whitelisted API within cap.
-**Voiceover:** "The agent pays a whitelisted API. Our facilitator reads the ENS record, checks the binding and the cap, and settles on Hedera — gas-free."
+<!-- [CRITIQUE E-3] First time value moves, name the token as our own test USDC (own HTS 6-dec), never implying canonical USDC. Honesty invariant + pre-empts a Q&A "is that real USDC?" gotcha. Disclosed in ADR-005 / LIMITATIONS. -->
+**Voiceover:** "The agent pays a whitelisted API in our test USDC, our own Hedera token. Our facilitator reads the ENS record, checks the binding and the cap, and settles on Hedera, gas-free."
 **Action:** call → 402 → Privy-signed transfer → facilitator reads ENS + binding → settle → HashScan receipt + HCS log line.
 
 ### Scene 4: REFUSE, A/B (1:40–2:10)
 **Screen:** same agent tries 50 USDC → facilitator aborts `over_cap`, shown beside the amount that just worked.
-**Voiceover:** "Now it tries to overspend. The facilitator refuses — over cap. Same agent, same API, blocked at the payment rail."
+**Voiceover:** "Now it tries to overspend. The facilitator refuses - over cap. Same agent, same API, blocked at the payment rail."
 **Action:** split-screen: resolver record | live 402.
 
-### Scene 5: KILL — the hero moment (2:10–2:40)
+### Scene 5: KILL - the hero moment (2:10–2:40)
 **Screen:** org `revokeRoles` / clears the record (one Sepolia tx). The agent's next in-cap call now fails closed.
-**Voiceover:** "One on-chain write. The org revokes the record — and the exact call that worked ninety seconds ago now fails closed. Everywhere."
+**Voiceover:** "One on-chain write. The org revokes the record - and the exact call that worked ninety seconds ago now fails closed. Everywhere."
 **Action:** split-screen resolver ↔ 402 flips pass→fail.
 
 ### Scene 6: SECOND RAIL + real product (2:40–3:00)
@@ -253,7 +257,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 
 > **Price/amount reconciliation (R-11):** set the demo endpoint price so the narrated 3/5/50 USDC spends are literal charges against the cap (not a $0.10 flat call narrated as 3 USDC). Cap = 5 USDC; in-cap spend = 3 USDC; over-cap attempt = 50 USDC.
 
-### Demo Prerequisites — Seed State Table
+### Demo Prerequisites - Seed State Table
 Build implements `scripts/seed-demo.ts` from this table. It must be idempotent and reproduce this exact state from scratch.
 
 | Item | Value | Network / Location | Created By |
@@ -267,7 +271,7 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 | Agent funding | agents funded from treasury (policy-allowed) | Hedera testnet | seed-demo.ts |
 | HCS topic | topic id in `.env` HCS_TOPIC_ID | Hedera testnet | scripts/hedera |
 
-**Invariant:** `npx tsx scripts/seed-demo.ts` from project root produces this exact state; idempotent. This is REAL pre-produced state (real txs), not fabricated demo data — permitted by the INVARIANTS honesty rule.
+**Invariant:** `npx tsx scripts/seed-demo.ts` from project root produces this exact state; idempotent. This is REAL pre-produced state (real txs), not fabricated demo data - permitted by the INVARIANTS honesty rule.
 
 ---
 
@@ -294,7 +298,7 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 
 ### Risk Categories Covered
 - [x] Technical (R-2, R-3, R-4, R-7, R-8, R-12, R-13, R-16)
-- [x] Competitive (differentiation from ChainSight — read-analyst vs our transact/getting-paid write-side; see research §13)
+- [x] Competitive (differentiation from ChainSight - read-analyst vs our transact/getting-paid write-side; see research §13)
 - [x] Time (R-9)
 - [x] Demo (R-6, R-10, R-11)
 - [x] Judging (R-1, honest-framing Q&A)
@@ -305,10 +309,10 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 ## 7.5 Judge Experience
 
 - **First-visit state (`/demo`):** `acme.leash.eth` + 2 child agents render immediately with live caps/allowlists read from ENS, a recent-spend feed, and a one-line explainer. No empty states, no login wall, no "connect wallet to continue".
-- **Seed script:** `scripts/seed-demo.ts` (see §6 table) — creates org + 2 agents + funded treasury + associated USDC + HCS topic; idempotent.
+- **Seed script:** `scripts/seed-demo.ts` (see §6 table) - creates org + 2 agents + funded treasury + associated USDC + HCS topic; idempotent.
 - **10-second test:** hero line "Your ENS name is your revocable spend policy" + the split-screen resolver↔402 visual makes the concept legible in 10s.
 - **30-second test:** the SPEND beat (gas-free settle + HashScan receipt) shows the core value.
-- **60-second test:** the KILL beat — judge clicks revoke, watches the next identical call fail closed — is the try-it moment.
+- **60-second test:** the KILL beat - judge clicks revoke, watches the next identical call fail closed - is the try-it moment.
 - **Landing/console split:** `/` landing → `/demo` (sandbox) + `/app` (real). Plain language on the surface; jargon behind `<details>`.
 - **Demo-Insurance Invariant Check:** LEASH's claim is verifiable revocation. Fabricated state is FORBIDDEN outright (TASTE U7 / thesis INVARIANT). Seed state is real pre-produced txs, earned not fabricated. No precache/fallback on the revoke path.
 - **Keys-off-host demo path (custody product):** the treasury holds signing keys and the agent signs via Privy custody. The cold-judge path on the DEPLOYED `/demo` URL uses SERVER-SIDE pre-seeded keys held by the facilitator/treasury services (Render env, not the funds root), scoped + rate-limited, driving the full hero flow with NO local keys and NO judge wallet. The funds/root key never goes on the Vercel host (R-14). `keysOffHostDemoPath` = `/demo` server-orchestrated hero flow.
@@ -335,7 +339,7 @@ Hard deadline 2026-09-13 16:00 UTC. ~30h from forge. Focused build ~12-14h. Judg
 
 ### Buffer + Tripwire
 Honest total: the WS blocks sum to ~15h focused work with near-zero slack against a HARD 2026-09-13 16:00 UTC no-late-submission deadline (R-9). The "~12-14h" figure elsewhere is the optimistic core; plan against 15h. **Wall-clock tripwires (deterministic, not relative hours):**
-- **T-4h before deadline (12:00 UTC Sep 13):** submission lockdown begins — whatever is live gets recorded + submitted. Reserve this window for video + form + buffer.
+- **T-4h before deadline (12:00 UTC Sep 13):** submission lockdown begins - whatever is live gets recorded + submitted. Reserve this window for video + form + buffer.
 - **Real-console cutoff (~T-6h):** if the real multi-tenant path (`/app`) is not done, ship the flawless judge sandbox + a real "sign in" that demonstrably works and cut the rest.
 - **ENS provisioning cutoff (WS-1, if it blows its 3h budget):** fall back to ENS+Hedera two-prize and cut Privy first.
 Never let the real path endanger the sandbox.
@@ -379,7 +383,7 @@ See `.env.example` + `.input-manifest.json` (Phase 4). All required creds SET+VE
 | Deployer (funded) | `0x72A90a712b7a668bD215B3b70B3fEaBFA40dd5C5` | Sepolia | 0.05 ETH funded 2026-09-12 |
 | USDC (HTS) | generated (USDC_TOKEN_ID) | Hedera testnet | scripts/hedera mint |
 
-(Full pinned address set — 10 ENSv2 contracts — in ARCHITECTURE.md §Addresses.)
+(Full pinned address set - 10 ENSv2 contracts - in ARCHITECTURE.md §Addresses.)
 
 ---
 
