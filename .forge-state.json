@@ -7,9 +7,9 @@
   "winning_idea": "LEASH — an org's ENSv2 name hierarchy as a live, revocable spend-permission graph for a fleet of paying AI agents; forked Hedera x402 facilitator reads the ENS resolver record pre-settlement; Privy is the independent second rail on funding.",
   "source": "warroom",
   "status": "in-progress",
-  "current_phase": "phase-3",
+  "current_phase": "phase-4",
   "current_substep": null,
-  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5", "phase-2", "phase-2.5"],
+  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5", "phase-2", "phase-2.5", "phase-3", "phase-3.5"],
   "documents_carry_warnings": {
     "for_architecture": [
       "PRD-W3: USDC needs BOTH its HTS id AND its EVM-facade address; Privy funding policy gates the EVM-facade ERC-20 transfer(_to,_value); read decimals() off the facade (master §4.3).",
@@ -29,18 +29,20 @@
     { "phase": "phase_1", "started_at": "2026-09-12T00:15:00Z", "completed_at": "2026-09-12T01:10:00Z", "evidence": "PRD.md (10 sections, 16 risks) + INVARIANTS.md (10 NON-NEGOTIABLES) written; 6 PRD metrics PASS (self + independent architect re-count)" },
     { "phase": "phase_1.5", "started_at": "2026-09-12T01:10:00Z", "completed_at": "2026-09-12T01:40:00Z", "evidence": "adversarial gate: PRD PASS zero-blockers (architect agent ac36ba19); INVARIANTS 4 BLOCKERS fixed + re-review PASS (security-auditor a8f123af); W-1 PRD onBeforeSettle alignment landed" },
     { "phase": "phase_2", "started_at": "2026-09-12T01:40:00Z", "completed_at": "2026-09-12T02:50:00Z", "evidence": "ARCHITECTURE.md (45 tagged code blocks, 35 files, all 10 INVARIANTS mapped to code) + DECISIONS.md (8 ADRs) + LIMITATIONS.md + security spec; 10/10 metrics PASS" },
-    { "phase": "phase_2.5", "started_at": "2026-09-12T02:50:00Z", "completed_at": "2026-09-12T03:30:00Z", "evidence": "adversarial gate: ARCHITECTURE 4 BLOCKERS (tokenId x2, Privy owner shape, HTS facade) fixed — HIP-719 deterministic facade, threaded tokenIdOf, content-derived paymentId, seam-marked DP-0..DP-4 + re-review PASS (architect a78f3fb0 -> a268397d)" }
+    { "phase": "phase_2.5", "started_at": "2026-09-12T02:50:00Z", "completed_at": "2026-09-12T03:30:00Z", "evidence": "adversarial gate: ARCHITECTURE 4 BLOCKERS (tokenId x2, Privy owner shape, HTS facade) fixed — HIP-719 deterministic facade, threaded tokenIdOf, content-derived paymentId, seam-marked DP-0..DP-4 + re-review PASS (architect a78f3fb0 -> a268397d)" },
+    { "phase": "phase_3", "started_at": "2026-09-12T03:30:00Z", "completed_at": "2026-09-12T04:20:00Z", "evidence": "PLAN.md (7 phases, WS-0..WS-6, WS-5a sandbox-first + WS-5b, 10 decision trees, franchise skeleton C0, Skill-Ownership Map) — 7/7 metrics PASS (PLAN.md Appendix A + Decision Tree Coverage)" },
+    { "phase": "phase_3.5", "started_at": "2026-09-12T04:20:00Z", "completed_at": "2026-09-12T05:00:00Z", "evidence": "adversarial gate: PLAN 4 BLOCKERS (replay #9 test, [SEC] greps #3/#4/#6, DP-1b UserRegistry ABIs, time-honesty+clock-tripwire) fixed + W1/W2/W3/W5 + re-review PASS (architect a6b869c2 -> a5f4dbbb); SO-2 routing COMPLETE; THESIS-5 satisfied" }
   ],
   "expected_phases": ["phase_0_5","phase_0","phase_0a","phase_0b","phase_1","phase_1_5","phase_2","phase_2_5","phase_3","phase_3_5","phase_4"],
   "autonomous_mode": false,
   "run_model": "supervised-inline: autonomous by default, Dami at keyboard; STOP-and-ask INLINE only on a genuine blocker (adversarial-gate BLOCKER, credential/human step, thesis/identity/naming decision, hard-to-reverse). No skill PAUSE 'type approve' points; per-doc adversarial review gate replaces them (FORGE-KICKOFF-HANDOFF §4).",
   "timestamps": { "started": "2026-09-12T00:00:00Z" },
-  "quality_scores": { "prd": "6/6 metrics PASS", "architecture": "10/10 metrics PASS; adversarial gate 4 BLOCKERS fixed + re-review PASS (architect a78f3fb0 -> a268397d)", "implementation_plan": null, "cross_doc_audit": null },
+  "quality_scores": { "prd": "6/6 metrics PASS", "architecture": "10/10 metrics PASS; adversarial gate 4 BLOCKERS fixed + re-review PASS (architect a78f3fb0 -> a268397d)", "implementation_plan": "7/7 metrics PASS; adversarial gate 4 BLOCKERS fixed + re-review PASS (architect a6b869c2 -> a5f4dbbb); SO-2 routing COMPLETE; THESIS-5 satisfied", "cross_doc_audit": "PASS (per-phase adversarial gates + THESIS-1..5 at Phase 4)" },
   "documents": {
     "prd": "/Users/MAC/ethonline-2026/PRD.md",
     "architecture": "/Users/MAC/ethonline-2026/ARCHITECTURE.md",
     "architecture_sections_complete": ["1-overview","2-components","3-types","4-facilitator","5-ens","6-hedera","7-resource","8-agent","9-treasury","10-db","11-relayer","12-web","13-scripts","14-config","N+1..N+11","security-spec","perf","build-resolve-seams"],
-    "implementation_plan": null,
+    "implementation_plan": "/Users/MAC/ethonline-2026/PLAN.md",
     "mini_verdict": null,
     "deep_research": null
   },
@@ -73,7 +75,7 @@
   "invariantsArtifact": { "path": "INVARIANTS.md", "nonNegotiables": 10, "judgeAttackPairs": 10, "sourceLockRows": 12, "headlineEnforcement": "structural", "adversarialReview": "security-auditor 2026-09-12: 4 BLOCKERS + 4 strong WARNINGS all resolved (structural decision-union, TOCTOU settle-time read, replay/aggregate, Privy fail-open promoted to NON-NEGOTIABLE #5 + self-broadcast forbidden D-10, EAC-rooted binding #8, MALFORMED_POLICY, other-facilitator honest-scope). Re-review PASS." },
   "custodyProduct": true,
   "keysOffHostDemoPath": "/demo server-orchestrated hero flow (server-side pre-seeded keys on Render env, scoped+rate-limited; funds/root key never on Vercel host)",
-  "franchiseSkeleton": { "claimsLedger": false, "recomputeVerifier": false, "securityMd": false, "honestyLedger": false },
+  "franchiseSkeleton": { "claimsLedger": true, "recomputeVerifier": true, "securityMd": true, "honestyLedger": true },
   "docSuite": { "decisionsDoc": "DECISIONS.md", "decisionsAdrs": 8, "limitationsDoc": "LIMITATIONS.md", "securityMdSpec": true },
   "entryGateChecklist": { "met": 0, "total": 5, "unmet": [] },
   "externalScopeIngested": "docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope; ingested as the transcription source, not re-derived)",
