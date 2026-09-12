@@ -1,0 +1,188 @@
+// File: facilitator/server.ts
+// [E-1 RESULT: self-hosted @x402/core + @x402/hedera facilitator - the Blocky402-EQUIVALENT path.]
+// Blocky402 is a hosted product built on this exact package stack (@x402/core + @x402/hedera) exposing the
+// official onBeforeVerify/onBeforeSettle hooks. Its source was not publicly forkable within the E-1 time box
+// (github.com/x402-foundation/x402 carries the SDK + the canonical reference facilitator, not the Blocky402
+// app; blockydevs/blocky402 is not a public repo). Per the E-1 fallback: we self-host a @x402/core +
+// @x402/hedera facilitator using the SAME official hooks - protocol-identical to Blocky402, and the ENS gate
+// still runs in onBeforeSettle PRE-settlement. Wiring mirrors x402-foundation/x402
+// e2e/facilitators/typescript/index.ts (register + verify/settle express routes). No second non-ENS path.
+//
+// This file is the I/O adapter around the PURE gate (facilitator/authorize.ts). It owns the single guarded
+// SDK-proceed emit and every external read/write, encoding:
+//   INVARIANT #1 fail-closed  - proceed is emitted ONLY inside `if ('settle' in d)` (DEV-010 narrowing).
+//   INVARIANT #2 TOCTOU-closed - onBeforeSettle re-reads the policy live (readPolicyNoCache), no cache.
+//   INVARIANT #3 no-DB path    - the enforcement path imports NO database layer; the advisory cache is
+//                                process-memory only, and the settle read is a live on-chain call.
+import express, { type Request, type Response } from 'express';
+import { AsyncLocalStorage } from 'async_hooks';
+import { x402Facilitator } from '@x402/core/facilitator';
+import type { PaymentPayload, PaymentRequirements } from '@x402/core/types';
+import { authorize } from './authorize';
+import { readPolicyCached, readPolicyNoCache } from './ens-read';
+import { hederaScheme, HEDERA_NETWORK } from './hedera-scheme';
+import { logDecision } from './hcs-log';
+import { toCtx, type HederaHookContext } from './decode-ctx';
+import type { PaymentContext, GateDecision, AgentPolicy } from '../types';
+
+// Replay guard for settled paymentIds (process memory; LIMITATIONS notes a prod DB/Redis backing).
+const seen = new Set<string>();
+
+// ---- agentName threading (DP-2) ----
+// The x402 hook context carries NO headers. The X-Leash-Agent header (the ENS record selector) is captured
+// per-request in the express route and read inside the hook via this AsyncLocalStorage.
+const agentNameStore = new AsyncLocalStorage<string>();
+function currentAgentName(): string {
+  return agentNameStore.getStore() ?? '';
+}
+
+// Resolve policy for a read variant, mapping an RPC throw -> RPC_ERROR (INVARIANT #1 fail-closed) and a
+// malformed record -> MALFORMED_POLICY; otherwise hand the policy to the pure gate.
+// Exported so the TOCTOU / binding integration tests can drive the EXACT settle-gate decision path with a
+// real decoded ctx + the real no-cache ENS read (INVARIANT #2), asserting the pre-submit decision.
+export async function decide(
+  ctx: PaymentContext,
+  read: (n: string) => Promise<AgentPolicy | null | 'MALFORMED'>,
+): Promise<GateDecision> {
+  let policy: AgentPolicy | null | 'MALFORMED';
+  try {
+    policy = await read(ctx.agentName);
+  } catch {
+    return { abort: true, reason: 'RPC_ERROR' }; // read failure fails closed
+  }
+  if (policy === 'MALFORMED') return { abort: true, reason: 'MALFORMED_POLICY' };
+  return authorize(policy, ctx, seen);
+}
+
+// Translate a GateDecision to the SDK hook contract (void proceed | {abort, reason}).
+// [DEV-010] Narrow with `'settle' in d` (the abort variant has no `settle` key -> `d.settle === true`
+// does not compile under strict against the GateDecision union). SDK-proceed (return undefined) is emitted
+// ONLY inside this affirmative guard (INVARIANT #1).
+function toHook(d: GateDecision): void | { abort: true; reason: string } {
+  if ('settle' in d) return; // proceed - the ONLY affirmative path
+  return { abort: true, reason: d.reason };
+}
+
+// Build the PaymentContext, failing closed to RPC_ERROR if the payload is structurally undecodable.
+function safeCtx(hookCtx: HederaHookContext): PaymentContext | null {
+  try {
+    return toCtx(hookCtx, currentAgentName());
+  } catch {
+    return null;
+  }
+}
+
+export const facilitator = new x402Facilitator()
+  .register(HEDERA_NETWORK, hederaScheme())
+  // Advisory pre-screen (30s cache OK). ALLOW here is NOT authoritative (INVARIANT #3).
+  .onBeforeVerify(async (hookCtx) => {
+    const ctx = safeCtx(hookCtx as unknown as HederaHookContext);
+    if (!ctx) return { abort: true, reason: 'RPC_ERROR' };
+    const d = await decide(ctx, readPolicyCached);
+    if (!('settle' in d)) {
+      await logDecision({
+        name: ctx.agentName, decision: 'DENY', amount: ctx.amount.toString(),
+        payTo: ctx.payTo, reason: d.reason, ts: new Date().toISOString(),
+      });
+    }
+    return toHook(d);
+  })
+  // AUTHORITATIVE decision - NO cache. This gates settle and closes TOCTOU (INVARIANT #2).
+  .onBeforeSettle(async (hookCtx) => {
+    const ctx = safeCtx(hookCtx as unknown as HederaHookContext);
+    if (!ctx) return { abort: true, reason: 'RPC_ERROR' };
+    const d = await decide(ctx, readPolicyNoCache);
+    const allow = 'settle' in d;
+    await logDecision({
+      name: ctx.agentName, decision: allow ? 'ALLOW' : 'DENY', amount: ctx.amount.toString(),
+      payTo: ctx.payTo, reason: allow ? undefined : d.reason, ts: new Date().toISOString(),
+    });
+    if (allow) seen.add(ctx.paymentId); // consume the paymentId ONLY on an authorized settle
+    return toHook(d);
+  });
+
+// Exhaustiveness guard (INVARIANT #1): a future GateReason with no branch is a COMPILE ERROR here, not a
+// runtime demo failure. `'settle' in d` narrows to the abort variant in the switch (DEV-010).
+function _assertNever(x: never): never { throw new Error('unhandled GateReason: ' + String(x)); }
+export function _exhaustive(d: GateDecision): void {
+  if ('settle' in d) return;
+  switch (d.reason) {
+    case 'OVER_CAP':
+    case 'OFF_ALLOWLIST':
+    case 'REVOKED':
+    case 'BINDING_MISMATCH':
+    case 'MALFORMED_POLICY':
+    case 'REPLAY':
+    case 'RPC_ERROR':
+      return;
+    default:
+      return _assertNever(d.reason);
+  }
+}
+
+// ---- self-hosted facilitator HTTP surface (the endpoints HttpFacilitatorClient calls) ----
+// Each route captures X-Leash-Agent into the AsyncLocalStorage for the duration of verify/settle so the
+// hooks can read the ENS record selector (DP-2).
+const app = express();
+app.use(express.json({ limit: '1mb' }));
+
+function agentHeader(req: Request): string {
+  const h = req.headers['x-leash-agent'];
+  return (Array.isArray(h) ? h[0] : h) ?? '';
+}
+
+app.post('/verify', async (req: Request, res: Response) => {
+  const { paymentPayload, paymentRequirements } = req.body as {
+    paymentPayload: PaymentPayload; paymentRequirements: PaymentRequirements;
+  };
+  if (!paymentPayload || !paymentRequirements) {
+    return res.status(400).json({ error: 'Missing paymentPayload or paymentRequirements' });
+  }
+  try {
+    const result = await agentNameStore.run(agentHeader(req), () =>
+      facilitator.verify(paymentPayload, paymentRequirements),
+    );
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
+app.post('/settle', async (req: Request, res: Response) => {
+  const { paymentPayload, paymentRequirements } = req.body as {
+    paymentPayload: PaymentPayload; paymentRequirements: PaymentRequirements;
+  };
+  if (!paymentPayload || !paymentRequirements) {
+    return res.status(400).json({ error: 'Missing paymentPayload or paymentRequirements' });
+  }
+  try {
+    const result = await agentNameStore.run(agentHeader(req), () =>
+      facilitator.settle(paymentPayload, paymentRequirements),
+    );
+    return res.json(result);
+  } catch (error) {
+    // A hook abort surfaces as a thrown "Settlement aborted: <reason>"; return it as a SettleResponse.
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (msg.includes('aborted')) {
+      return res.json({ success: false, errorReason: msg.replace(/^.*aborted:\s*/i, ''), network: HEDERA_NETWORK });
+    }
+    return res.status(500).json({ error: msg });
+  }
+});
+
+app.get('/supported', (_req: Request, res: Response) => res.json(facilitator.getSupported()));
+app.get('/healthz', (_req: Request, res: Response) => res.json({ ok: true }));
+
+// Start only when run directly (not when imported by a test). DP-2: the first request logs the REAL hook
+// context so the decoded field shape is observable.
+const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+if (isMain) {
+  const port = Number(process.env.FACILITATOR_PORT ?? 8401);
+  app.listen(port, () => {
+    console.log(`[leash-facilitator] self-hosted @x402/core+@x402/hedera (Blocky402-equivalent) on :${port}`);
+    console.log(`[leash-facilitator] scheme registered: exact @ ${HEDERA_NETWORK}`);
+    console.log(`[leash-facilitator] getSupported() = ${JSON.stringify(facilitator.getSupported())}`);
+  });
+}
+
+export { app };

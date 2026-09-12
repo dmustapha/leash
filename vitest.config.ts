@@ -16,6 +16,7 @@ const include = [TIER_GLOB[tier] ?? TIER_GLOB.unit];
 export default defineConfig({
   test: {
     include,
-    exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/.next/**'],
+    // contracts-v2 is the vendored ENSv2 repo with its OWN hardhat test runner (not the LEASH TS tiers).
+    exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/.next/**', '**/contracts-v2/**'],
   },
 });
