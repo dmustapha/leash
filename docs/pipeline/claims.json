@@ -2,13 +2,20 @@
   "schema": "leash.claims.v1",
   "generatedBy": "hackathon-build @ Task 6.2",
   "note": "Machine mirror of CLAIMS.md. Every headline claim carries a resolvable pointer and a recompute path. verify-claims.ts re-derives the 'recomputed' fields and diffs them against 'asserted'; it refuses to read back a stored success.",
-  "network": { "evm": "sepolia", "hedera": "testnet" },
+  "network": {
+    "evm": "sepolia",
+    "hedera": "testnet"
+  },
   "claims": [
     {
       "id": "C-ENS-CAP-DATA",
       "leg": "ens",
       "claim": "The data agent's live leash.policy cap is 5 USDC (raw 5000000, 6 decimals).",
-      "asserted": { "name": "data.acme.leash.eth", "maxPerCallRaw": "5000000", "maxPerCallUsdc": "5" },
+      "asserted": {
+        "name": "data.acme.leash.eth",
+        "maxPerCallRaw": "5000000",
+        "maxPerCallUsdc": "5"
+      },
       "recomputePath": "USDC = maxPerCallRaw / 1e6 ; live cross-check reads leash.policy text via POLICY_RESOLVER.text(namehash,'leash.policy')",
       "pointer": {
         "kind": "ens_text",
@@ -22,7 +29,11 @@
       "id": "C-ENS-CAP-PAYMENTS",
       "leg": "ens",
       "claim": "The payments agent's live leash.policy cap is 25 USDC (raw 25000000, 6 decimals).",
-      "asserted": { "name": "payments.acme.leash.eth", "maxPerCallRaw": "25000000", "maxPerCallUsdc": "25" },
+      "asserted": {
+        "name": "payments.acme.leash.eth",
+        "maxPerCallRaw": "25000000",
+        "maxPerCallUsdc": "25"
+      },
       "recomputePath": "USDC = maxPerCallRaw / 1e6 ; live cross-check reads leash.policy text via POLICY_RESOLVER.text(namehash,'leash.policy')",
       "pointer": {
         "kind": "ens_text",
@@ -35,7 +46,11 @@
       "id": "C-ENS-REVOKE",
       "leg": "ens",
       "claim": "Revocation is a real Sepolia transaction: clearPolicy on the data agent removes its leash.policy record on-chain (the org kill switch).",
-      "asserted": { "name": "data.acme.leash.eth", "action": "clearPolicy", "resultsIn": "REVOKED" },
+      "asserted": {
+        "name": "data.acme.leash.eth",
+        "action": "clearPolicy",
+        "resultsIn": "REVOKED"
+      },
       "recomputePath": "resolvable Sepolia tx hash; enforcement re-read returns empty policy -> REVOKED",
       "pointer": {
         "kind": "evm_tx",
@@ -47,7 +62,13 @@
       "id": "C-HEDERA-GASFREE",
       "leg": "hedera",
       "claim": "Hedera x402 settlement is gas-free for the agent: the agent (0.0.10497601) pays 0 HBAR gas while the facilitator fee-payer (0.0.10487802) covers the tx fee (native x402 fee-payer scheme). The agent is only debited the 3 USDC transfer.",
-      "asserted": { "agent": "0.0.10497601", "agentHbarSpent": "0", "feePayer": "0.0.10487802", "feePayerPaysGas": true, "scheme": "hedera-x402-feepayer" },
+      "asserted": {
+        "agent": "0.0.10497601",
+        "agentHbarSpent": "0",
+        "feePayer": "0.0.10487802",
+        "feePayerPaysGas": true,
+        "scheme": "hedera-x402-feepayer"
+      },
       "recomputePath": "resolvable Mirror Node tx: transfers show the agent account with ZERO HBAR debit; charged_tx_fee is debited from the feePayer (tx id is feePayer@timestamp)",
       "pointer": {
         "kind": "hedera_tx",
@@ -60,7 +81,11 @@
       "id": "C-HCS-AUDIT",
       "leg": "hedera",
       "claim": "Every gate decision is written to an immutable HCS audit topic: an ALLOW (seq#1) and a DENY OVER_CAP (seq#2) are both on-chain.",
-      "asserted": { "topicId": "0.0.10496492", "allowSeq": 1, "denyOverCapSeq": 2 },
+      "asserted": {
+        "topicId": "0.0.10496492",
+        "allowSeq": 1,
+        "denyOverCapSeq": 2
+      },
       "recomputePath": "resolvable Hedera Mirror Node topic messages list contains an ALLOW at seq 1 and a DENY OVER_CAP at seq 2",
       "pointer": {
         "kind": "hedera_topic",
@@ -72,7 +97,11 @@
       "id": "C-PRIVY-DENY",
       "leg": "privy",
       "claim": "The Privy funding rail fails closed: an over-fundingCap transfer from a P-256-owned treasury returns FUNDING_DENIED (Privy policy_violation) with no txHash, before broadcast.",
-      "asserted": { "overCapResult": "FUNDING_DENIED", "privyType": "policy_violation", "txHash": null },
+      "asserted": {
+        "overCapResult": "FUNDING_DENIED",
+        "privyType": "policy_violation",
+        "txHash": null
+      },
       "recomputePath": "in-cap fund broadcasts a real USDC transfer (resolvable tx); over-cap returns FUNDING_DENIED with no txHash",
       "pointer": {
         "kind": "hedera_tx",
@@ -83,65 +112,130 @@
     {
       "id": "C-COSIGN-SETTLE",
       "leg": "hedera",
-      "status": "PENDING",
+      "status": "PROVEN",
       "claim": "A co-signed, in-cap x402 pay SETTLES on the 2-of-2 KeyList[agentPub, leashCoSignerPub] threshold-2 spending account: the agent's 1-of-2 plus LEASH's post-gate co-signature produce a real Hedera settle tx. Control = TRUE, facilitator-trusted co-sign, NOT chain-enforced trustlessness.",
-      "asserted": { "accountType": "keylist_threshold_2", "cosignSite": "single_post_gate_settle", "settles": true },
+      "asserted": {
+        "accountType": "keylist_threshold_2",
+        "cosignSite": "single_post_gate_settle",
+        "settles": true
+      },
       "recomputePath": "resolvable Mirror Node settle tx from the threshold-2 KeyList spending account; co-sign emitted at the single post-gate site (grep-proven single emit site)",
-      "pointer": { "kind": "hedera_tx", "note": "PENDING — settle txId lands from agent/vm3.live.ts (Group V)" }
+      "pointer": {
+        "kind": "hedera_tx",
+        "note": "PENDING \u2014 settle txId lands from agent/vm3.live.ts (Group V)"
+      },
+      "evidence": "PROVEN (S-GATE proto + VM-3 BEAT-1, 2026-09-12: KeyList 0.0.10508343; S-GATE tx 0.0.10487802@1789241326.656309368)"
     },
     {
       "id": "C-AGENT-ALONE-DENY",
       "leg": "hedera",
-      "status": "PENDING",
+      "status": "PROVEN",
       "claim": "Agent-alone cannot spend: the agent's valid 1-of-2 payload submitted WITHOUT LEASH's co-signature yields NO settle and a clean MISSING_COSIGN gate reason, never a caught Hedera INVALID_SIGNATURE.",
-      "asserted": { "agentAloneResult": "MISSING_COSIGN", "settles": false, "cosignCallsOnAbort": 0 },
+      "asserted": {
+        "agentAloneResult": "MISSING_COSIGN",
+        "settles": false,
+        "cosignCallsOnAbort": 0
+      },
       "recomputePath": "agent-alone attempt -> reason MISSING_COSIGN, no settle tx; co-sign spy shows 0 calls on gate-abort",
-      "pointer": { "kind": "test", "test": "agent/vm3.live.ts", "note": "PENDING — Group V / VM-3" }
+      "pointer": {
+        "kind": "test",
+        "test": "agent/vm3.live.ts",
+        "note": "PENDING \u2014 Group V / VM-3"
+      },
+      "evidence": "PROVEN (VM-3 BEAT-2, 2026-09-12: MISSING_COSIGN, no settle)"
     },
     {
       "id": "C-OPERATOR-ALONE-DENY",
       "leg": "hedera",
-      "status": "PENDING",
+      "status": "PROVEN",
       "claim": "Operator/LEASH-alone cannot move the agent's funds: LEASH holds only LEASH_COSIGNER_KEY + the agent's PUBLIC key (never agentPriv, SR-1), so an operator+cosigner-only move does NOT settle. Facilitator-trusted, NOT trustless.",
-      "asserted": { "operatorAloneSettles": false, "agentPrivHeldByLeash": false },
+      "asserted": {
+        "operatorAloneSettles": false,
+        "agentPrivHeldByLeash": false
+      },
       "recomputePath": "operator/cosigner-only spend attempt -> no settle; agentPriv absent from facilitator/DB/env (grep proof)",
-      "pointer": { "kind": "test", "test": "agent/vm3.live.ts", "note": "PENDING — Group V / VM-3 + facilitator import-graph" }
+      "pointer": {
+        "kind": "test",
+        "test": "agent/vm3.live.ts",
+        "note": "PENDING \u2014 Group V / VM-3 + facilitator import-graph"
+      },
+      "evidence": "PROVEN (S-GATE BEAT-3 + VM-3 BEAT-3, 2026-09-12: operator+cosigner-only INVALID_SIGNATURE; 0 agentPriv in facilitator/)"
     },
     {
       "id": "C-IDENTITY-ONCHAIN-RESOLVED",
       "leg": "ens",
-      "status": "PENDING",
+      "status": "PROVEN",
       "claim": "On-chain-resolved external-identity binding: register resolves the ERC-8004 owner live via the canonical Sepolia Identity Registry (0x8004A818BFB912233c491871b3d84c89A494BD9e) and writes agent.erc8004 (CAIP) + agent.address; a mismatched owner errors and does not register. Labeled on-chain-resolved, NOT verified (ownerOf is not proof-of-control).",
-      "asserted": { "registry": "0x8004A818BFB912233c491871b3d84c89A494BD9e", "label": "on-chain-resolved", "mismatchErrors": true },
+      "asserted": {
+        "registry": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+        "label": "on-chain-resolved",
+        "mismatchErrors": true
+      },
       "recomputePath": "live ownerOf/getAgentWallet resolves an EVM owner; text(node,'agent.erc8004'|'agent.address') non-empty post-register; mismatched owner -> error, no policy write",
-      "pointer": { "kind": "evm_call", "script": "scripts/ens/erc8004.ts", "note": "PENDING — Group V / VM-3" }
+      "pointer": {
+        "kind": "evm_call",
+        "script": "scripts/ens/erc8004.ts",
+        "note": "PENDING \u2014 Group V / VM-3"
+      },
+      "evidence": "PROVEN (erc8004.live.ts 3/3, 2026-09-12: agentId 7395 -> 0x92AAe0857979a139344f5b6F008e71F27A507522)"
     },
     {
       "id": "C-ROLLING-CAP-DENY",
       "leg": "hedera",
-      "status": "PENDING",
-      "claim": "Rolling daily/weekly cap DENY (SOFT budget): with dailyCap/weeklyCap declared, a pay that pushes the rolling ALLOW total (HCS via mirror, windowed by consensus_timestamp) over the cap returns OVER_DAILY_CAP/OVER_WEEKLY_CAP and does NOT settle. Soft budget on a lagging mirror index — NOT trustless/exact/settle-authoritative; worst case approx C x maxPerCall under concurrency.",
-      "asserted": { "dailyReason": "OVER_DAILY_CAP", "weeklyReason": "OVER_WEEKLY_CAP", "budgetType": "soft", "settlesWhenOver": false },
+      "status": "PROVEN",
+      "claim": "Rolling daily/weekly cap DENY (SOFT budget): with dailyCap/weeklyCap declared, a pay that pushes the rolling ALLOW total (HCS via mirror, windowed by consensus_timestamp) over the cap returns OVER_DAILY_CAP/OVER_WEEKLY_CAP and does NOT settle. Soft budget on a lagging mirror index \u2014 NOT trustless/exact/settle-authoritative; worst case approx C x maxPerCall under concurrency.",
+      "asserted": {
+        "dailyReason": "OVER_DAILY_CAP",
+        "weeklyReason": "OVER_WEEKLY_CAP",
+        "budgetType": "soft",
+        "settlesWhenOver": false
+      },
       "recomputePath": "rolling total near-full -> next pay reason OVER_DAILY_CAP/OVER_WEEKLY_CAP, no settle tx",
-      "pointer": { "kind": "test", "source": "facilitator/spend-rollup.ts", "test": "agent/vm3.live.ts", "note": "PENDING — Group V / VM-3" }
+      "pointer": {
+        "kind": "test",
+        "source": "facilitator/spend-rollup.ts",
+        "test": "agent/vm3.live.ts",
+        "note": "PENDING \u2014 Group V / VM-3"
+      },
+      "evidence": "PROVEN (VM-3 BEAT-5, 2026-09-12: OVER_DAILY_CAP, no settle)"
     },
     {
       "id": "C-WINDOW-DENY",
       "leg": "hedera",
-      "status": "PENDING",
+      "status": "PROVEN",
       "claim": "Outside-window DENY: with allowedWindows declared, a pay whose mirror consensus_timestamp falls outside the window returns OUTSIDE_WINDOW (stateless gate) and does NOT settle.",
-      "asserted": { "reason": "OUTSIDE_WINDOW", "keyedOn": "consensus_timestamp", "settlesOutside": false },
+      "asserted": {
+        "reason": "OUTSIDE_WINDOW",
+        "keyedOn": "consensus_timestamp",
+        "settlesOutside": false
+      },
       "recomputePath": "out-of-window pay -> reason OUTSIDE_WINDOW, no submit; in-window -> settles",
-      "pointer": { "kind": "test", "source": "facilitator/authorize.ts", "test": "authorize boundary tests + agent/vm3.live.ts", "note": "PENDING — Group V / VM-3" }
+      "pointer": {
+        "kind": "test",
+        "source": "facilitator/authorize.ts",
+        "test": "authorize boundary tests + agent/vm3.live.ts",
+        "note": "PENDING \u2014 Group V / VM-3"
+      },
+      "evidence": "PROVEN (VM-3 BEAT-6, 2026-09-12: OUTSIDE_WINDOW, no settle)"
     },
     {
       "id": "C-MIRROR-DOWN-DENY",
       "leg": "hedera",
-      "status": "PENDING",
-      "claim": "Mirror-down => RPC_ERROR DENY (fail-closed): when a cap is declared and the mirror node is unreachable, spend-rollup throws (never defaults to 0), so the pay ABORTS with RPC_ERROR and NEVER settles — a dropped/unavailable index cannot silently un-cap.",
-      "asserted": { "reason": "RPC_ERROR", "failsClosed": true, "defaultsToZero": false },
+      "status": "PROVEN",
+      "claim": "Mirror-down => RPC_ERROR DENY (fail-closed): when a cap is declared and the mirror node is unreachable, spend-rollup throws (never defaults to 0), so the pay ABORTS with RPC_ERROR and NEVER settles \u2014 a dropped/unavailable index cannot silently un-cap.",
+      "asserted": {
+        "reason": "RPC_ERROR",
+        "failsClosed": true,
+        "defaultsToZero": false
+      },
       "recomputePath": "point the mirror at a dead endpoint with a cap declared -> reason RPC_ERROR, no settle tx",
-      "pointer": { "kind": "test", "source": "facilitator/spend-rollup.ts", "test": "kill-endpoint test + agent/vm3.live.ts", "note": "PENDING — Group V / VM-3" }
+      "pointer": {
+        "kind": "test",
+        "source": "facilitator/spend-rollup.ts",
+        "test": "kill-endpoint test + agent/vm3.live.ts",
+        "note": "PENDING \u2014 Group V / VM-3"
+      },
+      "evidence": "PROVEN @ integration/unit tier (spend-rollup.test+integration, 2026-09-12: throw->RPC_ERROR, not faked live)"
     }
   ],
   "contracts": {
