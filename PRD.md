@@ -107,10 +107,10 @@ An org mints a child ENS name for each agent and writes its `leash.policy` text 
 5. Judge triggers **SECOND RAIL**: a leaked key tries to over-fund an agent from the treasury → Privy policy DENY. HCS audit trail scrolls.
 
 ### Flow 2: Real console onboarding (`/app`, bring-your-own-org, multi-tenant)
-1. User signs in with Privy email/Google (embedded wallet, no MetaMask).
-2. LEASH provisions their org subname `<org>.leash.eth` under `leash.eth` (gas sponsored by the relayer, scoped to that subname).
-3. User registers an agent: LEASH mints `data.<org>.leash.eth`, sets its `leash.policy`, records it in Postgres.
-4. User sets caps/allowlists, funds the agent from the Privy treasury (policy-gated), watches live spend, and revokes with one click - all gas-sponsored.
+1. User signs in with Privy email/Google (embedded wallet, no MetaMask). Every `/app` API route verifies the Privy auth token server-side and derives the tenant from it, never from client input (A1, INVARIANT #11).
+2. LEASH provisions their org subname `<org>.leash.eth` under `leash.eth` (gas sponsored by the relayer, scoped to that subname). The org name is bound to the owning `privyUserId`, so a second user cannot reuse it (A2). On provision, the EAC kill-switch role is granted to the signed-in user's Privy embedded-wallet address ALONGSIDE the relayer, so the user co-holds real on-chain revoke authority while the relayer stays the delegated operator for gasless ops (C1, INVARIANT #12).
+3. User registers an agent: LEASH mints `data.<org>.leash.eth`, sets its `leash.policy`, writes agent-identity records (`agent.description`, `agent.type`, `avatar`, optional ERC-8004 pointer) plus a reverse name (D1, advisory-only, INVARIANT #13), adds the new agent to the Privy funding-policy allowlist so it can be funded in-cap (A3), and records it in Postgres.
+4. User sets caps, EDITS the allowlist (rewrites `leash.policy` on-chain, B1), funds the agent from the Privy treasury (policy-gated, in-cap ALLOW / over-fund DENY on the real token, A3), watches a LIVE per-agent + org-level spend feed indexed from HCS (B3), revokes with one click, and can UN-REVOKE / re-activate a revoked agent (setPolicy rebind, B2) - all gas-sponsored.
 
 ### Flow 3: Revocation (shared mechanism, both paths)
 1. Org clears the text record (`setText('leash.policy','')`) OR `revokeRoles(tokenId, SET_RESOLVER|SET_SUBREGISTRY, agentAddr)` - one Sepolia tx.
@@ -140,8 +140,8 @@ ResourceServer -> Agent: paid data | 402 with reason
 
 ### ENS provisioning layer
 - **Purpose:** provision + control the org naming hierarchy and per-agent policy records on ENSv2 Sepolia.
-- **Interface:** scripts/functions - `register2LD`, `deployUserRegistry`, `grantRole`, `mintSubname`, `setPolicy`, `setReverse`, `readPolicy`, `revoke`, `loadAddresses`.
-- **Key data structures:** `leash.policy` JSON `{ "maxPerCall": "5000000", "allowedPayees": ["0.0.PAYEE"], "hederaAccount": "0.0.AGENT", "token": "0.0.USDC" }` (amounts raw smallest-unit; USDC 6 decimals).
+- **Interface:** scripts/functions - `register2LD`, `deployUserRegistry`, `grantRole`, `mintSubname`, `setPolicy`, `setReverse`, `readPolicy`, `revoke`, `loadAddresses`. **Agent-identity writes (D1):** `setIdentity` writes agent-identity text records (`agent.description`, `agent.type`, `avatar`, optional ERC-8004 pointer) alongside `leash.policy` on each agent child, and `setReverse` sets a reverse name for the agent account. These records are ADVISORY identity metadata surfaced in `/app` + `/proof` + demo; the facilitator's authorize path NEVER reads them (INVARIANT #13).
+- **Key data structures:** `leash.policy` JSON `{ "maxPerCall": "5000000", "allowedPayees": ["0.0.PAYEE"], "hederaAccount": "0.0.AGENT", "token": "0.0.USDC" }` (amounts raw smallest-unit; USDC 6 decimals). Agent-identity keys are SEPARATE text records, never mixed into `leash.policy`.
 - **Dependencies:** viem ^2.56, Sepolia RPC, pinned ENSv2 addresses (2026-06-29 set) or runtime load from `contracts-v2/deployments/sepolia/*.json`.
 - **Constraints:** commit-reveal 2LD registration needs ~60s wait → local setup script only (exceeds serverless timeouts). Runtime ops (mint subname, setText, revoke) are single fast txs → fine in Vercel API routes.
 
@@ -150,7 +150,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Interface:** `new x402Facilitator().registerScheme(2,["hedera:testnet"],hederaScheme).onBeforeVerify(hook).onBeforeSettle(hook)`. SDK hook contract is `void | {abort:true, reason:string}`; context carries `{payload, requirements}`. Internally a pure `authorize(ctx): {settle:true,auth} | {abort:true,reason}` (closed union, no proceed default) drives both hooks; the adapter emits SDK-proceed only under `if(d.settle===true)`. `onBeforeVerify` = advisory pre-screen (≤30s cache); `onBeforeSettle` = authoritative no-cache read (closes TOCTOU, INVARIANTS #2).
 - **Key data structures:** decoded payment `{payer, amount, asset, payTo}`; ENS policy JSON; HCS entry `{name, decision, amount, payTo, reason, ts}`.
 - **Dependencies:** @x402/core ~2.25, @x402/hedera 2.25, viem, @hiero-ledger/sdk 2.85.0.
-- **Constraints:** amount and maxPerCall compared as BigInt raw units. NO cache on the demo revoke path; 30s in-memory cache elsewhere; on RPC failure → error, never allow.
+- **Constraints:** amount and maxPerCall compared as BigInt raw units. NO cache on the demo revoke path; 30s in-memory cache elsewhere; on RPC failure → error, never allow. **Durable replay store (A5, INVARIANT #14):** the `seen` paymentId set is Neon-backed so a replayed `X-PAYMENT` is rejected `REPLAY` even across a facilitator restart (Render spin-down). The durable store is on the replay-guard path ONLY; enforcement still reads live ENS, never the DB (INVARIANT #3 intact).
 
 ### Resource server
 - **Purpose:** the live x402-gated service Hedera requires.
@@ -166,13 +166,13 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Purpose:** org treasury + funding policy + leaked-key DENY.
 - **Interface:** `walletApi.createPolicy(...)`, `walletApi.createWallet({chainType:'ethereum', owner:<P-256>, policyIds:[id]})`, `walletApi.ethereum.sendTransaction(...)` with `caip2:'eip155:296'`.
 - **Key data structures:** funding policy - ALLOW `eth_sendTransaction` where ERC-20 `transfer._to in [agentAddrs]` AND `transfer._value lte fundingCap`; default DENY.
-- **Constraints:** wallet MUST have a P-256 owner and be driven via the SDK (raw calls fail-OPEN). `fundingCap` pinned raw units, distinct from per-call `maxPerCall`.
+- **Constraints:** wallet MUST have a P-256 owner and be driven via the SDK (raw calls fail-OPEN). `fundingCap` pinned raw units, distinct from per-call `maxPerCall`. **Funding-allowlist reconcile (A3):** on agent register, the new agent EVM-facade address is added to the Privy funding-policy allowlist so an in-cap `Fund` ALLOWS (real transfer) while an over-fund still DENIES `FUNDING_DENIED`, both on the real token. The default action stays DENY; the allowlist grows one entry per registered agent.
 
 ### Web dashboard (two paths)
 - **Purpose:** `/demo` sandbox (scored) + `/app` real console (multi-tenant).
-- **Interface:** server-side API routes for ENS ops, agent payment trigger, Privy treasury, sandbox orchestration.
+- **Interface:** server-side API routes for ENS ops, agent payment trigger, Privy treasury, sandbox orchestration. **Authz layer (A1, INVARIANT #11):** every `/app` console route (org, agents, revoke, pay, fund) runs `verifyAuthToken` server-side and derives `privyUserId` from the verified token, never from client-supplied query/body. A request with no valid token, or naming another tenant's id, is rejected 401/403 with no mutation. New console controls (B1 allowlist edit, B2 un-revoke) are ordinary authz-guarded routes.
 - **Key data structures:** see §Database.
-- **Constraints:** judge-sandbox path must never depend on the real-console path (§13.6).
+- **Constraints:** judge-sandbox path must never depend on the real-console path (§13.6). The `/demo` sandbox is server-orchestrated and is NOT behind the auth-token layer (no login by design); the authz layer applies to `/app` console routes only.
 
 ### Database (Postgres/Neon)
 - **Purpose:** app/index layer, per-user views, activity feeds, metadata not on-chain.
@@ -221,9 +221,9 @@ ResourceServer -> Agent: paid data | 402 with reason
 **Action:** dashboard renders live records.
 
 ### Scene 2: GRANT (0:20–1:00)
-**Screen:** org mints `data.acme.leash.eth` cap 5 USDC + allowlist; text record + EAC role shown on-chain.
-**Voiceover:** "The org mints a child name with a 5-USDC cap and an allowlist. That policy lives in the ENS resolver record."
-**Action:** dashboard form → viem `register` + `setText` tx → Sepolia explorer confirmation.
+**Screen:** the live `/app` register form mints `data.acme.leash.eth` cap 5 USDC + allowlist; the real `register` + `setText` tx (policy + agent-identity records) + EAC role shown on-chain. This is a REAL register shot from the console (E1, now that 5.4a login is done), not a mock affordance.
+**Voiceover:** "The org mints a child name with a 5-USDC cap and an allowlist. That policy lives in the ENS resolver record, right next to the agent's identity."
+**Action:** `/app` register form → relayer-sponsored viem `register` + `setText` (policy) + identity records (D1) → Sepolia explorer confirmation of the real txs.
 
 ### Scene 3: SPEND, gas-free (1:00–1:40)
 **Screen:** agent pays a whitelisted API within cap.
@@ -242,15 +242,15 @@ ResourceServer -> Agent: paid data | 402 with reason
 **Action:** split-screen resolver ↔ 402 flips pass→fail.
 
 ### Scene 6: SECOND RAIL + real product (2:40–3:00)
-**Screen:** leaked key over-funds an agent from treasury → Privy policy DENY. HCS audit trail scrolls. Quick cut to `/app`: a real Privy email login provisioning a fresh org subname (Flow 2, "it's a real product" beat).
-**Voiceover:** "The funding rail is independent: a leaked key can't over-fund an agent, Privy's policy denies it. And this isn't just a sandbox: sign in, and you get your own org namespace, gas-sponsored. Two rails, one honest control plane."
-**Action:** Privy DENY + HCS log; then the real-console login + subname provision.
+**Screen:** leaked key over-funds an agent from treasury → Privy policy DENY. The live per-agent + org-level spend feed indexed from HCS scrolls (B3). Quick cut to the REAL `/app` login (E2, 5.4a done): a real Privy email/Google login provisioning a fresh org subname, where the signed-in user co-holds the kill-switch role for their own agents (Flow 2, "it's a real product" beat).
+**Voiceover:** "The funding rail is independent: a leaked key can't over-fund an agent, Privy's policy denies it, and every decision lands in the live spend feed. And this isn't just a sandbox: sign in, get your own org namespace, gas-sponsored, and you hold the off-switch for your own agents. Two rails, one honest control plane."
+**Action:** Privy DENY + live HCS-indexed spend feed; then the real-console login + subname provision (user co-holds the role, C1).
 
 ### Flow → Scene map (Metric 2 alignment)
 | User flow (§3) | Demo scenes |
 |---|---|
-| Flow 1: Judge Sandbox hero flow | Scenes 1-6 (primary) |
-| Flow 2: Real console onboarding | Scene 6 (real-product beat: login + subname provision) |
+| Flow 1: Judge Sandbox hero flow | Scenes 1, 3-5 (SPEND/REFUSE/KILL beats + world) |
+| Flow 2: Real console onboarding | Scene 2 (live `/app` register mint+setText, E1) + Scene 6 (login + subname provision + user co-holds role, E2/C1) |
 | Flow 3: Revocation | Scene 5 (KILL) |
 
 > **Voice & copy compliance:** no em dashes in voiceover delivery; confident, technical, direct. Every beat is a real tx. Honest framing throughout ("the facilitator we run enforces the org's ENS-declared policy; Privy is the independent second rail"). Never "trustless" / "the chain enforces the cap".
@@ -295,6 +295,9 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 | R-14 | Vercel `.env` clobber wipes a funds-controlling key | MED | LOW | Key loss | Guard every vercel call (move .env out + restore); no scripts-only signing key on host | PLAN Phase deploy |
 | R-15 | Single-commit-day DQ / missing AI attribution | MED | LOW | Submission DQ | Granular commits from hour 1; AI-ATTRIBUTION.md + spec files | PLAN all phases + package |
 | R-16 | Neon free-tier / connection limits under demo load | LOW | LOW | DB hiccup | Pooled connection string (verified); DB off the enforcement path | PLAN Phase 5 |
+| R-17 | Console authz / IDOR: a request with no token or naming another tenant reads or mutates cross-tenant data | HIGH | MED (if unguarded) | Cross-tenant leak / rogue mutation; B2B credibility loss | `verifyAuthToken` on every `/app` route; tenant derived from the verified token, never client input; foreign-id → 401/403 no mutation (INVARIANT #11) | WS7 A1; FEATURE-OBSERVABLES F-016 |
+| R-18 | Render cold-start / spin-down: facilitator restarts mid-demo and loses in-memory replay state | MED | MED | In-memory `seen` set cleared → a replay could slip; cold-start stall in the video | Durable Neon-backed replay store (INVARIANT #14) so `REPLAY` survives restart; deploy keep-warm ping or `plan:starter` (DS-5) | WS7 A5; PULSE DS-5; FEATURE-OBSERVABLES F-008 |
+| R-19 | Rate-limit / balance drain: rapid repeat `/api/demo` or console calls drain the fee-payer / agent balance | MED | MED | Judge sandbox runs dry mid-judging | Per-IP/session token-bucket rate limit returns `429` before balances drain (A4) | WS7 A4; FEATURE-OBSERVABLES F-019 |
 
 ### Risk Categories Covered
 - [x] Technical (R-2, R-3, R-4, R-7, R-8, R-12, R-13, R-16)
@@ -315,10 +318,12 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 - **60-second test:** the KILL beat - judge clicks revoke, watches the next identical call fail closed - is the try-it moment.
 - **Landing/console split:** `/` landing → `/demo` (sandbox) + `/app` (real). Plain language on the surface; jargon behind `<details>`.
 - **Demo-Insurance Invariant Check:** LEASH's claim is verifiable revocation. Fabricated state is FORBIDDEN outright (TASTE U7 / thesis INVARIANT). Seed state is real pre-produced txs, earned not fabricated. No precache/fallback on the revoke path.
+- **Spend-feed monitoring surface (B3):** `/app` shows a LIVE per-agent + org-level spend feed indexed from HCS (name, decision, amount, reason, ts), with an agent drill-down (policy + recent ALLOW/DENY); a compact audit scroll appears in `/demo` for Scene 6. This is the "control plane the pitch implies" made visible: judges see real decisions land, not just a single settle.
+- **User co-holds their agents (C1):** in `/app`, the signed-in user's Privy embedded-wallet address holds the kill-switch role on-chain for their own agents alongside the relayer (delegated operator). The off-switch is genuinely the user's, not operator-only (INVARIANT #12) - a stronger B2B story for a Privy/ENS judge.
 - **Keys-off-host demo path (custody product):** the treasury holds signing keys and the agent signs via Privy custody. The cold-judge path on the DEPLOYED `/demo` URL uses SERVER-SIDE pre-seeded keys held by the facilitator/treasury services (Render env, not the funds root), scoped + rate-limited, driving the full hero flow with NO local keys and NO judge wallet. The funds/root key never goes on the Vercel host (R-14). `keysOffHostDemoPath` = `/demo` server-orchestrated hero flow.
 
 ## 7.6 Judge Proof Artifacts
-- **Proof surface:** a `/proof` section (or README "On-Chain Verification") listing: ENS parent/org/agent names + Sepolia explorer links, the `leash.policy` record contents, sample Hedera settle tx (HashScan), HCS topic id + sample ALLOW/DENY entries, Privy DENY evidence, contract/registry addresses.
+- **Proof surface:** a `/proof` section (or README "On-Chain Verification") listing: ENS parent/org/agent names + Sepolia explorer links, the `leash.policy` record contents, the agent-identity text records (`agent.description`/`agent.type`/`avatar`/optional ERC-8004 pointer) + the agent's reverse name (D1, advisory), sample Hedera settle tx (HashScan), HCS topic id + sample ALLOW/DENY entries, Privy DENY evidence, contract/registry addresses.
 - **Proof generation (build phase):** run the hero flow once, capture Sepolia tx hashes (register/setText/revoke), Hedera settle tx + HCS sequence numbers, Privy DENY response → store in `submission/proof.md`.
 - **Explorer patterns:** Sepolia `https://sepolia.etherscan.io/tx/{hash}` and ENS name pages; Hedera `https://hashscan.io/testnet/transaction/{id}` and `/topic/{id}`.
 

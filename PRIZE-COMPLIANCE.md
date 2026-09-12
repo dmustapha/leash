@@ -15,6 +15,7 @@
 | 4 | "Submit video recording or live demo link (both preferred)" | 2-4min video + live `/demo` URL | PRD §6, §7.5 | ✅ |
 | 5 | "Code must be open source on GitHub" | Public repo | package/deploy phase | ✅ |
 | - | Focus areas (hierarchical registry, EAC, Permissioned Resolvers, AI agent identity) | Uses hierarchy + EAC + Permissioned Resolver + agent-name identity | ARCHITECTURE §5; F-013 | ✅ deep |
+| - | Focus area: **AI agent identity / agent text records** (WS7 D1) | Each agent child carries readable agent-identity text records (`agent.description`/`agent.type`/`avatar`/optional ERC-8004 pointer) + a reverse name, surfaced in `/app` + `/proof` + demo. This is a CENTRAL deepener of the ENS "AI agent identity" focus area, not cosmetic: identity lives in the resolver next to the enforcement policy, on the same 3-level hierarchy. Advisory-only (never an enforcement input, INVARIANT #13). | ARCHITECTURE §5 (identity write path, component 14); F-024; INVARIANT #13; PRD §4 ENS / §7.6 | ✅ deep (D1) |
 
 **⚠ F1:** "not just hard-coded values" is satisfied structurally (values are read live), but the DEMO must *visibly* show a value being read from ENS (e.g. the resolver record panel in the A/B split-screen, or an on-screen eth_call), not appear to come from a config file. Owned by demo/design. Already the design intent (A/B split-screen resolver↔402); just make the live-read legible on camera.
 
@@ -49,7 +50,7 @@
 | 7 | "Clearly explain how Privy enables the product" | README + demo Scene 6 (two-rail control plane) | PRD §6 Scene 6 | ✅ |
 | - | DISQUALIFIER: "Mocked experiences without live integration do not satisfy" | Live leaked-key over-fund DENY on camera (real policy eval, P-256-owner enforced; proven live 2026-09-12) | F-009; VF-F1; ADR-003 | ✅ |
 
-**Note:** LEASH ships ONE Privy control (policy). The bullet requires "at least one" - so it QUALIFIES. E-2 (a 2nd control via intents) was correctly DROPPED because intents = active approver, which trips INVARIANT #6 / concern #4 [C] / the thesis drift-tripwire. No additional control is needed for the prize; deepening here would cost the thesis. Also: LEASH targets **B2B**, not Privy "Best Financial Flow" (which requires Cards mocked + another live flow) - that track is not selected, so its Cards rule does not apply.
+**Note:** LEASH ships ONE Privy control (policy). The bullet requires "at least one" - so it QUALIFIES. E-2 (a 2nd control via intents) was correctly DROPPED because intents = active approver, which trips INVARIANT #6 / concern #4 [C] / the thesis drift-tripwire. WS-7 keeps this at ONE control: D3 (a Privy 2nd control) is HELD as a stretch (not built this scope) precisely because a co-signer/approver control is invariant-protective to omit - adding one would re-open the same thesis drift E-2 was dropped for. No additional control is needed for the prize; deepening here would cost the thesis. Also: LEASH targets **B2B**, not Privy "Best Financial Flow" (which requires Cards mocked + another live flow) - that track is not selected, so its Cards rule does not apply.
 
 ---
 

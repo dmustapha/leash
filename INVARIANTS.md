@@ -50,6 +50,22 @@
     - **Test:** the `/demo` route + API handlers have no import edge to `/app`'s Privy-login/multi-tenant modules; the sandbox runs with the real-path DB/login disabled.
     - **Judge-attack:** exercise the sandbox while the real console is broken/half-built. → **Defense:** hard module boundary; sandbox is self-contained and server-orchestrated (`keysOffHostDemoPath` = `/demo`).
 
+### WS-7 additions (build-delta, 2026-09-12) - same binding force as #1-#10
+
+11. **[SEC] Every `/app` console API route verifies the Privy auth token server-side.** The tenant identity (`privyUserId`/wallet) is derived from `verifyAuthToken`, NEVER from client-supplied query/body. A request with no valid token, or naming another tenant, is rejected (401/403). No cross-tenant read or mutation is possible.
+    - **Test:** a console route called without a Privy token, or with a forged/other-user id, returns 401/403 and performs no ENS write / DB mutation.
+    - **Judge-attack:** call `/api/revoke` with someone else's `agentId`/`privyUserId`. -> **Defense:** the route resolves the caller from the verified token and scopes every op to that caller's own org; a cross-tenant target is refused.
+
+12. **[SEC] User co-holds the kill-switch role; identity is real, not operator-only.** For a signed-in `/app` user, the EAC role that gates `setText`/revoke on their agents is granted to the user's Privy embedded-wallet address ALONGSIDE the relayer (delegated operator for gasless ops). The user has genuine on-chain authority to revoke their own agents. The relayer never becomes the SOLE holder for a user-owned org.
+    - **Test:** after provision, the user's address holds the role on-chain (readable); a user-initiated revoke fails the agent's next payment closed; relayer-sponsored ops still succeed.
+    - **Note:** the sandbox (`/demo`) remains operator-orchestrated by design (no login); this invariant governs the `/app` real-product path only.
+
+13. **[SEC] Agent-identity records are ADVISORY, never an enforcement input.** ENS agent-identity text records (D1: description/type/avatar/ERC-8004 pointer) and reverse names are display/identity metadata only. The facilitator's authorize path reads ONLY `leash.policy` (cap/allowlist/hederaAccount/token); it never reads an identity record to make a settle decision.
+    - **Test:** grep proves the facilitator enforcement path reads only `leash.policy`; changing an identity record does not change any ALLOW/DENY.
+
+14. **[SEC] Replay-closed survives a facilitator restart.** The `seen` paymentId set is DURABLE (Neon-backed), so a replayed `X-PAYMENT` is rejected `REPLAY` even across a cold start (Render spin-down). The durable store is on the replay-guard path only; it is NOT a policy/enforcement read (INVARIANT #3 intact: enforcement still reads live ENS, never the DB).
+    - **Test:** submit a settled payload, restart the facilitator, re-submit -> `REPLAY` (or Hedera DUPLICATE_TRANSACTION); no second settle.
+
 ### MUST NOT CLAIM
 - MUST NOT claim the chain / smart contract / ENS enforces the spend cap (it stores the policy; the facilitator enforces it).
 - MUST NOT claim "trustless" enforcement anywhere.

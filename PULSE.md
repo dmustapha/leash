@@ -4,10 +4,15 @@
 | Fact | Source | Phase |
 |------|--------|-------|
 | The Graph does NOT index Hedera (no subgraph/Substreams/Token-API support; Hedera data only via Mirror Node REST, which doesn't satisfy the Graph bounty) | fact-check [A1] thegraph.com/docs/supported-networks | warroom-v2 |
+| [USER] Privy dashboard Email/Google login + allowed origins ALREADY enabled by Dami (pre-build screenshot); NEXT_PUBLIC_PRIVY_APP_ID now set (mirrors PRIVY_APP_ID). Task 5.4a env portion DONE; /app login testable. | user (screenshot) + build | build-delta (WS-7) |
+| [SKILL] WS-7 scope doc = docs/WS7-HARDENING-SCOPE.md (the build-delta spec). Sandbox /demo + VM-1/VM-2 are the FROZEN regression gate for the whole delta. | build | build-delta (WS-7) |
 
 ## Decisions Log
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
+| [USER] WS-7 hardening delta after build: tier = Correctness + controls + D1 (G1-G4, S1-S3, B1-B3 controls, D1 ENS agent-identity, demo Scene 2/6). D2 Hedera-extras + D3 Privy-2nd-control HELD as stretch. | Post-build critique found real /app gaps + world-class opportunities; ahead on build time (~28h). Scored sandbox stays frozen as the regression gate. | build-delta (WS-7) |
+| [USER] G1 identity model = user CO-HOLDS the EAC kill-switch role with the relayer as delegated operator (NOT full self-custody, NOT operator-only). | User gets real on-chain authority to revoke their own agents; relayer keeps sponsoring gas; lower regression risk to the proven revoke path near deadline. | build-delta (WS-7) |
+| [USER] Doc-first discipline: every WS-7 item amends the canonical docs (PRD/ARCHITECTURE/PLAN/FEATURE-OBSERVABLES/INVARIANTS/PRIZE-COMPLIANCE/CLAIMS) BEFORE its code, so debug/wire/verify/design_forge/demo/package stay coherent with the new scope. | Downstream skills read the canonical docs as source of truth; unrecorded features are invisible to them. | build-delta (WS-7) |
 
 ## Downstream Items
 <!-- Owner-routed, non-blocking deferred work. Every skill reads on entry, actions rows it owns. See PULSE-PROTOCOL § Downstream Items. -->
@@ -17,6 +22,9 @@
 | DS-2 | intel | build | P1 | Version-control history required throughout event; large single commits risk DQ | Progressive granular commits from first build hour | open |
 | DS-3 | intel | package | P1 | Max 3 partner prize selections on submission form; AI usage must be documented (spec files + prompts included) | Submission selects <=3 sponsor prizes; AI-ATTRIBUTION/spec docs in repo | open |
 | DS-4 | intel | warroom | P1 | Track selection (Scratch vs Continuity: Extend Open Source / Ship a Feature) locks prize eligibility; team all-same-track | Warroom explicitly decides track with prize-EV comparison | open |
+| DS-5 | build (WS-7) | deploy | P1 | Render free tier spins down (no persistent disk) -> facilitator/resource cold-start mid-demo + clears in-memory state. A5 makes replay durable (Neon); deploy must add keep-warm or starter plan. | Facilitator/resource stay warm during judging (keep-warm ping or plan:starter); durable replay survives restart | open |
+| DS-6 | build (WS-7) | demo_rehearsal | P1 | Scene 2 GRANT shot from /app live mint; Scene 6 real-product login (5.4a done). Restore-after-KILL uses direct setPolicy (seed has an idempotency edge, DEV-026). | Demo script covers GRANT via /app + Scene 6 login + a clean re-take restore path | open |
+| DS-7 | build (WS-7) | verify_preflight | P1 | New WS-7 observables F-016..F-024 (authz/IDOR, org-collision, funding reconcile, rate-limit, durable replay, allowlist-edit, un-revoke, spend feed, co-hold identity, ENS agent-identity) must be scored. | verify/stress assert F-016..F-024; preflight confirms present | open |
 
 ## Skill Sections
 ### forge (complete, 2026-09-12)
