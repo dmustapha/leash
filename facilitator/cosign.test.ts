@@ -4,7 +4,24 @@
 // (LEASH_COSIGNER_KEY !== HEDERA_OPERATOR_KEY).
 import { describe, it, expect } from 'vitest';
 import { PrivateKey } from '@hiero-ledger/sdk';
-import { isKeyListShape, assertCosignerDistinct } from './cosign';
+import { isKeyListShape, assertCosignerDistinct, keyListEcdsaMembers } from './cosign';
+
+describe('keyListEcdsaMembers() — extract per-account KeyList member pubkeys (payer binding, adversarial-review fix)', () => {
+  // Real mirror ProtobufEncoded KeyList hex for the co-signed account 0.0.10508343 (threshold-2):
+  // member A = agent pub 02d80d..be797, member B = cosigner pub 033ba0..458e0e.
+  const PROTOBUF = '2a4e0802124a0a233a2102d80d72763b97605aa25be788955759c72143873fc77b3e5e3a0360bf8a4be7970a233a21033ba0010360e416ec423bfbd0358c0edf3419708ebc540ff1173a9555c3458e0e';
+  it('extracts BOTH ECDSA member pubkeys from the real protobuf', () => {
+    expect(keyListEcdsaMembers(PROTOBUF)).toEqual([
+      '02d80d72763b97605aa25be788955759c72143873fc77b3e5e3a0360bf8a4be797',
+      '033ba0010360e416ec423bfbd0358c0edf3419708ebc540ff1173a9555c3458e0e',
+    ]);
+  });
+  it('returns [] for empty/undefined input (fail-safe)', () => {
+    expect(keyListEcdsaMembers(undefined)).toEqual([]);
+    expect(keyListEcdsaMembers('')).toEqual([]);
+    expect(keyListEcdsaMembers('deadbeef')).toEqual([]);
+  });
+});
 
 describe('isKeyListShape() — single-key floor vs co-sign path selection', () => {
   it('bare ECDSA single key -> single-key path (false)', () => {

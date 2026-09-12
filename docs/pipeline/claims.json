@@ -197,7 +197,7 @@
         "test": "agent/vm3.live.ts",
         "note": "PENDING \u2014 Group V / VM-3"
       },
-      "evidence": "PROVEN (VM-3 BEAT-5, 2026-09-12: OVER_DAILY_CAP, no settle)"
+      "evidence": "PROVEN \u2014 daily LIVE (VM-3 BEAT-5, 2026-09-12: OVER_DAILY_CAP, no settle); weekly UNIT tier (authorize.test.ts, same path, no live weekly beat)"
     },
     {
       "id": "C-WINDOW-DENY",

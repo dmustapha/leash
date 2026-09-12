@@ -91,17 +91,14 @@ async function enrichForDynamicLimits(ctx: PaymentContext, policy: AgentPolicy):
 
   // Rolling caps: sum ALLOW amounts for this agent over the rolling day/week (SOFT budget, lagging index).
   if (policy.dailyCap !== undefined || policy.weeklyCap !== undefined) {
-    // "now" for the rolling window bound = the mirror consensus instant (epoch seconds).
-    const { minuteUtc, dayUtc } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
-    void minuteUtc;
-    void dayUtc;
-    const nowSeconds = Math.floor(Date.now() / 1000); // window WIDTH is clock-agnostic (a duration); the
-    // consensus clock above is the authoritative window-membership source. The rolling bound is a lagging
-    // duration (now - 86400 / now - 604800); a small host/consensus skew only widens the lag by seconds,
-    // which is conservative for a SOFT budget (it can only INCLUDE slightly older spend, never miss recent).
+    // "now" for the rolling window bound = the mirror CONSENSUS instant (epoch seconds), NOT the host clock.
+    // (DEV-D01 fix / adversarial-review MAJOR): a host clock AHEAD of consensus would make Date.now()-86400 a
+    // LATER instant than true consensus_now-86400, narrowing the lookback and UNDER-counting recent spend — a
+    // silent un-cap. Anchoring the width to the same consensus epoch used for membership removes that skew.
+    const { epochSeconds } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
     const { dailyRaw, weeklyRaw } = await rollingTotals(ctx.agentName, topicId, {
-      dailyFromSeconds: nowSeconds - DAY_SECONDS,
-      weeklyFromSeconds: nowSeconds - WEEK_SECONDS,
+      dailyFromSeconds: epochSeconds - DAY_SECONDS,
+      weeklyFromSeconds: epochSeconds - WEEK_SECONDS,
     }); // THROWS -> RPC_ERROR upstream (NEVER defaulted to 0 — that would un-cap)
     next = { ...next, rollingDailyRaw: dailyRaw, rollingWeeklyRaw: weeklyRaw };
   }
