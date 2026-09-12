@@ -141,3 +141,25 @@
 - [USER] Dami registered **leash.ink** (Namecheap). This is the CANONICAL submission/demo domain. `leash-ens.vercel.app` stays as the guaranteed fallback.
 - Wiring (build/deploy WS-6): Vercel project = `leash-ens`; add custom domains `leash.ink` + `www.leash.ink`. Keep Namecheap DNS and add: A `@` -> 76.76.21.21, CNAME `www` -> cname.vercel-dns.com. Vercel auto-issues TLS. Use the exact record value Vercel shows in the dashboard as source of truth.
 - Flag F1/F2 copy + README live-link + demo URL should reference https://leash.ink.
+
+### build (complete, 2026-09-12)
+
+#### Done
+- All 7 PLAN phases executed (0-6), phase-by-phase subagent dispatch + orchestrator re-verification of every gate. All 3 prizes proven LIVE on-chain: ENS (3-level hierarchy leash.eth>acme>{data,payments}, live policy read/revoke on POLICY_RESOLVER 0xdC460cd7), Hedera x402 (real gas-free settle, agent 0 HBAR), Privy B2B (real-USDC funding + policy DENY). VM-1 (ENS+Hedera) + VM-2 (three-prize hero on canonical account 0.0.10499595) both PASS, orchestrator re-ran. WINNER-READINESS ~80.
+- next build PASSES (/, /demo, /app, /proof + APIs); unit 33/33; typecheck clean. Franchise skeleton + CI + clean-room + 3 test tiers scaffolded at C0. Granular commits from hour 1 (DS-2). .env never committed.
+- Seams resolved: DP-0 (Privy P-256 owner DENY, deterministic), DP-1/DP-1b (real ENSv2-alpha ABIs from cloned contracts-v2), R-2 (PermissionedResolver for self-deployed registry, DEV-008), DP-2 (real x402 hook shape {paymentPayload,requirements}, content-derived paymentId), DP-3 (@x402/hedera signer, PAYMENT-SIGNATURE header), DP-4 (payer-sig gates settle + TOCTOU no-cache REVOKED).
+
+#### Active Facts (corrections / new intel)
+- [SKILL] E-1 (DEV-014): facilitator is a SELF-HOSTED @x402/core+@x402/hedera service (Blocky402-EQUIVALENT), NOT a literal Blocky402 fork - the Blocky402 app source (blockydevs/blocky402) is NOT public. Prize STILL QUALIFIES (live bullet = "host a live x402-gated service on Hedera"). demo/README (F2) MUST say "self-hosted @x402/hedera facilitator, Blocky402-equivalent", NEVER "Blocky402 fork".
+- [SKILL] Canonical demo accounts (DEV-020 fix): agents created via setECDSAKeyWithAlias so on-chain evm_address==key-EVM; ONE account per agent across funding+payment+ENS. data 0.0.10499595 (cap 5 USDC), payments 0.0.10499598 (cap 25 USDC), receiver 0.0.10497604, own HTS USDC 0.0.10496489, HCS topic 0.0.10496492.
+- [SKILL] DEV-027: web/tsconfig must stay strict:true / target ES2020 (viem conditional types + BigInt need it) or next build fails type-check. Root tsconfig is ES2022/strict.
+
+#### For Next Skill (debug/wire, then design_forge/deploy/demo/package)
+- Read BUILD-REPORT.md (grep DEV- for all 32 deviations + Known Risks + on-chain proof pointers) + submission/proof.md (all 3 prize legs, resolvable). Rails: npm run facilitator (:8401), npm run resource (:8402), npm run seed (idempotent), npm run test:live -- vm2 (three-prize hero), npm run verify:claims (recompute, 0 mismatch).
+- OPEN HUMAN STEP (Task 5.4a, deploy-time): Dami must set NEXT_PUBLIC_PRIVY_APP_ID + enable Email/Google login + add the deployed origin to Privy allowed origins, before /app live login (WS-5b login is UNTESTED, DEV-031). Does NOT block the scored /demo sandbox.
+- KNOWN RISK DEV-030 (real-console only): funding a NEW /app agent returns FUNDING_DENIED (off Privy allowlist = correct default-DENY). ALLOW needs a Privy policy allowlist re-provision (policy op). Demo uses the sandbox where fund ALLOWs.
+- Flags: F1 (make live ENS read visible on camera) -> demo/design; F2 (README "Payment Flow" section + Blocky402-equivalent wording) -> deploy/package; F3 (AI-ATTRIBUTION.md + spec files in repo) -> package; F4 (human-voice 2-4min video) -> demo.
+- Deploy (Task 6.1, deploy-to-github): Vercel project leash-ens + leash.ink; Render leash-facilitator + leash-resource; guard .env (R-14). Build did NOT deploy (build boundary).
+
+#### Blockers for Downstream
+- None. WS-5b /app login UNTESTED pending the 5.4a human Privy dashboard step (expected, non-blocking; scored sandbox unaffected).
