@@ -21,14 +21,6 @@ type Notice = { kind: 'ok' | 'err'; text: string } | null;
 // A fetch that attaches the caller's Privy access token as `Authorization: Bearer` (WS-7 A1). Every console
 // call goes through this so the server can re-derive the caller identity from the token and enforce ownership.
 export type AuthedFetch = (url: string, init?: RequestInit) => Promise<Response>;
-function makeAuthedFetch(getAccessToken: () => Promise<string | null>): AuthedFetch {
-  return async (url, init = {}) => {
-    const token = await getAccessToken();
-    const headers = new Headers(init.headers);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-    return fetch(url, { ...init, headers });
-  };
-}
 
 // The console body once Privy state is known. Split from the provider so the hook is inside PrivyProvider.
 export default function AppConsole({ configured }: { configured: boolean }) {
@@ -90,7 +82,12 @@ function Authed() {
 
 // The org + agents surface for a signed-in user.
 function OrgConsole({ privyUserId, email, userAddress, onLogout, getAccessToken }: { privyUserId: string; email: string | null; userAddress: string | null; onLogout: () => void; getAccessToken: () => Promise<string | null> }) {
-  const authedFetch = useCallback(makeAuthedFetch(getAccessToken), [getAccessToken]);
+  const authedFetch = useCallback<AuthedFetch>(async (url, init = {}) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init.headers);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(url, { ...init, headers });
+  }, [getAccessToken]);
   const [org, setOrg] = useState<Org | null>(null);
   const [agents, setAgents] = useState<PublicAgent[]>([]);
   const [loading, setLoading] = useState(true);

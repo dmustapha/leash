@@ -38,8 +38,13 @@ export default function RegisterAgentForm({ orgId, userAddress, onRegistered, se
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.message || j.error || `HTTP ${r.status}`);
-      const cohold = j.coholdVerified ? ' · you co-hold the kill switch' : '';
-      setNotice({ kind: 'ok', text: `Registered ${j.agent.ensName} (mint ${j.mintTx.slice(0, 12)}…, policy ${j.policyTx.slice(0, 12)}…)${cohold}` });
+      const ens = j.agent?.ensName ?? label;
+      const mint = j.mintTx ? ` (mint ${String(j.mintTx).slice(0, 12)}…)` : '';
+      // Co-hold: confirmed when verified; if the embedded wallet wasn't ready at submit, say so honestly.
+      const cohold = j.coholdVerified
+        ? ' · you co-hold the kill switch'
+        : (!userAddress ? ' · embedded wallet still initializing — co-hold adds on next register' : '');
+      setNotice({ kind: 'ok', text: `Registered ${ens}${mint}${cohold}` });
       setLabel('');
       onRegistered();
     } catch (e) {

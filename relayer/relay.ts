@@ -33,7 +33,8 @@ export type RelayOp =
 // so the sponsor key can only ever act inside the caller's own namespace.
 export async function relay(orgSubname: string, op: RelayOp): Promise<string> {
   const target = op.kind === 'mint' ? `${op.label}.${orgSubname}` : op.name;
-  if (!target.endsWith(orgSubname)) {
+  // Label-boundary scope check (not a bare substring): `evilacme.leash.eth` must NOT pass for org `acme.leash.eth`.
+  if (target !== orgSubname && !target.endsWith(`.${orgSubname}`)) {
     throw new Error(`scope violation: "${target}" is outside caller org subname "${orgSubname}"`);
   }
   switch (op.kind) {
