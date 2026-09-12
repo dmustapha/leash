@@ -263,7 +263,46 @@ leash/
   resource-server/      (x402-gated demo API)
   agent/                (agent client: Privy sign + pay)
   treasury/             (Privy org wallet + funding policy)
-  web/                  (Next.js dashboard)
+  web/                  (Next.js dashboard: real console + judge sandbox)
+  db/                   (Postgres schema + migrations: users/orgs/agents/spend)
+  relayer/              (gas sponsor: deployer pays Sepolia gas for user ENS ops)
   docs/                 (this doc, AI-ATTRIBUTION.md, spec files, README)
   .env                  (gitignored)
 ```
+
+---
+
+## 13. PRODUCT ARCHITECTURE: two-path app (real console + judge sandbox). DECISION 2026-09-12 (Dami)
+This EXTENDS §5 WS-5 (the single dashboard) into a real multi-tenant product PLUS a zero-setup judge sandbox. The thesis (§0.1) is unchanged; this is scope extension, not identity drift. It strengthens all three prizes (deeper Privy via login, deeper ENS via a 3-level multi-tenant hierarchy) and matches the exemplar landing/console split. **Judge-sandbox-first sequencing is a HARD rule (§13.6).**
+
+### 13.1 The two paths
+- **Real mode (bring your own org, multi-tenant):** a user signs in, gets their own org namespace, registers THEIR agents, has THEIR own DB records, and controls them (set caps, revoke, fund). This is the actual product.
+- **Judge / demo mode (sandbox):** a pre-seeded org (Acme, parent + 2 children, already funded + wired) that a judge runs with ZERO setup: no login, no wallet, no test ETH. It drives the full hero flow (grant to spend gas-free to over-cap refuse to revoke to fail-closed to Privy leaked-key DENY). This is the SCORED, must-be-flawless path.
+
+### 13.2 Multi-tenant ENS hierarchy (deeper ENS depth)
+LEASH owns the parent `leash.eth` on Sepolia. Each org is a subname (`<org>.leash.eth`); each agent is a child (`data.<org>.leash.eth`). That is a real 3-level hierarchy (parent to org to agent), stronger ENS depth than a 2-level demo. The judge sandbox uses a pre-provisioned `acme.leash.eth`. (If `leash.eth` is taken on Sepolia, pick a free 2LD, e.g. `leashorg.eth`, at WS-1.)
+
+### 13.3 Data model + database
+Postgres (Neon or Vercel Postgres). Tables: `users`, `orgs`, `agents` (ens_name, max_per_call, allowed_payees, hedera_account, status, tx refs), `spend_events` (indexed from HCS). **ENS remains the on-chain source of truth and the facilitator reads ENS LIVE at settlement, never the DB.** The DB is the queryable app/index layer (per-user views, activity feeds, metadata not on-chain). The DB is NEVER the enforcement authority (that stays ENS + facilitator, per §3.3 and the INVARIANTS).
+
+### 13.4 Auth (real mode) = Privy embedded-wallet login
+Real mode uses the Privy React SDK (`@privy-io/react-auth`) email/Google login: low friction, no MetaMask, and it DEEPENS the Privy integration (login + treasury + policy), which strengthens the $2.5K Privy prize. Judge mode bypasses auth entirely via a public `/demo` route on the pre-seeded org. (Dashboard config needed once: enable Email/Google login + add the deployed origin to allowed origins.)
+
+### 13.5 Gas sponsorship (relayer)
+Connected users have no Sepolia ETH, so LEASH sponsors their ENS ops: the deployer key acts as a relayer paying gas for a user's mint-subname / setText / revoke, SCOPED to that user's own org subname (not an open relay). This is a genuine gasless-onboarding UX win. Judge mode needs no relayer (server-side, pre-funded).
+
+### 13.6 SEQUENCING (HARD RULE, protects the floor)
+1. **Core backend + JUDGE SANDBOX first** (ENS/Hedera/Privy working + the pre-seeded Acme hero flow). This alone wins the three prizes and IS the minimum-eligible bar. It must be flawless before anything else.
+2. **Real multi-tenant path second** (Privy login, per-user org namespace, DB, relayer, register/control).
+3. **Best-UI polish across both** in the design phase.
+Tripwire: if the multi-tenant layer is not done by the reserved cutoff, ship the flawless judge sandbox plus a real "sign in" that demonstrably works, and cut the rest. NEVER let the real-user path endanger the judge sandbox.
+
+### 13.7 Deltas to earlier sections
+- **§5 WS-5 splits:** WS-5a Judge Sandbox (pre-seeded, server-side, hero flow) FIRST; WS-5b Real Console (Privy login + multi-tenant + DB + relayer) SECOND.
+- **§8 credentials add:** `DATABASE_URL` (Postgres; self-provision via Vercel if possible, else Dami provides a Neon URL in `.env`) + the Privy dashboard toggle in §13.4. Only Sepolia ETH funding is strictly human (see §8).
+- **§10 prize alignment:** Privy DEEPENED (login + treasury + policy); ENS DEEPENED (3-level multi-tenant hierarchy + per-user orgs).
+- **§12 repo:** adds `db/` and `relayer/` (shown above).
+- **§7 demo:** the judge drives the SANDBOX (zero setup); optionally show a real login registering a new org as the "it is a real product" beat.
+
+### 13.8 Honest-scope note
+This roughly doubles the frontend + infra vs the single dashboard. Judge-sandbox-first is the discipline that keeps the scored deliverable safe if the clock runs out.
