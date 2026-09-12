@@ -1,0 +1,171 @@
+/* File: web/app/globals.css
+   LEASH design floor - warm-editorial-dark (Dami's locked taste): neutral near-black base,
+   amber accent, muted jewel-tone verdicts (green-ish ALLOW, red-ish DENY/REVOKED).
+   CSS-first Tailwind v4. Craft floor: CF-1 radius scale, CF-2 elevation (bg-delta + layered
+   shadow), CF-4 hover transform+shadow + :focus-visible, CF-5 pure-glow (dark world),
+   CF-6 tokenized fluid type. Structure only; design_forge/ui-revamp does final polish. */
+@import "tailwindcss";
+
+@theme {
+  /* palette - warm-editorial-dark */
+  --color-base: #0b0b0d;          /* near-black page */
+  --color-surface-1: #141417;     /* elevation 1 (card) */
+  --color-surface-2: #1c1c21;     /* elevation 2 (raised panel / hover) */
+  --color-line: #2a2a31;          /* hairline */
+  --color-ink: #f4f1ea;           /* warm off-white text */
+  --color-ink-dim: #a8a29a;       /* secondary text */
+  --color-ink-faint: #6b665e;     /* tertiary / captions */
+
+  --color-amber: #f2a63b;         /* accent */
+  --color-amber-soft: #3a2a12;    /* amber wash bg */
+
+  --color-allow: #4fae7a;         /* muted jade - ALLOW */
+  --color-allow-soft: #12261d;
+  --color-deny: #d16060;          /* muted garnet - DENY / REVOKED */
+  --color-deny-soft: #2a1416;
+
+  /* CF-1 tokenized radius scale */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-full: 999px;
+
+  /* CF-5 pure-glow shadow philosophy (dark/luminous world) */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.35);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.55), 0 16px 40px rgba(0,0,0,0.45);
+  --shadow-amber: 0 0 0 1px rgba(242,166,59,0.35), 0 8px 30px rgba(242,166,59,0.12);
+
+  /* CF-6 fluid type scale */
+  --text-display: clamp(2rem, 1.2rem + 3vw, 3.25rem);
+  --text-h2: clamp(1.25rem, 1rem + 1vw, 1.6rem);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-base);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    /* subtle warm vignette so the base is never a flat fill */
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(242,166,59,0.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(79,174,122,0.04), transparent 55%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+  a { color: inherit; }
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-base), 0 0 0 4px var(--color-amber);
+    border-radius: var(--radius-sm);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+}
+
+@layer components {
+  /* CF-2 elevation card: bg-delta + layered shadow, never bare border */
+  .card {
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-1);
+  }
+  .panel {
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+    font-family: var(--font-mono);
+  }
+
+  .code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--color-ink-dim);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* buttons - CF-4 hover transform + shadow, focus handled by base :focus-visible */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-line);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, border-color 150ms ease;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  @media (hover: hover) {
+    .btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: var(--shadow-2); border-color: #3a3a44; }
+  }
+  .btn:not(:disabled):active { transform: translateY(0); }
+
+  .btn-primary {
+    background: linear-gradient(180deg, #f6b552, var(--color-amber));
+    color: #1a1206;
+    border-color: transparent;
+    font-weight: 600;
+  }
+  @media (hover: hover) {
+    .btn-primary:not(:disabled):hover { box-shadow: var(--shadow-amber); }
+  }
+
+  /* verdict pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    border: 1px solid transparent;
+  }
+  .pill-allow { background: var(--color-allow-soft); color: var(--color-allow); border-color: rgba(79,174,122,0.35); }
+  .pill-deny  { background: var(--color-deny-soft);  color: var(--color-deny);  border-color: rgba(209,96,96,0.35); }
+  .pill-amber { background: var(--color-amber-soft); color: var(--color-amber); border-color: rgba(242,166,59,0.3); }
+  .pill-idle  { background: var(--color-surface-2);  color: var(--color-ink-faint); border-color: var(--color-line); }
+
+  .link-tx {
+    color: var(--color-amber);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(242,166,59,0.3);
+    transition: border-color 150ms ease;
+  }
+  @media (hover: hover) { .link-tx:hover { border-color: var(--color-amber); } }
+}
+
+@layer utilities {
+  .fade-in { animation: fade-in 260ms ease both; }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+  .spin { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+}

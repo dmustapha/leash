@@ -14,3 +14,7 @@ _prepipeline-archive/
 # generated recompute output (baseline committed at verify/deploy)
 evidence/claims-recomputed.json
 contracts-v2/
+
+web/.env
+web/.next/
+.next/

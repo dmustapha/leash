@@ -34,10 +34,15 @@
     "viem": "^2.56"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/express": "^4.17.25",
     "@types/node": "latest",
     "@types/pg": "latest",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "dotenv": "latest",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
     "tsx": "latest",
     "typescript": "^5",
     "vitest": "latest"
