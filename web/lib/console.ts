@@ -110,6 +110,11 @@ export async function provisionSpendingAccount(agentPub: string, fundRaw = 20_00
   } catch {
     throw new Error(`provisionSpendingAccount: agentPub "${trimmed}" is not a valid Hedera public key`);
   }
+  // Reject a non-positive funding amount up front (a public fn; a 0/negative fund would create an unusable
+  // co-signed account that can never pay). Callers pass a positive default, but guard the public surface.
+  if (!Number.isFinite(fundRaw) || fundRaw <= 0) {
+    throw new Error(`provisionSpendingAccount: fundRaw must be a positive amount (got ${fundRaw})`);
+  }
 
   const tokenId = config.usdcTokenId;
   const cosigner = ensureCosignerKey(); // LEASH's own authority key (asserted != operator/gas key, REF-3)

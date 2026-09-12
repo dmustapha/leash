@@ -213,7 +213,7 @@ export default function AgentRow({ agent, onChanged, setNotice, authedFetch }: P
                     if (s >= en) return setNotice({ kind: 'err', text: 'Window start must be before its end.' });
                     body.allowedWindows = [{ startMinuteUtc: s, endMinuteUtc: en }];
                   } else { body.allowedWindows = []; }
-                  void call('limits', '/api/agents', body, (j) => `Limits updated (tx ${String(j.policyTx).slice(0, 12)}…)`);
+                  void call('limits', '/api/agents', body, (j) => j.policyTx ? `Limits updated (tx ${String(j.policyTx).slice(0, 12)}…)` : 'Limits updated');
                   setNewDaily(''); setNewWeekly(''); setNewWinStart(''); setNewWinEnd('');
                 }}>{busy === 'limits' ? 'Saving…' : 'Set limits'}</button>
               </div>

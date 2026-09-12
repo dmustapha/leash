@@ -20,3 +20,5 @@
 2026-09-12T16:22:37Z | hackathon-debug | ADVERSARIAL-REVIEW | post-gate | security-auditor + senior-critique; 6 fixes (incl. decode-ctx allowlist-bypass + feed IDOR); re-gated vm2 6/6 vm1 3/3
 2026-09-12T16:26:08Z | hackathon-wire | START | discovery | fresh standalone wire run; build+debug complete, deadline 2026-09-13 16:00 UTC
 2026-09-12T20:30:40Z | hackathon-build | COMPLETE | REFRAME build-delta | Groups F/S/S-GATE/R/D/R3+D4/V built+gated; S-GATE+VM-3 PASS on-chain; C-9..C-15 PROVEN; regression green every group; frozen floor untouched
+2026-09-12T21:05:00Z | hackathon-debug | START | phase-1 | REFRAME re-run over the co-sign/dynamic-limits/identity-bind delta; full mode, deadline 2026-09-13 16:00 UTC
+2026-09-12T21:25:10Z | hackathon-debug | COMPLETE | phase-6 | REFRAME: confidence 96 PROCEED; 0 MUST-FIX, 0 unresolved, 6 SHOULD-FIX fixed; DEV-D01 CLEARED (docs stale); SR-1 verified; vm3 re-run 7live/1integ; frozen floor untouched

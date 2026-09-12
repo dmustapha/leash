@@ -100,6 +100,7 @@ function OrgConsole({ privyUserId, email, userAddress, onLogout, getAccessToken 
     try {
       const r = await authedFetch('/api/org', { cache: 'no-store' });
       const j = await r.json();
+      if (!r.ok) throw new Error(j.message || j.error || `HTTP ${r.status}`);
       setOrg(j.org ?? null);
       setAgents(j.agents ?? []);
     } catch (e) {

@@ -1,4 +1,76 @@
-# DEBUG REPORT
+# DEBUG REPORT — REFRAME RE-RUN (2-of-2 co-sign spend-control plane)
+
+> This is the debug re-run over the **REFRAME build-delta** (Groups F/S/R/D/V — external-identity binding + 2-of-2 co-signed Hedera spending account + dynamic limits + register-existing flow). The WS-7 report is preserved below. The frozen floor (`/demo`, `/api/demo`, `provision-canonical.ts`, `ensureCanonicalAgent`, VM-1/VM-2) is NO-TOUCH and was NOT re-litigated.
+
+## Executive Summary (REFRAME)
+- **Generated:** 2026-09-12T21:21:00Z
+- **Scope:** REFRAME delta only (co-sign / dynamic-limits / identity-binding / register-bind surfaces). Frozen floor + WS-7 already passed debug; not re-reviewed.
+- **Mode:** full (deadline 2026-09-13 16:00 UTC, ~19h out → all 6 phases)
+- **Confidence Score:** 96
+- **Unresolved Issues:** 0
+- **Security Findings:** CRITICAL 0, HIGH 0, MEDIUM 0 (the only test mock — `erc8004.test.ts` viem stub — is backed by `erc8004.live` 3/3, not a leak)
+- **Test Coverage:** unit 102/102 (11 files) + integration 8/8 (4 files) + live (erc8004 3/3 + VM-3 hero 7 live/1 integration, re-run post-fix); reframe surfaces cosign/spend-rollup/authorize/erc8004/provision all unit-tested
+- **Recommendation:** PROCEED (demoFormat unknown → default threshold 75; 96 ≫ 75). Hand to **wire** (RF-1).
+
+### Honesty locks — verified IN CODE (both senior critiques + orchestrator read)
+- **SR-1 (linchpin):** `COSIGN_AGENT_KEY` (agent private key) is NEVER read by `facilitator/`, `db/`, or web runtime — only by `agent/*` + `scripts/hedera/*` (the agent-side actor + demo provisioner). `bindExistingAgent` requires the agent-supplied `agentPub` (400 without it) and indexes `agentKey:''`. **F-031 holds.**
+- **Trustless=FALSE / Control=TRUE:** no code or comment implies the chain enforces the cap; the co-sign is the SINGLE post-gate emit (`cosignSignAndSubmit`, spy-counted).
+- **Rolling caps = SOFT budget, fail-CLOSED:** `spend-rollup.ts` never catches its fetch to a default-0; a mirror throw → `RPC_ERROR` deny in `server.ts`. `maxPerCall` (live ENS) is the hard bound.
+- **ERC-8004 = "on-chain-resolved", never "verified":** `erc8004.ts` labels + required owner-mismatch path confirmed; UI copy verified honest.
+- **INVARIANT #8 / #13:** payer==policy.hederaAccount binding intact; enforcement reads only `leash.policy` (module-boundary CI guard).
+
+## Baseline Snapshot (REFRAME Phase 1)
+- typecheck PASS · unit **102/102** (11 files) · integration **8/8** (4 files) · `next build` PASS (14 routes incl. frozen `/demo` + reframe `/app`,`/proof`)
+- Live (fresh this run): `test:live -- erc8004` **3/3** (agentId 7395 → owner on registry 0x8004A818…); `test:live -- vm3` **7 live / 1 integration** (re-run AFTER the Phase-6 rolling-path fix, 93.8s)
+- Frozen floor NO-TOUCH verified: `git diff cb53436^..HEAD` includes NONE of provision-canonical / app/demo / api/demo / ensureCanonical.
+- Reframe test:source — cosign(unit) · spend-rollup(unit+integ) · authorize(unit) · erc8004(unit+live) · provision(unit) · hedera-scheme(NO unit; covered by VM-3 live + cosign primitives — a unit test would need heavy SDK mocking).
+
+## Known-Risks Disposition (REFRAME Phase 2)
+| Item | Class | Disposition | Detail |
+|------|-------|-------------|--------|
+| DEV-021 (PublicKey import) | STRUCTURAL | DISMISSED | Cosmetic; `hedera-scheme.ts:37` correctly imports `PublicKey` from `@hiero-ledger/sdk`. |
+| DEV-R1-ABI (registry ABI) | STRUCTURAL | CLEARED | `erc8004.ts` pins only the real `ownerOf`/`getAgentWallet`; `getAgent`/`resolveByAgentId` absent — matches live contract. |
+| DEV-R2-DBPUSH (5 new cols) | TESTABLE | CLEARED | All 5 cols present in BOTH `db/schema.ts` and `db/init.sql`. |
+| **DEV-D01 (rolling width)** | TESTABLE | **CLEARED (docs stale)** | Kickoff §3 said "FIXED — confirm": CONFIRMED. `server.ts` anchors the lookback width to `mirrorConsensusNow().epochSeconds`, NOT `Date.now()` (the only `Date.now` mention is the explanatory comment). **PULSE RF-4 + BUILD-REPORT DEV-D01 were STALE — code is ahead.** VM-3 over-daily beat proves it live. |
+| DEV-R3D4-01/02 (PUT preserve/clear) | TESTABLE | CLEARED | `route.ts` PUT reads live policy to preserve untouched limits; empty field clears one limit. |
+| RF-1 (authed bind e2e) | EXTERNAL | ACCEPTED → wire | Bind branch STRUCTURALLY sound (resolve→provision→mint→identity→policy-LAST→fund→index; requireOwner first). Live authed round-trip needs a captured Privy token = wire's job (headless-auth constraint). |
+| Watch: `isKeyListAccount` mirror lookup on /demo settle | STRUCTURAL | HARDENED/ACCEPTED → stress + demo_rehearsal | Co-sign routing adds a mirror GET per settle to the FROZEN /demo path (verify + submit). Mirror-up → identical (VM-2 green); mirror-down → fail-CLOSED deny (never wrong-settle). Not an INVARIANT #10 behavior regression, but adds latency + a mirror dependency to the demo path. |
+| Watch: `assertCosignerDistinct` ECDSA-only | STRUCTURAL | DISMISSED | The whole rail is ECDSA by construction; an ED25519 operator key crashes closed at startup (safe). |
+| Watch: rolling cap C×maxPerCall under concurrency | STRUCTURAL | ACCEPTED (disclosed) → stress | SOFT budget, documented in LIMITATIONS; `maxPerCall` stays the hard per-call bound. |
+
+## Delegation Manifest (REFRAME Phase 3)
+Ownership map unchanged (wire = connections/creds; verify_milestone = demo path; stress = exhaustive/edge/attack/AI-failure). Reframe handoff rows are in PULSE `## Downstream Items` and mirrored in `.debug-state.json.delegationHandoff` — RF-1 (wire), RF-2 (demo), RF-3 (verify+stress), RF-4 (stress; rolling-WIDTH portion now CLEARED, mirror-base-env portion remains), plus the /demo mirror-coupling + rolling-concurrency rows. Single smoke: covered by the fresh live erc8004 + VM-3 runs (real endpoints).
+
+## Security Audit (REFRAME Phase 4)
+- Secrets: all `0x{64}` hits in the delta are public **tx hashes** in `docs/pipeline/claims.json` (with etherscan links) — no keys. `.env` untracked + gitignored.
+- Config/CORS/routes: no new exposed debug/admin routes; register/PUT/pay all behind `requireOwner` + rate-limited.
+- Mock-leak: only `erc8004.test.ts` (viem stub) — backed by `erc8004.live` 3/3, acceptable.
+- SR-1 grep clean (see honesty locks).
+
+## Senior Dev Critique (REFRAME Phase 5) — two parallel code-reviewer subagents
+- **Backend/facilitator: MUST-FIX 0**, SHOULD-FIX 3, NOTE 5 (`debug-results/phase-5-backend-critique.md`). All six honesty locks verified in code.
+- **Frontend/console: MUST-FIX 0**, SHOULD-FIX 3, NOTE 5 (`debug-results/phase-5-frontend-critique.md`). Honest copy PASS, demo-robustness PASS.
+
+## Fix Round (REFRAME Phase 6) — all 6 SHOULD-FIX applied, re-gated GREEN
+1. `facilitator/server.ts` — collapsed the double `mirrorConsensusNow` into ONE consensus read reused for window + rolling width (≤ prior round-trips; VM-3 re-run confirms).
+2. `web/lib/console.ts` — `provisionSpendingAccount` now rejects non-positive `fundRaw` (public-surface guard).
+3. `facilitator/hedera-scheme.ts` — co-sign verify branch throws loud on a KeyList payer when `LEASH_COSIGNER_KEY` is absent (symmetric with signAndSubmit; no more empty-pubkey filter accident).
+4. `web/app/app/_components/register-agent-form.tsx` — success reset now also clears cap/payees/agentType/description (a 2nd register can't inherit the previous agent's allowlist/type).
+5. `web/app/app/app-console.tsx` — `refresh()` now throws on a non-OK `/api/org` (shows an error instead of an empty console on a flaky network).
+6. `web/app/app/_components/agent-row.tsx` — limits success message guards the tx suffix (no "tx undefined").
+
+**Re-gate after fixes:** typecheck PASS · unit 102/102 · integration 8/8 · `next build` EXIT 0 · `test:live -- vm3` 7 live/1 integration (93.8s). **Lens neighbor check:** VM-3 co-sign hero + rolling/window SAME; authorize pure gate SAME; VM-1/VM-2 + /demo frozen SAME (enrich not entered on single-key; single-key paths byte-identical); erc8004 SAME. No CHANGED-without-expected.
+
+## Final Snapshot (REFRAME)
+- unit 102/102 · integration 8/8 · live erc8004 3/3 + VM-3 7-live/1-integration · `next build` PASS
+- 0 unresolved · 0 MUST-FIX · 6/6 SHOULD-FIX fixed · 0 security CRITICAL/HIGH/MEDIUM
+
+## Confidence Justification (REFRAME)
+Formula → 100 (no unresolved/entangled/abandoned/infra, 0 security HIGH/MEDIUM, 0 unfixed MUST-FIX, no unsanctioned skips). Adjusted to **96 (−4)** for two disclosed structural realities the downstream gates must still exercise live: (a) the `isKeyListAccount` mirror lookup now coupling the frozen /demo settle to the mirror (fail-closed, VM-2 green, but stress must prove mirror-down + demo_rehearsal must budget latency); (b) `hedera-scheme.ts` has no unit test (covered only by the VM-3 live hero). Neither is a defect; both are handoffs. 96 ≫ the 75 threshold → PROCEED to wire.
+
+---
+
+# DEBUG REPORT — WS-7 DELTA (prior run, preserved)
 
 ## Executive Summary
 - **Generated:** 2026-09-12T16:50:00Z
