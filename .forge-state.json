@@ -7,9 +7,9 @@
   "winning_idea": "LEASH — an org's ENSv2 name hierarchy as a live, revocable spend-permission graph for a fleet of paying AI agents; forked Hedera x402 facilitator reads the ENS resolver record pre-settlement; Privy is the independent second rail on funding.",
   "source": "warroom",
   "status": "in-progress",
-  "current_phase": "phase-2",
+  "current_phase": "phase-3",
   "current_substep": null,
-  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5"],
+  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5", "phase-2", "phase-2.5"],
   "documents_carry_warnings": {
     "for_architecture": [
       "PRD-W3: USDC needs BOTH its HTS id AND its EVM-facade address; Privy funding policy gates the EVM-facade ERC-20 transfer(_to,_value); read decimals() off the facade (master §4.3).",
@@ -27,21 +27,24 @@
     { "phase": "phase_0", "started_at": "2026-09-12T00:00:00Z", "completed_at": "2026-09-12T00:10:00Z", "evidence": "config+warroom+research+concerns loaded; concerns.md written (7 [C]); .forge-state.json created; entry-gate checklist 5/5 (.forge-state entryGateChecklist)" },
     { "phase": "phase_0b", "started_at": "2026-09-12T00:10:00Z", "completed_at": "2026-09-12T00:15:00Z", "evidence": "spike = master doc transcription; platform probe Privy owner+auth-sig CONFIRMED live (.forge-state technical_spike.platformProbe); ENSv2 read-back = secondary [UNVERIFIED-build-gate]" },
     { "phase": "phase_1", "started_at": "2026-09-12T00:15:00Z", "completed_at": "2026-09-12T01:10:00Z", "evidence": "PRD.md (10 sections, 16 risks) + INVARIANTS.md (10 NON-NEGOTIABLES) written; 6 PRD metrics PASS (self + independent architect re-count)" },
-    { "phase": "phase_1.5", "started_at": "2026-09-12T01:10:00Z", "completed_at": "2026-09-12T01:40:00Z", "evidence": "adversarial gate: PRD PASS zero-blockers (architect agent ac36ba19); INVARIANTS 4 BLOCKERS fixed + re-review PASS (security-auditor a8f123af); W-1 PRD onBeforeSettle alignment landed" }
+    { "phase": "phase_1.5", "started_at": "2026-09-12T01:10:00Z", "completed_at": "2026-09-12T01:40:00Z", "evidence": "adversarial gate: PRD PASS zero-blockers (architect agent ac36ba19); INVARIANTS 4 BLOCKERS fixed + re-review PASS (security-auditor a8f123af); W-1 PRD onBeforeSettle alignment landed" },
+    { "phase": "phase_2", "started_at": "2026-09-12T01:40:00Z", "completed_at": "2026-09-12T02:50:00Z", "evidence": "ARCHITECTURE.md (45 tagged code blocks, 35 files, all 10 INVARIANTS mapped to code) + DECISIONS.md (8 ADRs) + LIMITATIONS.md + security spec; 10/10 metrics PASS" },
+    { "phase": "phase_2.5", "started_at": "2026-09-12T02:50:00Z", "completed_at": "2026-09-12T03:30:00Z", "evidence": "adversarial gate: ARCHITECTURE 4 BLOCKERS (tokenId x2, Privy owner shape, HTS facade) fixed — HIP-719 deterministic facade, threaded tokenIdOf, content-derived paymentId, seam-marked DP-0..DP-4 + re-review PASS (architect a78f3fb0 -> a268397d)" }
   ],
   "expected_phases": ["phase_0_5","phase_0","phase_0a","phase_0b","phase_1","phase_1_5","phase_2","phase_2_5","phase_3","phase_3_5","phase_4"],
   "autonomous_mode": false,
   "run_model": "supervised-inline: autonomous by default, Dami at keyboard; STOP-and-ask INLINE only on a genuine blocker (adversarial-gate BLOCKER, credential/human step, thesis/identity/naming decision, hard-to-reverse). No skill PAUSE 'type approve' points; per-doc adversarial review gate replaces them (FORGE-KICKOFF-HANDOFF §4).",
   "timestamps": { "started": "2026-09-12T00:00:00Z" },
-  "quality_scores": { "prd": "6/6 metrics PASS", "architecture": null, "implementation_plan": null, "cross_doc_audit": null },
+  "quality_scores": { "prd": "6/6 metrics PASS", "architecture": "10/10 metrics PASS; adversarial gate 4 BLOCKERS fixed + re-review PASS (architect a78f3fb0 -> a268397d)", "implementation_plan": null, "cross_doc_audit": null },
   "documents": {
     "prd": "/Users/MAC/ethonline-2026/PRD.md",
-    "architecture": null,
-    "architecture_sections_complete": [],
+    "architecture": "/Users/MAC/ethonline-2026/ARCHITECTURE.md",
+    "architecture_sections_complete": ["1-overview","2-components","3-types","4-facilitator","5-ens","6-hedera","7-resource","8-agent","9-treasury","10-db","11-relayer","12-web","13-scripts","14-config","N+1..N+11","security-spec","perf","build-resolve-seams"],
     "implementation_plan": null,
     "mini_verdict": null,
     "deep_research": null
   },
+  "build_resolve_seams": ["DP-0 Privy owner arg/policy schema (WS-0)", "DP-1 ENS registrar ABI + tokenId scheme (WS-1)", "DP-2 x402 hook context fields incl paymentId (WS-2)", "DP-3 Hedera signable-hash + x402 price format (WS-3)", "DP-4 payer-sig gates settle (WS-2)"],
   "corrections": [
     "PRD: folded HCS logger into Facilitator component (Metric 1 8==8); added Flow→Scene map + real-product beat (Metric 2 3==3); schedule realism 15h + wall-clock tripwires; runtime-placeholder ENS names + no-Solidity note; onBeforeSettle authoritative (W-1).",
     "INVARIANTS: 4 adversarial BLOCKERS fixed — structural closed decision union (#1), settle-time TOCTOU read (#2), replay+aggregate scope (#9), Privy fail-open promoted to NON-NEGOTIABLE #5 + self-broadcast forbidden (D-10); plus EAC-rooted binding (#8), MALFORMED_POLICY, real-path staleness disclosure, other-facilitator honest-scope bullet."
@@ -71,7 +74,7 @@
   "custodyProduct": true,
   "keysOffHostDemoPath": "/demo server-orchestrated hero flow (server-side pre-seeded keys on Render env, scoped+rate-limited; funds/root key never on Vercel host)",
   "franchiseSkeleton": { "claimsLedger": false, "recomputeVerifier": false, "securityMd": false, "honestyLedger": false },
-  "docSuite": { "decisionsDoc": "DECISIONS.md", "decisionsAdrs": 0, "limitationsDoc": "LIMITATIONS.md", "securityMdSpec": false },
+  "docSuite": { "decisionsDoc": "DECISIONS.md", "decisionsAdrs": 8, "limitationsDoc": "LIMITATIONS.md", "securityMdSpec": true },
   "entryGateChecklist": { "met": 0, "total": 5, "unmet": [] },
   "externalScopeIngested": "docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope; ingested as the transcription source, not re-derived)",
   "project_type": null,
