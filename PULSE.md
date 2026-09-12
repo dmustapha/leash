@@ -27,15 +27,15 @@
 | DS-5 | build (WS-7) | deploy | P1 | Render free tier spins down (no persistent disk) -> facilitator/resource cold-start mid-demo + clears in-memory state. A5 makes replay durable (Neon); deploy must add keep-warm or starter plan. | Facilitator/resource stay warm during judging (keep-warm ping or plan:starter); durable replay survives restart | open |
 | DS-6 | build (WS-7) | demo_rehearsal | P1 | Scene 2 GRANT shot from /app live mint; Scene 6 real-product login (5.4a done). Restore-after-KILL uses direct setPolicy (seed has an idempotency edge, DEV-026). | Demo script covers GRANT via /app + Scene 6 login + a clean re-take restore path | open |
 | DS-7 | build (WS-7) | verify_milestone + stress_test + verify_preflight | P1 | New WS-7 observables F-016..F-024 (authz/IDOR cross-tenant, org-collision, funding reconcile union+non-empty, rate-limit, durable replay fail-closed, allowlist-edit, un-revoke, spend feed, co-hold both-holders, ENS agent-identity) must be scored at EVERY gate, not only preflight. | verify_milestone + stress_test + preflight each assert F-016..F-024 | open |
-| DH-1 | debug | wire | P1 | KNOWN-RISKS handoff: `web/lib/auth.test.ts` mocks Privy + Neon (unit); the REAL authed console path (requireOwner vs a live Privy access token + live Neon) is not automatically covered. | wire proves a live signed-in mutation returns 200 AND an authed-as-A-targets-B call returns 403 against the real DB | open |
-| DH-2 | debug | wire | P2 | KNOWN-RISKS handoff (mock-leak): build's `db/revoke-sync.test.ts` mocks the DB though Neon is available. | wire proves the real revoke -> index status sync against live Neon | open |
+| DH-1 | debug | wire | P1 | KNOWN-RISKS handoff: `web/lib/auth.test.ts` mocks Privy + Neon (unit); the REAL authed console path (requireOwner vs a live Privy access token + live Neon) is not automatically covered. | wire proves a live signed-in mutation returns 200 AND an authed-as-A-targets-B call returns 403 against the real DB | DONE (wire: subsumed by RF-1; 200+403 live) |
+| DH-2 | debug | wire | P2 | KNOWN-RISKS handoff (mock-leak): build's `db/revoke-sync.test.ts` mocks the DB though Neon is available. | wire proves the real revoke -> index status sync against live Neon | DONE (wire: active→revoked live Neon) |
 | DH-3 | debug | stress_test | P1 | KNOWN-RISKS handoff (DEV-033): A5 durable replay must FAIL-CLOSED on a Neon outage — a store error denies the settle, never proceeds. | stress simulates Neon-down on the settle path and asserts abort=REPLAY (no settle), plus a genuine replay of the same paymentId is rejected across a facilitator restart | open |
 | DH-4 | debug | stress_test | P2 | KNOWN-RISKS handoff (A4/DEV-034): rate limit must 429 a burst before draining fee-payer/agent balance; XFF-spoof is a known single-instance bypass. | stress bursts /api/demo + a console mutation and asserts 429 before balance drain | open |
 | DH-5 | debug | stress_test | P2 | KNOWN-RISKS handoff (A3/B-04): a SECOND new-agent register must keep the FIRST agent fundable (union preserves existing) and over-fund still DENIES. | stress registers 2 agents and proves both fund in-cap + both over-fund DENY on the real token | open |
 | DH-6 | debug | verify_milestone | P1 | KNOWN-RISKS handoff (C1/C-6): `agent/cohold.live.ts` proves the co-hold MECHANISM but revokes its throwaway grant to preserve demo state — no persistent per-agent co-hold tx yet. | verify_milestone (or the demo GRANT beat) produces a persistent co-hold grant tx on a real `/app`-registered agent; flip CLAIMS C-6 -> PROVEN | open |
 | DH-7 | debug | stress_test | P2 | KNOWN-RISKS handoff (B1/B2/B-08): allowlist-edit + reactivate cross-tenant negatives — A must not edit/reactivate B's agent (requireOwner covers it; confirm end-to-end). | stress asserts 403 on authed-as-A editing/reactivating B's agent, and OFF_ALLOWLIST after an allowlist edit | open |
 | DH-8 | debug | demo | P1 | KNOWN-RISKS handoff (DEV-014): narration must say "self-hosted @x402/hedera facilitator, Blocky402-equivalent", NEVER "Blocky402 fork". | demo script + README use the equivalent-wording; no "fork" claim | open |
-| RF-1 | build (REFRAME) | wire | P1 | Register-existing END-TO-END smoke deferred: `/api/agents` bind branch needs a live Privy owner token (same headless-auth constraint as DH-1). R1 resolve + co-signed account model already proven (erc8004.live + S-GATE); the authed bind POST → co-signed-agent round-trip needs a captured token. | re-wire proves an authed bind POST returns 200 with a co-signed KeyList account + on-chain-resolved identity + leash.policy | open |
+| RF-1 | build (REFRAME) | wire | P1 | Register-existing END-TO-END smoke deferred: `/api/agents` bind branch needs a live Privy owner token (same headless-auth constraint as DH-1). R1 resolve + co-signed account model already proven (erc8004.live + S-GATE); the authed bind POST → co-signed-agent round-trip needs a captured token. | re-wire proves an authed bind POST returns 200 with a co-signed KeyList account + on-chain-resolved identity + leash.policy | DONE (wire: 200 bind cosigned+on-chain-resolved+policyTx; 403 IDOR; real Privy JWT) |
 | RF-2 | build (REFRAME) | demo | P1 | Demo must show the REFRAME hero (bind existing → co-signed pay → agent-alone can't spend → LEASH-alone can't move → over-cap/daily/window refuse → revoke), NOT the old create-agent mint story. VM-3 is the script spine. | demo script covers the 2-of-2 co-sign veto + honest "facilitator-trusted, not trustless" framing | open |
 | RF-3 | build (REFRAME) | verify_milestone + stress_test + verify_preflight | P1 | New REFRAME observables F-026..F-032 + claims C-9..C-15 must be scored at every gate (co-signed settle, agent-alone/LEASH-alone DENY, on-chain-resolved identity, rolling/window DENY, mirror-down RPC_ERROR). | each gate asserts F-026..F-032; C-9..C-15 stay PROVEN | open |
 | RF-4 | build (REFRAME) | stress_test | P2 | BEAT-7 mirror-down is integration-tier (no env-configurable mirror base; hardcoded const in spend-rollup.ts/cosign.ts). A live kill-endpoint beat needs the mirror base made env-configurable. [debug 2026-09-12: DEV-D01 rolling-WIDTH portion is CLEARED — `server.ts` anchors the lookback width to the consensus epoch, NOT Date.now(); this row + BUILD-REPORT DEV-D01 were stale. ONLY the env-configurable-mirror-base half remains for a live kill beat.] | mirror base env-configurable → a live mirror-down RPC_ERROR beat (rolling width already consensus-anchored ✓) | open |
@@ -267,3 +267,26 @@
 
 #### Blockers for Downstream
 - None. Confidence 96, zero unresolved, zero MUST-FIX, honesty locks verified in code.
+
+### wire — REFRAME re-wire (complete, 2026-09-12)
+
+#### Done
+- **RF-1 CLOSED (PASS)** — authed bind `POST /api/agents` with a REAL Privy JWT → **200**: `bound:true`, co-signed KeyList acct `0.0.10511140` (long-zero `0x00…a06324`, cosignerPub `033ba0…`), on-chain-resolved identity erc8004 agentId 7395 → `0x92AAe…` (CAIP, label `on-chain-resolved`), `leash.policy` written `policyTx 0x4c254de9…`, ENS mint present. Authed-as-A-targets-B → **403** "not the owner of this org" (IDOR). DH-1 subsumed.
+- **DH-2 CLOSED (PASS)** — real `markAgentRevoked` flips index `active→revoked` against LIVE Neon (unit test had mocked pg).
+- Auth gate proven: bind POST no-token → 401, garbage-token → 401 (requireOwner is line 1).
+- Re-confirmed brief #1: LIVE Hedera **co-signed paid request** `npm run test:live -- vm3` 7-live/1-integration (HashScan in submission/proof.md); on-chain-resolved identity `erc8004` 3/3.
+- Isolation (5.6) PASS via the IDOR 403; privacy audit (5.5) SKIPPED (no FHE/ZK); async (5.7): co-sign adds ~1 mirror GET each at verify+submit (MEDIUM, fail-closed) → RF-5/RF-6.
+- WIRE-REPORT.md + .wire-state.json written. Zero failures, zero fixes, honesty locks intact. Status **WIRED**.
+
+#### Headless-auth unlock (reusable)
+- [SKILL] Privy `getTestAccessToken()` throws `Must specify origin` (auth API needs an Origin header the SDK omits). Replicated the passwordless-test-token flow manually with `Origin: http://localhost:3000` (`scripts/wire/mint-token.ts`) → genuine Privy JWT that `verifyAuthToken` accepts. User enabled Privy Test accounts (dashboard). verify/stress can reuse `scripts/wire/{mint-token,rf1}.ts`.
+
+#### Known artifact
+- On-chain `rf1x020998.acme.leash.eth` has a live leash.policy (only its Neon index row was deleted in cleanup). Not demo-visible (console reads the index); harmless. DB otherwise clean (acme owner restored to Dami).
+
+#### For Next Skill (verify_milestone, then design/design_forge/stress_test/deploy/livetest)
+- wire is WIRED, no blockers. verify_milestone Step 3 runs the demo path with teeth. Score F-026..F-032 (RF-3) at this gate. Carried to stress: RF-4 (env-configurable mirror base for a live BEAT-7), RF-5 (/demo settle denies on mirror outage). Carried to demo_rehearsal: RF-6 (budget co-sign mirror latency on camera).
+- Honesty locks NEVER drift: Control=TRUE, Trustless=FALSE, ERC-8004=on-chain-resolved, rolling caps=SOFT, SR-1.
+
+#### Blockers for Downstream
+- None.

@@ -1,0 +1,57 @@
+{
+  "status": "WIRED",
+  "working_dir": "/Users/MAC/ethonline-2026",
+  "autonomous_mode": false,
+  "project_type": "full-stack",
+  "context_percentage": 0,
+  "timestamp": "2026-09-12T22:55:00Z",
+  "expected_phases": ["discovery","credentials","dependencies","integration","fix_retest","privacy_audit","isolation_test","async_latency","report"],
+  "topology": {
+    "totalComponents": 7,
+    "totalConnections": 10,
+    "components": [
+      { "name": "web", "type": "frontend+api", "entryPoint": "web/app" },
+      { "name": "facilitator", "type": "service", "entryPoint": "facilitator/server.ts" },
+      { "name": "resource-server", "type": "service", "entryPoint": "resource-server/server.ts" },
+      { "name": "relayer", "type": "lib", "entryPoint": "relayer/relay.ts" },
+      { "name": "scripts/ens", "type": "lib", "entryPoint": "scripts/ens" },
+      { "name": "treasury/privy", "type": "lib", "entryPoint": "treasury/privy.ts" },
+      { "name": "db", "type": "database", "entryPoint": "db/client.ts" }
+    ]
+  },
+  "credentials": { "total": 20, "resolved": 20, "unresolved": 0, "mockFlagsActive": 0, "unresolvedList": [], "mockFlags": [] },
+  "fix_attempts": [],
+  "integrationResults": {
+    "total": 7, "passed": 7, "partial": 0, "failed": 0, "skipped": 0,
+    "results": [
+      { "connectionId": "bind→auth (no token)", "result": "PASS", "notes": "401 missing Bearer" },
+      { "connectionId": "bind→auth (garbage token)", "result": "PASS", "notes": "401 invalid token" },
+      { "connectionId": "RF-1 authed bind 200", "result": "PASS", "notes": "cosigned 0.0.10511140 + on-chain-resolved erc8004 7395 + policyTx 0x4c254de9" },
+      { "connectionId": "RF-1 IDOR 403", "result": "PASS", "notes": "not the owner of this org" },
+      { "connectionId": "DH-2 revoke→index sync (live Neon)", "result": "PASS", "notes": "active→revoked live" },
+      { "connectionId": "erc8004 resolve R1", "result": "PASS", "notes": "3/3 live" },
+      { "connectionId": "vm3 Hedera co-signed paid request", "result": "PASS", "notes": "7 live / 1 integration; HashScan evidence" }
+    ]
+  },
+  "sentinel_hits": [],
+  "auth_gaps": [],
+  "privacy_audit": { "status": "SKIPPED", "mirrors": [], "explorer_risks": [], "business_logic_plaintext": [] },
+  "cross_account_test": "PASS",
+  "isolation_path_tested": "POST /api/agents bind as user A targeting user B's orgId → 403 (requireOwner ownership JOIN)",
+  "async_operations": [
+    { "name": "Hedera co-signed x402 settle (verify+submit mirror GETs)", "trigger_endpoint": "facilitator /settle via isKeyListAccount", "latency_category": "MEDIUM", "requires_demo_wait_guidance": true, "estimated_wait_seconds": 6, "note": "fail-closed on mirror outage (vm3 BEAT-7). Routed to demo_rehearsal RF-6 + stress RF-5." }
+  ],
+  "blockers": [],
+  "downstream_carried": ["RF-3","RF-4","RF-5","RF-6"],
+  "phase": {
+    "discovery": "complete",
+    "credentials": "complete",
+    "dependencies": "complete",
+    "integration": "complete",
+    "fix_retest": "complete",
+    "privacy_audit": "skipped",
+    "isolation_test": "complete",
+    "async_latency": "complete",
+    "report": "complete"
+  }
+}
