@@ -117,6 +117,9 @@ export default function RegisterAgentForm({ orgId, userAddress, onRegistered, se
       }
       setLabel(''); setAgentPub(''); setErc8004Id(''); setExternalEvm('');
       setDailyCap(''); setWeeklyCap(''); setWinStart(''); setWinEnd('');
+      // Also reset the shared fields so a second register never silently inherits the previous agent's
+      // allowlist / cap / type / description.
+      setCap('5'); setPayees(''); setAgentType(''); setDescription('');
       onRegistered();
     } catch (e) {
       setNotice({ kind: 'err', text: e instanceof Error ? e.message : String(e) });

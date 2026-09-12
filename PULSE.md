@@ -38,7 +38,9 @@
 | RF-1 | build (REFRAME) | wire | P1 | Register-existing END-TO-END smoke deferred: `/api/agents` bind branch needs a live Privy owner token (same headless-auth constraint as DH-1). R1 resolve + co-signed account model already proven (erc8004.live + S-GATE); the authed bind POST → co-signed-agent round-trip needs a captured token. | re-wire proves an authed bind POST returns 200 with a co-signed KeyList account + on-chain-resolved identity + leash.policy | open |
 | RF-2 | build (REFRAME) | demo | P1 | Demo must show the REFRAME hero (bind existing → co-signed pay → agent-alone can't spend → LEASH-alone can't move → over-cap/daily/window refuse → revoke), NOT the old create-agent mint story. VM-3 is the script spine. | demo script covers the 2-of-2 co-sign veto + honest "facilitator-trusted, not trustless" framing | open |
 | RF-3 | build (REFRAME) | verify_milestone + stress_test + verify_preflight | P1 | New REFRAME observables F-026..F-032 + claims C-9..C-15 must be scored at every gate (co-signed settle, agent-alone/LEASH-alone DENY, on-chain-resolved identity, rolling/window DENY, mirror-down RPC_ERROR). | each gate asserts F-026..F-032; C-9..C-15 stay PROVEN | open |
-| RF-4 | build (REFRAME) | stress_test | P2 | BEAT-7 mirror-down is integration-tier (no env-configurable mirror base; hardcoded const in spend-rollup.ts/cosign.ts). A live kill-endpoint beat needs the mirror base made env-configurable. Also DEV-D01: rolling lookback width uses Date.now() (membership stays consensus). | mirror base env-configurable → a live mirror-down RPC_ERROR beat; rolling width anchored to consensus epoch | open |
+| RF-4 | build (REFRAME) | stress_test | P2 | BEAT-7 mirror-down is integration-tier (no env-configurable mirror base; hardcoded const in spend-rollup.ts/cosign.ts). A live kill-endpoint beat needs the mirror base made env-configurable. [debug 2026-09-12: DEV-D01 rolling-WIDTH portion is CLEARED — `server.ts` anchors the lookback width to the consensus epoch, NOT Date.now(); this row + BUILD-REPORT DEV-D01 were stale. ONLY the env-configurable-mirror-base half remains for a live kill beat.] | mirror base env-configurable → a live mirror-down RPC_ERROR beat (rolling width already consensus-anchored ✓) | open |
+| RF-5 | debug (REFRAME) | stress_test | P2 | Co-sign routing (`isKeyListAccount`) now adds a mirror GET per settle to the FROZEN /demo path (verify + submit). Fail-CLOSED (deny on mirror outage, never wrong-settle) + VM-2 green, so not an INVARIANT #10 behavior regression — but a NEW mirror dependency on the demo path. | prove /demo settle denies on a mirror outage AND settles identically when mirror is up (VM-2 stays green) | open |
+| RF-6 | debug (REFRAME) | demo_rehearsal | P2 | Same co-sign routing adds ~1 mirror round-trip each at verify + submit to every settle (incl. /demo) — extra on-camera latency. | budget the added mirror latency into the live settle timing (spinner / wait markers) | open |
 
 ## Skill Sections
 ### forge (complete, 2026-09-12)
@@ -243,3 +245,25 @@
 
 #### Blockers for Downstream
 - None. Confidence 95, zero unresolved, zero MUST-FIX.
+
+### debug — REFRAME re-run (complete, 2026-09-12)
+
+#### Done
+- Full-mode 6-phase quality gate over the REFRAME build-delta (Groups F/S/R/D/V). Confidence **96, PROCEED**. Frozen floor + WS-7 delta NOT re-litigated (already passed). DEBUG-REPORT.md gains a REFRAME section (WS-7 report preserved below it); .debug-state.json re-scoped.
+- Phase 1 baseline: typecheck PASS · unit **102/102** (11 files) · integration **8/8** (4 files) · `next build` PASS (14 routes incl frozen /demo + reframe /app,/proof) · live `erc8004` 3/3 (fresh) · `vm3` 7-live/1-integration (RE-RUN post-fix, 93.8s). Frozen floor NO-TOUCH proven (`git diff cb53436^..HEAD` touches none of provision-canonical/app-demo/api-demo/ensureCanonical).
+- Phase 2 KNOWN-RISKS: **DEV-D01 CLEARED** — rolling lookback WIDTH is consensus-epoch-anchored in `server.ts` (NOT Date.now()); RF-4 + BUILD-REPORT DEV-D01 were STALE, code is ahead. DEV-021/R1-ABI/R2-DBPUSH/R3D4 CLEARED/DISMISSED. RF-1 ACCEPTED→wire. /demo mirror-coupling HARDENED/ACCEPTED→stress+demo_rehearsal (new RF-5/RF-6). Rolling concurrency SOFT-budget ACCEPTED→stress.
+- Phase 4 security: secrets CLEAN (all 0x64hex in the delta are public tx hashes in claims.json); .env untracked+gitignored; 0 mock-leaks (erc8004.test viem stub backed by erc8004.live 3/3). **SR-1 grep CLEAN** — no agentPriv/COSIGN_AGENT_KEY in facilitator/db/web runtime; F-031 holds.
+- Phase 5 senior critique (2 parallel code-reviewer subagents): backend MUST-FIX 0 / SHOULD-FIX 3; frontend MUST-FIX 0 / SHOULD-FIX 3. All 6 honesty locks (SR-1, Trustless=FALSE, SOFT-budget fail-closed, on-chain-resolved, INVARIANT #8/#13) verified IN CODE; honest-copy PASS; demo-robustness PASS.
+- Phase 6 fix round: all 6 SHOULD-FIX applied (server.ts single-consensus-read dedup; console.ts fundRaw>0 guard; hedera-scheme.ts co-verify throws loud w/o cosigner key; register-form clears shared fields on success; app-console refresh r.ok throw; agent-row limits tx-suffix guard). Re-gate GREEN (typecheck+unit 102+integ 8+build+vm3 7live/1integ). Lens check: 6/6 neighbor contracts SAME (VM-1/VM-2/demo/authorize/vm3/erc8004) — no regression.
+
+#### Active Facts (corrections / new intel)
+- [SKILL] DEV-D01 / RF-4 rolling-WIDTH half is FIXED in code (consensus-epoch-anchored) — the PULSE RF-4 row + BUILD-REPORT DEV-D01 line describing `Date.now()` are STALE. Only the env-configurable-mirror-base half of RF-4 remains (for a live BEAT-7 kill-endpoint beat).
+- [SKILL] Co-sign routing couples the FROZEN /demo settle to a mirror GET (per verify + submit) via `isKeyListAccount`. Fail-CLOSED + VM-2 green ⇒ no INVARIANT #10 behavior regression, but a NEW mirror dependency + latency on the demo path → RF-5 (stress mirror-down) + RF-6 (demo_rehearsal latency).
+- [SKILL] `facilitator/hedera-scheme.ts` has no unit test (covered by VM-3 live hero + cosign.ts primitive unit tests); a unit test would need heavy SDK mocking (mock-leak risk).
+
+#### For Next Skill (wire, then verify_milestone/stress_test/demo)
+- Read the DEBUG-REPORT REFRAME executive summary + the RF-1..RF-6 rows in `## Downstream Items`. **wire's #1 job = RF-1**: an authed bind POST → co-signed KeyList account + on-chain-resolved identity + leash.policy, with a LIVE Privy owner token (headless-auth constraint = same as the old DH-1). The bind branch is structurally sound (resolve→provision→mint→identity→policy-LAST→fund→index; requireOwner first) — wire proves it live.
+- Also re-confirm the LIVE Hedera co-signed paid-request evidence (HashScan) per the brief; the 3 prize legs + VM-1/VM-2 frozen proofs still stand.
+
+#### Blockers for Downstream
+- None. Confidence 96, zero unresolved, zero MUST-FIX, honesty locks verified in code.

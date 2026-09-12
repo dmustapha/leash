@@ -83,22 +83,25 @@ async function enrichForDynamicLimits(ctx: PaymentContext, policy: AgentPolicy):
   if (!topicId) throw new Error('HCS_TOPIC_ID not set: cannot evaluate dynamic limits'); // fail closed
   let next = ctx;
 
-  // Window: derive the settle-time minute-of-day + day-of-week from the mirror consensus clock.
+  // Read the mirror CONSENSUS clock ONCE and reuse it for BOTH the window check and the rolling-cap lookback
+  // width (a single mirror round-trip per capped/windowed settle instead of two; the consensus instant is the
+  // same for both). THROWS -> RPC_ERROR upstream. The window uses minuteUtc/dayUtc; the rolling width anchors to
+  // epochSeconds — the mirror CONSENSUS instant, NOT the host clock. (DEV-D01 fix / adversarial-review MAJOR:
+  // a host clock AHEAD of consensus would make Date.now()-86400 a LATER instant than true consensus_now-86400,
+  // narrowing the lookback and UNDER-counting recent spend — a silent un-cap. Anchoring both to the one consensus
+  // epoch removes that skew.)
+  const consensus = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
+
+  // Window: settle-time minute-of-day + day-of-week from the consensus clock.
   if (policy.allowedWindows && policy.allowedWindows.length > 0) {
-    const { minuteUtc, dayUtc } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
-    next = { ...next, nowMinuteUtc: minuteUtc, nowDayUtc: dayUtc };
+    next = { ...next, nowMinuteUtc: consensus.minuteUtc, nowDayUtc: consensus.dayUtc };
   }
 
   // Rolling caps: sum ALLOW amounts for this agent over the rolling day/week (SOFT budget, lagging index).
   if (policy.dailyCap !== undefined || policy.weeklyCap !== undefined) {
-    // "now" for the rolling window bound = the mirror CONSENSUS instant (epoch seconds), NOT the host clock.
-    // (DEV-D01 fix / adversarial-review MAJOR): a host clock AHEAD of consensus would make Date.now()-86400 a
-    // LATER instant than true consensus_now-86400, narrowing the lookback and UNDER-counting recent spend — a
-    // silent un-cap. Anchoring the width to the same consensus epoch used for membership removes that skew.
-    const { epochSeconds } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
     const { dailyRaw, weeklyRaw } = await rollingTotals(ctx.agentName, topicId, {
-      dailyFromSeconds: epochSeconds - DAY_SECONDS,
-      weeklyFromSeconds: epochSeconds - WEEK_SECONDS,
+      dailyFromSeconds: consensus.epochSeconds - DAY_SECONDS,
+      weeklyFromSeconds: consensus.epochSeconds - WEEK_SECONDS,
     }); // THROWS -> RPC_ERROR upstream (NEVER defaulted to 0 — that would un-cap)
     next = { ...next, rollingDailyRaw: dailyRaw, rollingWeeklyRaw: weeklyRaw };
   }

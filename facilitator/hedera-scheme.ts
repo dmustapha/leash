@@ -164,7 +164,10 @@ function typedSigner(
   const cosignerRaw = process.env.LEASH_COSIGNER_KEY?.trim();
   const cosignerKey = cosignerRaw ? PrivateKey.fromStringECDSA(cosignerRaw) : null;
   const coSignAndSubmit = cosignerKey ? cosignSignAndSubmit(build, operatorKey, cosignerKey) : null;
-  const coVerify = cosignVerifyPayerSignature(cosignerKey ? cosignerKey.publicKey.toStringRaw() : '');
+  // Built ONLY when a cosigner key exists (else null). The verify branch below throws loud on a KeyList payer
+  // when it is null — symmetric with signAndSubmit — instead of silently building a verifier with an empty
+  // cosigner pubkey (which would not filter LEASH's own key out of the member set).
+  const coVerify = cosignerKey ? cosignVerifyPayerSignature(cosignerKey.publicKey.toStringRaw()) : null;
 
   return toFacilitatorHederaSigner({
     getAddresses: () => [operatorId],
@@ -185,7 +188,13 @@ function typedSigner(
     // SELECT verifyPayerSignature per payer account type. `payer` is provided directly by the scheme.
     verifyPayerSignature: async (params: { payer: string; transaction: string; network: string }) => {
       const keyList = await isKeyListAccount(params.payer, params.network); // throws -> fail closed
-      return keyList ? coVerify(params) : singleVerify(params); // UNCHANGED /demo verify on single-key.
+      if (keyList) {
+        if (!coVerify) {
+          throw new Error('co-sign path selected but LEASH_COSIGNER_KEY is not set');
+        }
+        return coVerify(params);
+      }
+      return singleVerify(params); // UNCHANGED /demo verify on single-key.
     },
 
     // Pre-settlement balance / association check - called unconditionally by verify(). Unchanged for both.
