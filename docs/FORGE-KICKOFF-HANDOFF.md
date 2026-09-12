@@ -56,7 +56,7 @@ One skill per chat. After forge finishes + passes §4: run `/handoff` producing 
 ## 8. LAUNCH MECHANICS
 - **working_dir:** `/Users/MAC/ethonline-2026`
 - Invoke the **hackathon-forge skill directly** (Dami orchestrates across chats via handoffs; do not launch the conductor: the legacy conductor state is archived and pre-merge).
-- Env: `.env` present (chmod 600, gitignored). Credentials SET+VERIFIED: Privy, Hedera operator (1000 HBAR), Hedera EVM RPC (Hashio 296), Alchemy Sepolia RPC. Node v24.10.0.
+- Env: `.env` present (chmod 600, gitignored). Credentials SET+VERIFIED (as of 2026-09-12): Privy app; Hedera operator (1000 HBAR); Hedera EVM RPC (Hashio 296); Alchemy Sepolia RPC; **`LEASH_DEPLOYER_ADDRESS` `0x72A9…d5C5` FUNDED 0.05 Sepolia ETH** (key = `LEASH_DEPLOYER_KEY`); **`DATABASE_URL` Neon Postgres 16 live-tested OK**; Privy chain-296 support verified. Node v24.10.0. Tooling authed: `gh` (dmustapha), `vercel`, `render` CLI present. STILL PENDING (non-blocking, real-path only): Privy dashboard Email/Google + allowed-origins toggle; possible Sepolia top-up.
 - Fresh terminal recommended: `claude --dangerously-skip-permissions` (no `--rc`, Dami on PC) for full autonomy without permission prompts.
 
 ## 9. DESIGN IS FIRST-CLASS (carry this forward to the design phase)

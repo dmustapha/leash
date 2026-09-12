@@ -212,12 +212,15 @@ Stored in `/Users/MAC/ethonline-2026/.env` (chmod 600, gitignored, `git check-ig
 | `HEDERA_OPERATOR_EVM_ADDRESS` | SET + VERIFIED | Hashio eth_getBalance = 1000 HBAR; chainId 296 |
 | `HEDERA_EVM_RPC` = `https://testnet.hashio.io/api` | SET + VERIFIED | eth_chainId returned 296 |
 | `SEPOLIA_RPC_URL` (Alchemy, ghostfund app) | SET + VERIFIED | chainId 11155111, live block, ENSv2 ETHRegistry bytecode reachable (29424 chars). ALL creds now green. |
+| `LEASH_DEPLOYER_ADDRESS` = `0x72A90a712b7a668bD215B3b70B3fEaBFA40dd5C5` | GENERATED + FUNDED | 0.05 test ETH on Sepolia (2026-09-12); private key in `.env` `LEASH_DEPLOYER_KEY`. Top up if provisioning + relayer need more. |
+| `DATABASE_URL` (Neon Postgres 16, pooled) | SET + VERIFIED | live connection OK: db `neondb`, user `neondb_owner`, PostgreSQL 16.15 (2026-09-12). Reset the Neon password post-event (was pasted in chat). |
+| Privy chain support for Hedera EVM (`eip155:296`) | VERIFIED | live API test: Privy accepts chain 296 and simulates on a Hedera RPC. Policy enforcement requires the owner + authorization-signature flow via `@privy-io/server-auth` (raw calls fail-open). |
 
 Note: the operator key was pasted in chat plaintext (testnet-only, low risk). Rotate the Privy app secret after the hackathon since it was shared in plaintext.
 
 LEASH generates (no user action): ENS Sepolia deployer key; agent/receiver Hedera ECDSA keys; test USDC (HTS) token; the `.eth` name; funding transfers from operator.
-One remaining user step after WS-0: fund the generated Sepolia deployer address with test ETH (Google/Alchemy faucet) once Leash prints it.
-`.env` keys present: `PRIVY_APP_ID, PRIVY_APP_SECRET, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_EVM_ADDRESS, HEDERA_OPERATOR_KEY, HEDERA_OPERATOR_KEY_DER, HEDERA_NETWORK, HEDERA_EVM_RPC, SEPOLIA_RPC_URL, LEASH_DEPLOYER_KEY (generated), USDC_TOKEN_ID (generated), HCS_TOPIC_ID (generated), ENS_PARENT_NAME=acme.eth`. Never commit `.env`.
+Sepolia deployer DONE (2026-09-12): generated + funded (0.05 test ETH) at `0x72A90a712b7a668bD215B3b70B3fEaBFA40dd5C5`. Only top-up remains if provisioning + relayer gas exceed 0.05 ETH.
+`.env` keys present: `PRIVY_APP_ID, PRIVY_APP_SECRET, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_EVM_ADDRESS, HEDERA_OPERATOR_KEY, HEDERA_OPERATOR_KEY_DER, HEDERA_NETWORK, HEDERA_EVM_RPC, SEPOLIA_RPC_URL, LEASH_DEPLOYER_KEY (generated+funded), LEASH_DEPLOYER_ADDRESS, DATABASE_URL (Neon PG16, verified), USDC_TOKEN_ID (generated), HCS_TOPIC_ID (generated), ENS_PARENT_NAME=acme.eth`. Never commit `.env`.
 
 ## 8.1 Testnet allowance (CONFIRMED against live prize pages 2026-09-12)
 - **ENS $4.5K: testnet REQUIRED.** "Project must be built on ENSv2 (Sepolia)... Mainnet deployment does NOT qualify, only Sepolia testnet projects are eligible." [A1]
