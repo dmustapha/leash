@@ -73,5 +73,22 @@ Post-fix verification: typecheck PASS, unit 44/44, integration 8/8, build PASS (
 ## Unresolved Items
 None. (2 MEDIUM mock-leaks + all SHOULD-FIX/NOTE items are either fixed or routed as DH-1..DH-8 downstream handoffs.)
 
+## Post-Debug Adversarial Review (2026-09-12, requested)
+Two additional dedicated reviews were run after the 6-phase gate, with the full master doc (`docs/LEASH-MASTER-BUILD-DOC.md`) in scope:
+- **security-auditor on the WS-7 attack surface:** CRITICAL 0, HIGH 1 → FIX-FIRST. Verdict after fix: SHIP.
+- **code-reviewer senior critique on the pre-WS-7 core** (the enforcement/rails code that never got a Phase-5 pass): MUST-FIX 1. Enforcement core judged sound (fail-closed is structural; TOCTOU-closed; every RPC/decode/store error denies).
+
+Findings fixed this round (all re-gated: typecheck, unit 44, integration 8, build, vm2 6/6, vm1 3/3 — no regression):
+| Sev | Finding | Fix |
+|-----|---------|-----|
+| HIGH (H-01) | `/api/feed?agent=` had NO ownership check — cross-tenant spend-feed disclosure (B-08 join missed on this read path) | resolve agent by ENS name → `requireOwner({agentId})` before returning events |
+| MUST-FIX (core) | `decode-ctx.ts` checked the REQUESTED `requirements.payTo`/asset, not the ACTUAL settled transfer — a malicious agent could pay a non-allowlisted account while the gate saw the allowlisted requested one (allowlist bypass; fails closed only by luck in the honest demo) | derive `payTo` from the actual sole positive receiver; fail CLOSED if not exactly one receiver in the requested asset. Honest single-receiver case unchanged (vm1/vm2 green) |
+| MED (M-01) | replay `isSeen→markSeen` TOCTOU under concurrency | `markSeen` now an atomic claim (`INSERT … ON CONFLICT DO NOTHING RETURNING`); loser of the race → REPLAY abort |
+| MED→fix (L-02) | `/api/policy/[name]` public, no rate limit (enumeration/RPC abuse) | added `enforceRateLimit` (read-tier capacity) |
+| SHOULD (honest-framing) | demo `refuse`/`revoke` beats fabricated `OVER_CAP`/`REVOKED` on a transport error | only classify when a settle response exists; else `NO_SETTLE_RESPONSE` (verdict stays truthful) |
+| SHOULD (robustness) | HCS `logDecision` awaited on the settle hot path — an audit hiccup could abort a legit settle | fire-and-forget with `.catch` (audit log can't fail the payment it audits) |
+
+Disclosed / accepted (no fix, documented): M-02 paymentId keyed on tx bytes (Hedera DUPLICATE_TRANSACTION backstop), L-01 bearer-token replay (B-06, LIMITATIONS), plus the `payTo` no-op guard was subsumed by the decode-ctx fix. `isPolicyDenial` bare-403 clause left as-is (typed `policy_violation` matches first).
+
 ## Confidence Score Justification
 95. Anchored formula: start 100; MUST-FIX 0, UNRESOLVED 0, SECURITY-CRITICAL/HIGH 0, no unsanctioned skips (full mode, all 6 phases). −5 for the 2 documented MEDIUM mock-leaks (dispositioned as wire handoffs, not shipped-blind). Every WS-7 acceptance (F-016..F-025) has live or unit evidence; both senior critiques approved with zero MUST-FIX; no regression to `/demo` or the 3 prize legs (INVARIANT #10). What would raise it: DH-1/DH-3/DH-6 actioned (real authed path, Neon-down fault-injection, persistent co-hold tx) — those are correctly owned by wire/stress/verify_milestone downstream.

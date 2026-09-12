@@ -36,13 +36,22 @@ export function toCtx(hookCtx: HederaHookContext, agentName: string): PaymentCon
   const inspected = inspectHederaTransaction(tx);
 
   const asset = hookCtx.requirements.asset;
-  const payTo = hookCtx.requirements.payTo;
 
   // Transfers for the requested asset ("0.0.0" HBAR -> hbarTransfers, else the HTS token bucket).
   const transfers = asset === '0.0.0' ? inspected.hbarTransfers : inspected.tokenTransfers[asset] ?? [];
 
-  // Payer = the account with a NEGATIVE net (the sender). Amount = what payTo RECEIVES (positive net).
+  // SECURITY (allowlist-bypass fix): the gate must enforce against the ACTUAL settled transfer, NOT the
+  // requested `requirements.payTo`. A malicious agent could build a transfer paying a non-allowlisted account
+  // while the resource server advertised an allowlisted `payTo`; keying the gate off `requirements` would then
+  // authorize a payment to an arbitrary recipient. A well-formed x402 payment moves the asset to exactly ONE
+  // positive receiver; anything else (zero, multiple, or a swapped/absent asset -> empty bucket) fails CLOSED.
   const receivers = getPositiveReceivers(transfers);
+  if (receivers.length !== 1) {
+    throw new Error(`expected exactly one receiver in asset ${asset}, decoded ${receivers.length}`);
+  }
+  const payTo = receivers[0]; // the account that ACTUALLY received the funds (checked against the allowlist)
+
+  // Payer = the account with a NEGATIVE net (the sender). Amount = what payTo actually RECEIVES (positive net).
   const payer = transfers.find((t) => BigInt(t.amount) < 0n)?.accountId
     ?? transfers.find((t) => getNetForAccount(transfers, t.accountId) < 0n)?.accountId
     ?? '';
@@ -51,9 +60,9 @@ export function toCtx(hookCtx: HederaHookContext, agentName: string): PaymentCon
   return {
     agentName,
     payer,
-    // amount is the positive receipt to payTo; guard against a mis-decoded sign.
+    // amount is the positive receipt to the actual payTo; guard against a mis-decoded sign.
     amount: amount < 0n ? -amount : amount,
-    payTo: receivers.includes(payTo) ? payTo : payTo,
+    payTo,
     asset,
     paymentId: derivePaymentId(tx),
   };

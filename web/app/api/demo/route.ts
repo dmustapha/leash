@@ -75,7 +75,9 @@ export async function POST(req: Request) {
       // ENS-declared cap is what refuses it.
       case 'refuse': {
         const r = await pay({ ...agentArgs(), amountRawOverride: '50000000' });
-        const reason = r.settle?.errorReason ?? 'OVER_CAP';
+        // Honest reason: only surface a facilitator classification when a settle response actually came back;
+        // never fabricate OVER_CAP on a transport error (the verdict stays DENY because nothing settled).
+        const reason = r.settle ? (r.settle.errorReason ?? 'OVER_CAP') : 'NO_SETTLE_RESPONSE';
         return NextResponse.json({
           beat,
           verdict: 'DENY',
@@ -97,7 +99,8 @@ export async function POST(req: Request) {
         // fail-closed probe: identical in-cap payment now that the policy record is cleared.
         const after = await pay(agentArgs());
         const failClosed = after.settle?.success !== true;
-        const reason = after.settle?.errorReason ?? 'REVOKED';
+        // Honest reason: classify only when a settle response returned; a transport error is not a fabricated REVOKED.
+        const reason = after.settle ? (after.settle.errorReason ?? 'REVOKED') : 'NO_SETTLE_RESPONSE';
         return NextResponse.json({
           beat,
           verdict: 'REVOKED',

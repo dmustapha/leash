@@ -9,6 +9,9 @@
 // INVARIANT #3: this reads the INDEX mirror of the public HCS topic only. It NEVER gates a payment - the
 // facilitator always reads the live ENS record. A stale/missing row here can only affect what the UI shows.
 import { NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { db } from '../../../../db/client';
+import { agents } from '../../../../db/schema';
 import {
   indexTopic, recentSpendEvents, recentSpendEventsForAgent, recentSpendEventsForOrg,
 } from '../../../../db/index-hcs';
@@ -45,13 +48,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ scope: 'org', ensName: org.ensName, indexed, events });
     }
 
-    // Single-agent drill-down (public HCS ledger data).
+    // Single-agent drill-down: OWNER-SCOPED (H-01 fix — this is the authed console surface, not public). Resolve
+    // the agent by ENS name, then assert the caller owns it (same ownership JOIN as every mutating route).
     if (agent) {
+      const rows = await db.select().from(agents).where(eq(agents.ensName, agent)).limit(1);
+      if (!rows[0]) return NextResponse.json({ error: 'agent not found' }, { status: 404 });
+      try {
+        await requireOwner(req, { agentId: rows[0].id });
+      } catch (e) {
+        const err = authErrorResponse(e);
+        if (err) return NextResponse.json(err.body, { status: err.status });
+        throw e;
+      }
       const events = await recentSpendEventsForAgent(agent, limit);
       return NextResponse.json({ scope: 'agent', agent, indexed, events });
     }
 
-    // Global recent activity (the /demo audit scroll).
+    // Global recent activity — the /demo audit scroll ONLY (public HCS ledger data; sandbox agents).
     const events = await recentSpendEvents(limit);
     return NextResponse.json({ scope: 'global', indexed, events });
   } catch (e) {
