@@ -6,8 +6,8 @@
   "doc_layout": "flat-at-root (git repo IS the project; build populates repo root per master doc §12; no nested project subdir)",
   "winning_idea": "LEASH — an org's ENSv2 name hierarchy as a live, revocable spend-permission graph for a fleet of paying AI agents; forked Hedera x402 facilitator reads the ENS resolver record pre-settlement; Privy is the independent second rail on funding.",
   "source": "warroom",
-  "status": "in-progress",
-  "current_phase": "phase-4",
+  "status": "complete",
+  "current_phase": "complete",
   "current_substep": null,
   "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5", "phase-2", "phase-2.5", "phase-3", "phase-3.5"],
   "documents_carry_warnings": {
@@ -79,7 +79,13 @@
   "docSuite": { "decisionsDoc": "DECISIONS.md", "decisionsAdrs": 8, "limitationsDoc": "LIMITATIONS.md", "securityMdSpec": true },
   "entryGateChecklist": { "met": 0, "total": 5, "unmet": [] },
   "externalScopeIngested": "docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope; ingested as the transcription source, not re-derived)",
-  "project_type": null,
-  "feature_observables": [],
+  "project_type": "full-stack",
+  "project_type_rationale": "Next.js dashboard (two-path /demo + /app) + backend services (facilitator, resource-server, treasury) + Postgres index + real user flows (wallet-less sandbox + Privy login console). The paying 'agent' is a client action triggered by user/demo, NOT an autonomous cron/LLM keeper loop, so 'full-stack' not 'agent'.",
+  "featureObservablesPath": "/Users/MAC/ethonline-2026/FEATURE-OBSERVABLES.md",
+  "feature_observables_count": 15,
+  "thesis_gate": { "THESIS-1": "PASS", "THESIS-2": "PASS", "THESIS-3": "PASS", "THESIS-4": "PASS", "THESIS-5": "PASS", "cross_review_thesis2": "AGREE (claude re-derive, PULSE ## Cross-Review)" },
+  "phase_ledger_final": [
+    { "phase": "phase_4", "started_at": "2026-09-12T05:00:00Z", "completed_at": "2026-09-12T05:40:00Z", "evidence": "FEATURE-OBSERVABLES.md (15 observables), .env.example + .input-manifest.json (21 rows) + INPUT-MANIFEST.md, manifest-lint EXIT 0, THESIS-1..5 PASS + claude cross-review AGREE (PULSE), project_type=full-stack" }
+  ],
   "errors": []
 }

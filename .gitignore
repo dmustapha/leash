@@ -1,5 +1,8 @@
 .env
 .env.*
+!.env.example
+.crossmodel-events.jsonl
+.salt-*
 node_modules/
 .next/
 dist/
