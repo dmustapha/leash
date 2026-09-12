@@ -1,9 +1,9 @@
 {
   "project": "leash",
   "currentPhase": "phase-6",
-  "currentStep": "6.1",
-  "currentSubStep": "6.1.a",
-  "status": "in-progress",
+  "currentStep": "6.2-complete",
+  "currentSubStep": "build-boundary",
+  "status": "complete",
   "autonomous_mode": false,
   "expected_phases": [
     "Phase 0",
@@ -50,6 +50,12 @@
       "started_at": "2026-09-12T12:35:00Z",
       "completed_at": "2026-09-12T14:30:00Z",
       "evidence": "Phase 5 COMPLETE (BUILD-REPORT.md): 5.1 seed canonical accounts (DEV-020 fixed, evm==key-EVM MATCH, idempotent); 5.2 WS-5a /demo 4 real beats + A/B SplitScreen, next build PASSES (web/tsconfig strict+ES2020 DEV-027), isolation 0, honest-framing 0, SPEND real settle; 5.3 VM-2 orchestrator re-ran 6/6 three-prize hero on canonical 0.0.10499595 (spend gas-free @1789214406, revoke Sepolia 0x12945fe4, Privy FUNDING_DENIED real token), WINNER-READINESS ~80; 5.4b WS-5b real console /app (relayer-sponsored org/agent/fund/revoke real txs driven locally, next build PASSES, isolation 0, custody key stripped). 5.4a Privy dashboard toggle = deploy-time human step (login UNTESTED, DEV-031); DEV-030 new-console-agent funding off-allowlist honest DENY"
+    },
+    {
+      "phase": "Phase 6",
+      "started_at": "2026-09-12T14:35:00Z",
+      "completed_at": "2026-09-12T15:05:00Z",
+      "evidence": "Phase 6 build-owned (Task 6.2) COMPLETE (BUILD-REPORT.md): submission/proof.md all 3 prize legs resolvable; /proof route next build PASSES prerendered; verify-claims recompute orchestrator-reran 6 claims 0 mismatches; docs/pipeline/claims.json populated; honest-framing grep 0 hits owned source; DEV-032 recompute caught+fixed a wrong cap. 6.1 deploy + 6.3 README/demo/video routed to deploy-to-github/hackathon-demo/hackathon-package per Skill-Ownership Map"
     }
   ],
   "completedSteps": [
@@ -73,7 +79,8 @@
     "5.1",
     "5.2",
     "5.3",
-    "5.4b"
+    "5.4b",
+    "6.2"
   ],
   "fileGroups": {
     "0.1": {
@@ -292,6 +299,18 @@
         "db/push.ts",
         "web/app/api/fund/route.ts",
         "web/app/globals.css",
+        "package.json"
+      ],
+      "written": true,
+      "verified": true
+    },
+    "6.2": {
+      "files": [
+        "submission/proof.md",
+        "web/app/proof/page.tsx",
+        "docs/pipeline/claims.json",
+        "scripts/verify-claims.ts",
+        "evidence/claims-recomputed.json",
         "package.json"
       ],
       "written": true,
@@ -546,6 +565,14 @@
       "reason": "dashboard access is a human deploy-time step",
       "class": "UNTESTED",
       "impact": "full login surface built against real SDK; test after 5.4a; does not block scored sandbox"
+    },
+    {
+      "step": "6.2",
+      "id": "DEV-032",
+      "description": "recompute gate caught asserted payments cap 2 USDC vs on-chain 25 USDC; fixed all surfaces to on-chain truth",
+      "reason": "VERIFY-BEFORE-CLAIMING; fix the claim never fabricate",
+      "class": "DEGRADED",
+      "impact": "none (honesty machine working as designed)"
     }
   ],
   "phaseExecutors": {
@@ -554,7 +581,8 @@
     "phase-2": "subagent",
     "phase-3": "subagent",
     "phase-4": "subagent",
-    "phase-5": "subagent+inline(tsconfig fix)"
+    "phase-5": "subagent+inline(tsconfig fix)",
+    "phase-6": "subagent (6.2 only; 6.1/6.3 owned downstream)"
   },
   "contractAddresses": {
     "orgParentRegistry": "0xb36e0ede0Ed38653c5aB8222B409a6b2Ba78b409",
@@ -636,5 +664,42 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T14:30:00Z"
+  "timestamp": "2026-09-12T15:05:00Z",
+  "deliverables_claimed": [
+    {
+      "id": "live_deploy",
+      "status": "not_started",
+      "owner": "deploy-to-github"
+    },
+    {
+      "id": "portfolio_readme",
+      "status": "not_started",
+      "owner": "deploy-to-github"
+    },
+    {
+      "id": "demo_video",
+      "status": "not_started",
+      "owner": "hackathon-demo"
+    },
+    {
+      "id": "submission_bundle",
+      "status": "not_started",
+      "owner": "hackathon-package"
+    },
+    {
+      "id": "logo_set",
+      "status": "not_started",
+      "owner": "design-forge"
+    },
+    {
+      "id": "proof_route",
+      "status": "done",
+      "owner": "hackathon-build"
+    },
+    {
+      "id": "submission_proof_md",
+      "status": "done",
+      "owner": "hackathon-build"
+    }
+  ]
 }
