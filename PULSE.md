@@ -178,3 +178,14 @@
 
 #### Blockers for Downstream
 - None. WS-5b /app login UNTESTED pending the 5.4a human Privy dashboard step (expected, non-blocking; scored sandbox unaffected).
+
+#### WS-7 build-delta (COMPLETE, 2026-09-12) - runs BEFORE debug, now DONE
+- All 12 items (A1 A2 A3 / B1 B2 B3 / C1 / D1 / A4 A5 / E1 E2) implemented + gated. Every group re-ran the FULL regression gate (vm2 6/6, vm1 3/3, `npm run build` PASS, `npm run check` PASS) with ZERO regression to /demo or the 3 prize legs (INVARIANT #10). All baked-in adversarial refinements B-01..B-08 implemented. Full table + new DEVs (033-035) in BUILD-REPORT.md `## WS-7 build-delta`.
+- [SKILL] A1 authz: `web/lib/auth.ts requireOwner()` (Bearer-only + app-id audience + ownership JOIN) is line 1 of every mutating console route; client sends `Authorization: Bearer` via `authedFetch`. IDOR (authed-as-A-targets-B) proven blocked 403 by `web/lib/auth.test.ts` (F-016). Identity is re-derived from the token, never client `privyUserId`.
+- [SKILL] C1 co-hold (DEV-035): the REAL kill switch is `setText('leash.policy','')` on the PermissionedResolver, so the co-hold role is ROLE_SET_TEXT on the agent's leash.policy part-resource, granted via the resolver's scoped `authorizeTextRoles` (raw EAC `grantRoles` is OVERRIDDEN to revert on that contract). Deployer/relayer is resolver ROOT admin → grant is gasless + scope-guarded (relay 'grant' op). Additive: user AND relayer both hold (proven on-chain, `agent/cohold.live.ts` 3/3). `createOnLogin:'users-without-wallets'` gives the user an address.
+- [SKILL] A3 (DEV-030 CLOSED): register reconciles the Privy funding allowlist read-modify-write UNION (non-empty guard); new /app agents are in-cap fundable + over-fund still DENIES on the real token.
+- [SKILL] A5 (DEV-033): durable replay in the settle path (Neon `seen_payments`), FAIL-CLOSED on store error. Pure gate `authorize.ts` stays DB-free (INVARIANT #3 preserved). paymentIds are unique per x402 payload, so durable seen never false-REPLAYs a re-run.
+- [SKILL] D1 identity is ADVISORY: `facilitator/identity-isolation.integration.ts` is a MODULE-BOUNDARY guard proving the enforcement graph never imports `scripts/ens/identity` (INVARIANT #13). Live identity records on data/payments sandbox agents; surfaced in /app, /demo, /proof.
+- [SKILL] B3 fix: the HCS indexer mirror query rejected `sequencenumber=gt:0`; now omits the filter when the index is empty → `/api/feed` returns real ALLOW/DENY (indexed:true).
+- E1/E2: GRANT surface (/app register → real mint+setPolicy+identity+cohold txs) + Privy login surface both render 200; the interactive OAuth login + on-camera register are Dami's browser steps (owned by demo_rehearsal/demo). Surfaces verified ready.
+- PENDING CLAIMS to flip PROVEN as live txs resolve: C1 co-hold tx (already live via cohold.live), D1 identity setText tx (already live via seed), A3 new-agent in-cap fund tx (needs a signed-in console register).
