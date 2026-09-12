@@ -17,3 +17,4 @@
 2026-09-12T14:23:34Z | hackathon-build | WS-7-SETUP | build-delta docs + 3 adversarial reviews applied | scope+docs amended, security refinements baked into INVARIANTS #11/#12/#14, ws7Delta cursor set; fresh chat implements WS-7 then debug
 2026-09-12T15:40:18Z | hackathon-debug | START | phase-1 | WS-7 delta complete; full-mode 6-phase gate
 2026-09-12T15:51:46Z | hackathon-debug | COMPLETE | phase-6 | confidence 95, PROCEED; 0 MUST-FIX, 0 unresolved, 6 hardening fixes, 8 handoffs
+2026-09-12T16:22:37Z | hackathon-debug | ADVERSARIAL-REVIEW | post-gate | security-auditor + senior-critique; 6 fixes (incl. decode-ctx allowlist-bypass + feed IDOR); re-gated vm2 6/6 vm1 3/3

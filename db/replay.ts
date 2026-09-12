@@ -17,8 +17,11 @@ export async function isSeen(paymentId: string): Promise<boolean> {
   return !!rows[0];
 }
 
-// Durably record a settled paymentId. Idempotent (a re-insert of the same id is a no-op). Throws on a store
-// error (caller fails closed and does NOT proceed).
-export async function markSeen(paymentId: string): Promise<void> {
-  await db.insert(seenPayments).values({ paymentId }).onConflictDoNothing();
+// Atomically CLAIM a paymentId. Returns true if THIS call inserted it (the caller won and may proceed), false
+// if it was already present (a replay / a concurrent settle already claimed it -> caller must abort). This
+// collapses check-and-claim into one atomic op, closing the isSeen->markSeen TOCTOU under concurrency. Throws
+// on a store error (caller fails closed and does NOT proceed).
+export async function markSeen(paymentId: string): Promise<boolean> {
+  const inserted = await db.insert(seenPayments).values({ paymentId }).onConflictDoNothing().returning({ id: seenPayments.paymentId });
+  return inserted.length > 0;
 }

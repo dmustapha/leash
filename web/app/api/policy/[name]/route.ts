@@ -6,10 +6,14 @@
 import { NextResponse } from 'next/server';
 import { readPolicy } from '../../../../../scripts/ens/policy';
 import { readIdentity } from '../../../../../scripts/ens/identity';
+import { enforceRateLimit } from '../../../../lib/ratelimit';
 
 export const dynamic = 'force-dynamic'; // never cache: the panel must reflect the on-chain record live
 
-export async function GET(_req: Request, ctx: { params: Promise<{ name: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ name: string }> }) {
+  // Blunt enumeration + RPC-cost abuse on this public read (higher capacity than mutations: it's a cheap read).
+  const limited = enforceRateLimit(req, 'policy', { capacity: 30, refillPerSec: 2 });
+  if (limited) return limited;
   const { name: raw } = await ctx.params;
   const name = decodeURIComponent(raw);
   try {

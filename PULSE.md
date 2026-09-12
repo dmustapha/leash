@@ -211,6 +211,10 @@
 #### Active Facts
 - [SKILL] Debug applied 6 fixes ON TOP of the WS-7 commits (not yet separately committed at PULSE-write time; committed immediately after). No functionality changed — hardening only. /demo + 3 prize legs unregressed (INVARIANT #10).
 
+#### Adversarial review (post-debug, 2026-09-12)
+- Two dedicated reviews with the full master doc in scope: security-auditor (WS-7 surface) = CRIT 0 / HIGH 1 -> SHIP after fix; code-reviewer (pre-WS-7 core) = MUST-FIX 1, enforcement core sound (fail-closed structural, TOCTOU-closed, RPC/decode/store errors deny).
+- 6 fixes applied + re-gated (typecheck, unit 44, integration 8, build, vm2 6/6, vm1 3/3, no regression): [H-01] `/api/feed?agent=` now owner-scoped (was cross-tenant readable); [core MUST-FIX] `decode-ctx` binds the ACTUAL settled receiver/amount not `requirements` (closes an allowlist bypass; honest single-receiver case unchanged); [M-01] atomic replay claim; [L-02] `/api/policy` rate-limited; honest demo reason (no fabricated OVER_CAP/REVOKED on transport error); HCS log fire-and-forget on the settle hot path.
+
 #### For Next Skill (wire, then verify_milestone/stress_test)
 - Read DEBUG-REPORT.md executive summary + the DH-1..DH-8 rows in `## Downstream Items`. wire owns DH-1 (real authed console path: live Privy token + Neon; prove 200 + cross-tenant 403) and DH-2 (revoke-sync mock-leak). Everything else routes to stress_test (DH-3/4/5/7) and verify_milestone (DH-6).
 - The 3 prize legs + VM-1/VM-2 are unchanged and green; wire should re-confirm the LIVE Hedera paid request evidence (HashScan) per the brief.

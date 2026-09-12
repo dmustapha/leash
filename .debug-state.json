@@ -15,7 +15,8 @@
     "3": { "status": "complete", "handoffEntries": 8, "smoke": "PASS" },
     "4": { "status": "complete", "secrets": "CLEAN (all 0x64hex are bitmaps/ZERO_BYTES32/public tx hashes; keys only in gitignored .env)", "envTracked": "none", "mockLeaks": 2, "critical": 0, "high": 0, "medium": 2 },
     "5": { "status": "complete", "backend": { "mustFix": 0, "shouldFix": 5, "note": 3 }, "frontend": { "mustFix": 0, "shouldFix": 5, "note": 2 } },
-    "6": { "status": "complete", "fixed": 6, "note": "relay scope-guard label-boundary; fund route dead agentAddress branch removed; index-hcs per-message try/catch; app-console useCallback lint fix; agent-row loadActivity r.ok check; register-form optional-field guards + co-hold hint" }
+    "6": { "status": "complete", "fixed": 6, "note": "relay scope-guard label-boundary; fund route dead agentAddress branch removed; index-hcs per-message try/catch; app-console useCallback lint fix; agent-row loadActivity r.ok check; register-form optional-field guards + co-hold hint" },
+    "adversarial_review": { "status": "complete", "date": "2026-09-12", "reviews": ["security-auditor (WS-7 surface): CRIT 0 HIGH 1 -> SHIP after fix", "code-reviewer (pre-WS-7 core): MUST-FIX 1, core sound"], "fixed": ["H-01 feed ?agent= ownership check", "decode-ctx actual-receiver binding (allowlist-bypass)", "M-01 atomic replay claim", "L-02 /api/policy rate limit", "demo honest reason (no fabricated OVER_CAP/REVOKED on transport error)", "HCS log fire-and-forget on settle"], "regate": "typecheck + unit 44 + integration 8 + build + vm2 6/6 + vm1 3/3, no regression" }
   },
   "delegationHandoff": [
     { "owner": "wire", "risk": "auth.test mocks Privy+Neon; real authed console path uncovered", "reason": "prove live signed-in mutation 200 + authed-as-A-targets-B 403 (DH-1)" },

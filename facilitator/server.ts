@@ -115,22 +115,31 @@ export const facilitator = new x402Facilitator()
     // submit is treated as consumed). A persist error fails CLOSED (do not proceed); Hedera DUPLICATE_TRANSACTION
     // is the on-chain backstop.
     if (allow) {
+      let claimed: boolean;
       try {
-        await markSeen(ctx.paymentId);
-        seen.add(ctx.paymentId);
+        claimed = await markSeen(ctx.paymentId); // atomic claim: true = we won, false = already settled (race/replay)
       } catch {
         await logDecision({
           name: ctx.agentName, decision: 'DENY', amount: ctx.amount.toString(),
           payTo: ctx.payTo, reason: 'REPLAY', ts: new Date().toISOString(),
         });
-        return { abort: true, reason: 'REPLAY' };
+        return { abort: true, reason: 'REPLAY' }; // fail closed on store error
       }
+      if (!claimed) {
+        await logDecision({
+          name: ctx.agentName, decision: 'DENY', amount: ctx.amount.toString(),
+          payTo: ctx.payTo, reason: 'REPLAY', ts: new Date().toISOString(),
+        });
+        return { abort: true, reason: 'REPLAY' }; // lost the concurrent race -> do not double-settle
+      }
+      seen.add(ctx.paymentId);
     }
 
-    await logDecision({
+    // Audit log is fire-and-forget: an HCS latency spike / transient error must NEVER fail the settle it audits.
+    void logDecision({
       name: ctx.agentName, decision: allow ? 'ALLOW' : 'DENY', amount: ctx.amount.toString(),
       payTo: ctx.payTo, reason: allow ? undefined : d.reason, ts: new Date().toISOString(),
-    });
+    }).catch((e) => console.error('[hcs-log] settle-path audit log failed (non-fatal):', e));
     return toHook(d);
   });
 
