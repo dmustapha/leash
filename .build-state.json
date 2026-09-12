@@ -1,8 +1,8 @@
 {
   "project": "leash",
-  "currentPhase": "phase-1",
-  "currentStep": "1.1",
-  "currentSubStep": "1.1.a",
+  "currentPhase": "phase-2",
+  "currentStep": "2.1",
+  "currentSubStep": "2.1.a",
   "status": "in-progress",
   "autonomous_mode": false,
   "expected_phases": ["Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Phase 6"],
@@ -12,24 +12,45 @@
       "started_at": "2026-09-12T07:15:00Z",
       "completed_at": "2026-09-12T08:55:00Z",
       "evidence": "Phase 0 gate green (BUILD-REPORT.md Verification Results): typecheck EXIT=0; DP-0 Privy in-cap SUCCESS txHash 0x93e068bc + over-cap FUNDING_DENIED (policy_violation) deterministic wallet 0.0.10495945; Hedera 1-tinybar SUCCESS; Sepolia ETHRegistry bytecode 0x60806040...; franchise skeleton + CI + clean-room + 3 test tiers scaffolded"
+    },
+    {
+      "phase": "Phase 1",
+      "started_at": "2026-09-12T08:56:00Z",
+      "completed_at": "2026-09-12T09:25:00Z",
+      "evidence": "Phase 1 gate green (BUILD-REPORT.md): DP-1/DP-1b real alpha ABIs introspected from cloned contracts-v2; npm run setup provisioned 3-level hierarchy leash.eth>acme.leash.eth>{data,payments} on Sepolia; enforcement readPolicy round-trip orchestrator-reverified (payments live 25 USDC, data null after revoke tx 0xf03e14d1); register txs status=1 (0x32d3d92e, 0x81a9f22d, 0x9245255c); own HTS USDC 0.0.10496489; HCS topic 0.0.10496492; POLICY_RESOLVER 0xdC460cd7 (R-2 fix); DOMAIN-GUIDE.md 18842 bytes leash.policy x10"
     }
   ],
-  "completedSteps": ["0.1", "0.2", "0.3"],
+  "completedSteps": ["0.1", "0.2", "0.3", "1.1", "1.2", "1.3", "1.4"],
   "fileGroups": {
     "0.1": { "files": ["package.json", "tsconfig.json", "vitest.config.ts", "types/index.ts", "CLAIMS.md", "SECURITY.md", "scripts/verify-claims.ts", "scripts/ens/policy.ts", "web/lib/config.ts", "docs/pipeline/claims.json", "evidence/.gitkeep", "scripts/clean-room.sh", ".github/workflows/ci.yml"], "written": true, "verified": true },
     "0.2": { "files": ["treasury/privy.ts", "treasury/privy.live.ts"], "written": true, "verified": true },
-    "0.3": { "files": ["scripts/hedera/client.ts", "scripts/ens/client.ts", "scripts/ens/addresses.ts"], "written": true, "verified": true }
+    "0.3": { "files": ["scripts/hedera/client.ts", "scripts/ens/client.ts", "scripts/ens/addresses.ts"], "written": true, "verified": true },
+    "1.1": { "files": ["scripts/ens/register-2ld.ts", "scripts/ens/subregistry.ts", "scripts/ens/subname.ts", "scripts/ens/roles.ts", "scripts/ens/reverse.ts", "scripts/ens/revoke.ts"], "written": true, "verified": true },
+    "1.2": { "files": ["scripts/setup.ts", "scripts/hedera/mint-usdc.ts", "scripts/hedera/associate.ts", "scripts/hedera/hcs.ts", "scripts/hedera/fund-agent.ts"], "written": true, "verified": true },
+    "1.3": { "files": ["scripts/ens/policy.ts", "scripts/ens/revoke.ts"], "written": true, "verified": true },
+    "1.4": { "files": ["DOMAIN-GUIDE.md"], "written": true, "verified": true }
   },
   "deviations": [
     { "step": "0.2", "id": "DEV-001", "description": "createWallet owner shape typed (removed as any)", "reason": "DP-0 verified ^1.32 shape", "class": "COSMETIC", "impact": "none" },
     { "step": "0.2", "id": "DEV-002", "description": "createPolicy/sendTransaction/isPolicyDenial corrected to ^1.32 schema", "reason": "ARCHITECTURE §9 shapes pre-^1.32", "class": "DEGRADED", "impact": "seed-demo funding inherits corrected shapes" },
-    { "step": "0.2", "id": "DEV-003", "description": "WS-0 smoke in test:live tier; funds treasury EVM account before send", "reason": "Privy simulates before policy-eval; account must exist", "class": "DEGRADED", "impact": "later Privy smokes need existing treasury account" },
-    { "step": "0.2", "id": "DEV-004", "description": "treasury EVM funded 5 HBAR (was 1) for repeated in-cap gas", "reason": "control runs spend gas", "class": "COSMETIC", "impact": "none" },
-    { "step": "0.2", "id": "DEV-005", "description": "added in-cap SUCCESS control + typed policy_violation match", "reason": "prior test could pass off a broken-account failure as a deny", "class": "DEGRADED", "impact": "strengthens INVARIANT #5 proof" }
+    { "step": "0.2", "id": "DEV-003", "description": "WS-0 smoke in test:live tier; funds treasury EVM account before send", "reason": "Privy simulates before policy-eval", "class": "DEGRADED", "impact": "later Privy smokes need existing treasury account" },
+    { "step": "0.2", "id": "DEV-004", "description": "treasury EVM funded 5 HBAR (was 1)", "reason": "control runs spend gas", "class": "COSMETIC", "impact": "none" },
+    { "step": "0.2", "id": "DEV-005", "description": "added in-cap SUCCESS control + typed policy_violation match", "reason": "prior test could pass off broken-account failure as deny", "class": "DEGRADED", "impact": "strengthens INVARIANT #5 proof" },
+    { "step": "1.2", "id": "DEV-006", "description": "setup script uses --env-file=.env (no dotenv import existed)", "reason": "process.env undefined otherwise", "class": "COSMETIC", "impact": "all tsx runs need --env-file or sourced env" },
+    { "step": "1.1", "id": "DEV-007", "description": "subregistry resume-check treats existing==parentRegistry as unset", "reason": "ETHRegistry returns itself for names without custom subregistry", "class": "DEGRADED", "impact": "none (fixed)" },
+    { "step": "1.3", "id": "DEV-008", "description": "R-2 fix: deploy PermissionedResolver proxy, setResolver children to it, setText/text there (not shared PublicResolverV2)", "reason": "PublicResolverV2 reverts setText for self-deployed UserRegistry names; 3-level resolved, no 2-level fallback", "class": "DEGRADED", "impact": "facilitator/ens-read.ts MUST read text on POLICY_RESOLVER, identical primitive" },
+    { "step": "1.1", "id": "DEV-009", "description": "tokenIdOf returns plain v0 labelhash; ownerOf needs version-canonical id", "reason": "ENSv2 versioning", "class": "UNTESTED", "impact": "future direct ownerOf use must version-canonicalize" }
   ],
-  "phaseExecutors": { "phase-0": "subagent" },
-  "contractAddresses": {},
-  "env": { "added": ["TREASURY_OWNER_PUBKEY", "PRIVY_AUTHORIZATION_KEY", "TREASURY_WALLET_ID", "TREASURY_EVM_ADDRESS"] },
+  "phaseExecutors": { "phase-0": "subagent", "phase-1": "subagent" },
+  "contractAddresses": {
+    "orgParentRegistry": "0xb36e0ede0Ed38653c5aB8222B409a6b2Ba78b409",
+    "sandboxRegistry": "0xB45830aeaf0A00367A450635a110cffA6878A679",
+    "policyResolver": "0xdC460cd7151D679CF5D1e34595e1ac890A5E4978",
+    "usdcTokenId": "0.0.10496489",
+    "usdcEvmAddress": "0x0000000000000000000000000000000000a029e9",
+    "hcsTopicId": "0.0.10496492"
+  },
+  "env": { "added": ["TREASURY_OWNER_PUBKEY", "PRIVY_AUTHORIZATION_KEY", "TREASURY_WALLET_ID", "TREASURY_EVM_ADDRESS", "ENS_ROOT_NAME", "SANDBOX_ORG_NAME", "SANDBOX_ORG_PARENT_REGISTRY", "SANDBOX_REGISTRY", "POLICY_RESOLVER", "USDC_TOKEN_ID", "USDC_EVM_ADDRESS", "HCS_TOPIC_ID"] },
   "devPort": 3000,
   "depsVerified": true,
   "invariantsConsumed": true,
@@ -38,7 +59,7 @@
   "cleanRoomScaffolded": { "script": "scripts/clean-room.sh", "oneCommandGate": "npm run check" },
   "testTiersScaffolded": { "offlineGlob": "**/*.test.ts", "integrationGlob": "**/*.integration.ts", "liveGlob": "**/*.live.ts", "defaultGateExcludesLive": true },
   "ciScaffolded": true,
-  "verification_commands": ["npm run typecheck", "npm run test:live", "npm run check", "cast code 0x67b728a792e789a8978b30cf1b3b641f19354b43"],
+  "verification_commands": ["npm run typecheck", "npm run test:live", "npm run check", "npm run setup", "readPolicy round-trip", "cast receipt"],
   "screenshot_paths": [],
   "context_percentage": 0,
   "clock_tripwires": {
@@ -48,5 +69,5 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T08:55:00Z"
+  "timestamp": "2026-09-12T09:25:00Z"
 }
