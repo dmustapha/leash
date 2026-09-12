@@ -13,4 +13,10 @@ export const config = {
   usdcEvmAddress: process.env.USDC_EVM_ADDRESS!,
   treasuryWalletId: process.env.TREASURY_WALLET_ID!,
   sandboxRegistry: process.env.SANDBOX_REGISTRY as `0x${string}`,
+  // REFRAME [SKILL] (per REFRAME-SCOPE §4-S1/config) — env-pinned trust boundary additions.
+  // SR-1: config reads ONLY LEASH's own co-sign authority key (leashCosignerKey) — NEVER the agent's private
+  // key (COSIGN_AGENT_KEY). erc8004Registry is used only by scripts/ens/erc8004.ts for the ADVISORY on-chain
+  // resolve; the facilitator enforcement path never reads agent.* (INVARIANT #13).
+  leashCosignerKey: process.env.LEASH_COSIGNER_KEY!, // raw Hedera ECDSA authority key; asserted !== HEDERA_OPERATOR_KEY at process start
+  erc8004Registry: (process.env.ERC8004_REGISTRY_ADDRESS ?? '0x8004A818BFB912233c491871b3d84c89A494BD9e') as `0x${string}`,
 };
