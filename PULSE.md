@@ -6,6 +6,8 @@
 | The Graph does NOT index Hedera (no subgraph/Substreams/Token-API support; Hedera data only via Mirror Node REST, which doesn't satisfy the Graph bounty) | fact-check [A1] thegraph.com/docs/supported-networks | warroom-v2 |
 | [USER] Privy dashboard Email/Google login + allowed origins ALREADY enabled by Dami (pre-build screenshot); NEXT_PUBLIC_PRIVY_APP_ID now set (mirrors PRIVY_APP_ID). Task 5.4a env portion DONE; /app login testable. | user (screenshot) + build | build-delta (WS-7) |
 | [SKILL] WS-7 scope doc = docs/WS7-HARDENING-SCOPE.md (the build-delta spec). Sandbox /demo + VM-1/VM-2 are the FROZEN regression gate for the whole delta. | build | build-delta (WS-7) |
+| [USER] REFRAME (SUPERSEDES WS-7 product model): LEASH stops MINTING agents → spend-control plane for EXTERNAL agents. Scope = docs/REFRAME-SCOPE.md. 2-of-2 co-signed Hedera KeyList account (agent holds own key SR-1; LEASH_COSIGNER_KEY≠OPERATOR); Control=TRUE, Independence=TRUE, Trustless=FALSE (never claim). ERC-8004 on-chain-RESOLVED not verified. Rolling caps = SOFT budget. Frozen floor /demo+/api/demo+provision-canonical.ts+ensureCanonicalAgent+VM-1/VM-2 NO-TOUCH. Deadline 2026-09-13 16:00 UTC. | user + REFRAME-SCOPE | build-delta (REFRAME) |
+| [SKILL] REFRAME Group F COMPLETE (2026-09-12): 9 canonical docs amended doc-first (ARCHITECTURE/INVARIANTS/LIMITATIONS/PRD/DECISIONS/FEATURE-OBSERVABLES[F-026..F-032]/PRIZE-COMPLIANCE/CLAIMS[C-9..C-15]/claims.json). Honesty-grep clean (no affirmative trustless/verified). Baseline GREEN: typecheck 0err, unit 44/44, integration 8/8. Stray wire-phase `playwright` devDep dropped (0 refs, uncommitted). | build (REFRAME) | build-delta (REFRAME) |
 
 ## Decisions Log
 | Decision | Rationale | Phase |

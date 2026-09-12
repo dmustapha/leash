@@ -19,6 +19,13 @@ Not another agent that pays an API. LEASH is the ENS name that can un-pay it: cu
 
 LEASH turns an organization's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents. Cutting off any agent everywhere is one on-chain write.
 
+> **[USER] REFRAME (2026-09-12 — headline model; the create-your-own-agent product is roadmap "coming soon").** LEASH stops **minting** agents. It is the **spend-control plane for agents that already exist**. An agent's real self — logic, LLM, key, identity — lives **outside** LEASH (an EVM address / ERC-8004 registration it controls). LEASH **binds** that external identity to an **ENS name (the leash)** + a **2-of-2 co-signed Hedera spending account** (agent holds one key, LEASH the other) + a **policy** (per-call cap, allowlist, rolling daily/weekly caps, time-windows) + **Privy funding** + **one-write revoke**.
+>
+> **Honest framing (LOCKED — three DISTINCT properties, never conflate, never drift):**
+> - **Control = TRUE.** LEASH co-controls the agent's spending account: its policy-checked co-signature is *required*, so the agent cannot spend without LEASH, and LEASH refuses anything over-policy. Caps + revoke are real. Symmetrically, LEASH cannot touch the agent's funds without the agent.
+> - **Independence = TRUE.** The agent holds its own key on the account (a genuine co-owner), and its identity/logic/LLM are external and self-owned.
+> - **Trustless = FALSE (NEVER claim).** The cap is enforced by LEASH's *decision to co-sign*, not by the chain. The chain enforces only "two keys signed," never "why." Same honest facilitator-trust boundary as today (INVARIANT #4). Corporate-card model: independent employee, company-governed card, freezable.
+
 ### Problem Statement
 Teams now deploy fleets of AI agents that spend money per call over x402. The only spend control today is a raw private key per agent: no per-agent cap, no payee scoping, no hierarchy, and revocation means rotating keys across every downstream service by hand. A leaked or rogue agent has no single, instant, org-wide off-switch. **The shocking number: cutting off a leaked agent today means touching every downstream service one-by-one; LEASH cuts it everywhere in ONE transaction.**
 
@@ -99,6 +106,16 @@ An org mints a child ENS name for each agent and writes its `leash.policy` text 
 
 ## 3. User Flows
 
+> **[USER] REFRAME (2026-09-12) — headline flow is register-existing, NOT mint-an-agent.** The flows below are preserved as the frozen `/demo` sandbox (single-key path, VM-1/VM-2) and the prior `/app` create-agent path (now roadmap "coming soon"). The reframe headline flow supersedes them for `/app`.
+
+### Flow 0: Register an EXISTING agent (`/app`, the reframe headline)
+The agent's identity/logic/LLM/key already exist outside LEASH. Registration BINDS that identity — it never mints one. No "mint an agent" copy anywhere in this path.
+1. User supplies an **EVM address and/or an ERC-8004 `agentId`** for an agent they run.
+2. LEASH calls the canonical ERC-8004 Identity Registry on Ethereum Sepolia (`0x8004A818BFB912233c491871b3d84c89A494BD9e`, ABI verified live at build) to **resolve** the owner. The badge reads **"on-chain-resolved"**, NOT "verified" — `ownerOf` does not prove the registrant controls the address (proof-of-control = roadmap). Owner-mismatch ⇒ clear error. Identity stays ADVISORY (INVARIANT #13).
+3. LEASH provisions a **2-of-2 co-signed Hedera spending account**: `KeyList[agentPub, leashCoSignerPub]`, `threshold=2`. The **agent supplies ONLY its Hedera PUBLIC key** (`agentPub`) — its Hedera private key is held by the AGENT and is NEVER in LEASH's facilitator, DB, or env (SR-1, the linchpin). USDC-associated; funded via the account's **long-zero EVM address**.
+4. LEASH writes the ENS text records — the **on-chain-resolved** identity keys (`agent.erc8004` CAIP, `agent.address`) — and then writes `leash.policy` **LAST** (spend authority is the final write, so a partial register is inert / fail-closed).
+5. **Privy funds** the spending account at its **long-zero EVM address** (funding UNION behind `requireOwner`; in-cap ALLOW / over-fund DENY on the real token). Privy stays funding-only, never a per-transaction co-signer (INVARIANT #6).
+
 ### Flow 1: Judge Sandbox hero flow (`/demo`, zero-setup, SCORED) - the demo path
 1. Judge opens `/demo`. Pre-seeded `acme.leash.eth` with 2 child agents renders, each showing its cap + allowlist read live from ENS Sepolia. No login, no wallet, no ETH.
 2. Judge (or auto-play) triggers **SPEND**: agent 1 pays a whitelisted API 3 USDC. Facilitator reads ENS + binding check → settles gas-free → HashScan receipt + HCS log line appear.
@@ -157,7 +174,14 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Interface:** `paymentMiddlewareFromConfig({ 'GET /premium': { price, network:'hedera:testnet', payTo } }, HttpFacilitatorClient({url: OUR_FACILITATOR}))`.
 - **Constraints:** demo endpoint price reconciled with narrated amounts (see Risk R-11 / §6 note).
 
-### Agent client
+### 2-of-2 co-signed spending account + agent-side client + funding [USER REFRAME, 2026-09-12]
+- **Purpose:** the reframe's spending model for `/app` register-existing agents. Additive + network-typed; the `/demo` single-key sandbox account is FROZEN and NO-TOUCH (INVARIANT #10).
+- **Account model:** a NET-NEW `KeyList[agentPub, leashCoSignerPub]`, `threshold=2` Hedera account (`scripts/hedera/provision-spending-account.ts`; NO reuse of `ensureCanonicalAgent`, NO touch to `provision-canonical.ts`). `agentPub` is supplied by the agent; the agent holds `agentPriv` (SR-1 — never in LEASH). `LEASH_COSIGNER_KEY` holds the cosigner key and is **asserted DISTINCT from `HEDERA_OPERATOR_KEY`** (the fee-payer) at process start — throw if equal — so "LEASH's authority key ≠ its gas key" is literally true within the process.
+- **Agent-side x402 client (SR-1 / SR-2):** the x402 client runs **AGENT-SIDE** — an external process holding its own Hedera key, signing **1-of-2** on the KeyList account. The demo/VM-3 agent is such an external process; it does NOT sign with a LEASH-held key.
+- **Co-sign discipline:** verify-time accepts the agent's valid 1-of-2 signature (a custom `verifyPayerSignature` confirming a known KeyList member signed; the network enforces the full threshold at submit). LEASH applies its co-signature **ONLY at settle, AFTER the gate passes, at the single post-gate emit site** — and only if `authorize()` returns `{settle:true}`. Agent-alone ⇒ no settle (`MISSING_COSIGN`, a clean gate reason, never a caught Hedera `INVALID_SIGNATURE`); operator-alone can't move funds (F-031, depends ENTIRELY on SR-1).
+- **Funding:** Privy funds to the account's **long-zero EVM address** (a KeyList account has no key-derived EVM alias — REF-2). That long-zero EVM is also the `agentEvm` in ENS and the `reconcileFundingAllowlist` target. Long-zero HTS funding is live-verified at the S-GATE; if it fails, the Privy DENY beat falls back to the treasury source (still qualifies).
+
+### Agent client (legacy single-key path — FROZEN /demo floor; create-your-own roadmap)
 - **Purpose:** build + sign + pay.
 - **Interface:** `pay(endpoint, agentName)` → builds native TransferTransaction, `freezeWith(client)`, signs via Privy `secp256k1Sign(hash)`, retries with `X-PAYMENT` + `X-Leash-Agent`.
 - **Dependencies:** @privy-io/server-auth (custody signer), @x402/hedera.
@@ -212,6 +236,8 @@ ResourceServer -> Agent: paid data | 402 with reason
 ---
 
 ## 6. Demo Script
+
+> **[USER] REFRAME (2026-09-12) — frozen floor + reframe hero.** The `/demo` sandbox stays **FROZEN** (single-key path, VM-1/VM-2 green) as the **regression floor** and is NO-TOUCH. The reframe hero (**VM-3**) runs on a **co-signed `/app` agent**: register-existing → co-sign in-cap pay (settle) → agent-alone can't spend → operator-alone can't move funds → over-cap / over-daily / outside-window refuse → mirror-down ⇒ `RPC_ERROR` DENY → revoke ⇒ fail-closed. The scenes below describe the frozen `/demo` floor; the reframe hero is filmed on `/app` VM-3.
 
 **Total Duration:** 3:00. **Format:** screen recording, human voice only (no AI voiceover/TTS), 720p+, intro <20s. Real on-chain txs throughout.
 
@@ -298,6 +324,10 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 | R-17 | Console authz / IDOR: a request with no token or naming another tenant reads or mutates cross-tenant data | HIGH | MED (if unguarded) | Cross-tenant leak / rogue mutation; B2B credibility loss | `verifyAuthToken` on every `/app` route; tenant derived from the verified token, never client input; foreign-id → 401/403 no mutation (INVARIANT #11) | WS7 A1; FEATURE-OBSERVABLES F-016 |
 | R-18 | Render cold-start / spin-down: facilitator restarts mid-demo and loses in-memory replay state | MED | MED | In-memory `seen` set cleared → a replay could slip; cold-start stall in the video | Durable Neon-backed replay store (INVARIANT #14) so `REPLAY` survives restart; deploy keep-warm ping or `plan:starter` (DS-5) | WS7 A5; PULSE DS-5; FEATURE-OBSERVABLES F-008 |
 | R-19 | Rate-limit / balance drain: rapid repeat `/api/demo` or console calls drain the fee-payer / agent balance | MED | MED | Judge sandbox runs dry mid-judging | Per-IP/session token-bucket rate limit returns `429` before balances drain (A4) | WS7 A4; FEATURE-OBSERVABLES F-019 |
+| R-20 [USER REFRAME] | Rolling daily/weekly cap is a **SOFT budget** (mirror node is a LAGGING index, read via `consensus_timestamp`), not a settle-live hard cap | HIGH | MED | Overspend up to worst-case ≈ **C × maxPerCall** under C concurrency | Disclose as soft budget (never "trustless/exact/settle-authoritative"); `maxPerCall` (live ENS) is the hard per-call bound, `fundingCap` (Privy) the hard aggregate; fail-CLOSED on mirror error (`RPC_ERROR`, never default-0); malformed cap ⇒ `MALFORMED_POLICY`; serialize per-agent settle if the tighter bound is wanted | REFRAME D3; INVARIANTS #3; LIMITATIONS |
+| R-21 [USER REFRAME] | Cosigner shares the facilitator's process trust-domain (`LEASH_COSIGNER_KEY` in the same process, separate-trust-domain cosigner service = roadmap) | MED | MED | 2-of-2 is facilitator-trusted, not chain-trustless | Assert `LEASH_COSIGNER_KEY ≠ HEDERA_OPERATOR_KEY` at startup; disclose in LIMITATIONS; never claim "trustless"; separate cosigner service is roadmap | REFRAME §1; INVARIANTS #6 |
+| R-22 [USER REFRAME] | No proof-of-control on the external identity — `ownerOf` is resolved, not verified | MED | MED | Identity binding is advisory only; a wrong `agentPub` is self-defeating (holder can't produce the 1-of-2 sig) | Label "on-chain-resolved" not "verified"; keep identity ADVISORY off the enforcement path (INVARIANT #13, CI module-boundary guard); signed proof-of-control = roadmap | REFRAME R1/R3; INVARIANTS #13; CLAIMS |
+| R-23 [USER REFRAME] | Long-zero EVM funding of the KeyList account may fail live (a KeyList account has no key-derived EVM alias) | MED | LOW | Privy funding beat can't target the spending account | Live-verify long-zero HTS funding at the S-GATE; treasury-source fallback for the Privy DENY beat (still qualifies); `provision-canonical.ts`/`ensureCanonicalAgent` NO-TOUCH | REFRAME S1/S-GATE/R2; LIMITATIONS |
 
 ### Risk Categories Covered
 - [x] Technical (R-2, R-3, R-4, R-7, R-8, R-12, R-13, R-16)
