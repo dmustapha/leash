@@ -1,8 +1,8 @@
 {
   "project": "leash",
-  "currentPhase": "phase-2",
-  "currentStep": "2.1",
-  "currentSubStep": "2.1.a",
+  "currentPhase": "phase-3",
+  "currentStep": "3.1",
+  "currentSubStep": "3.1.a",
   "status": "in-progress",
   "autonomous_mode": false,
   "expected_phases": ["Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Phase 6"],
@@ -18,9 +18,15 @@
       "started_at": "2026-09-12T08:56:00Z",
       "completed_at": "2026-09-12T09:25:00Z",
       "evidence": "Phase 1 gate green (BUILD-REPORT.md): DP-1/DP-1b real alpha ABIs introspected from cloned contracts-v2; npm run setup provisioned 3-level hierarchy leash.eth>acme.leash.eth>{data,payments} on Sepolia; enforcement readPolicy round-trip orchestrator-reverified (payments live 25 USDC, data null after revoke tx 0xf03e14d1); register txs status=1 (0x32d3d92e, 0x81a9f22d, 0x9245255c); own HTS USDC 0.0.10496489; HCS topic 0.0.10496492; POLICY_RESOLVER 0xdC460cd7 (R-2 fix); DOMAIN-GUIDE.md 18842 bytes leash.policy x10"
+    },
+    {
+      "phase": "Phase 2",
+      "started_at": "2026-09-12T09:30:00Z",
+      "completed_at": "2026-09-12T10:05:00Z",
+      "evidence": "Phase 2 gate green (BUILD-REPORT.md): pure authorize() 22/22 + structural fail-closed (removing a GateReason case = TS2345 not-assignable-to-never), INVARIANT #1 intact; [SEC] greps orchestrator-reverified (facilitator DB 0, secp256k1Sign 0, trustless 0, treasury createPolicy 4); TOCTOU integration 3/3 orchestrator-reverified (mid-flight clearPolicy tx 0xbfb1be7b then no-cache read REVOKED, submitCalled=false, INVARIANT #2/#8); HCS topic 0.0.10496492 ALLOW seq#1 + DENY OVER_CAP seq#2 decoded live via mirror node; ens-read byte-identical to proven policy.ts read; E-1=self-hosted @x402/hedera Blocky402-equivalent (DEV-014)"
     }
   ],
-  "completedSteps": ["0.1", "0.2", "0.3", "1.1", "1.2", "1.3", "1.4"],
+  "completedSteps": ["0.1", "0.2", "0.3", "1.1", "1.2", "1.3", "1.4", "2.1", "2.2", "2.3", "2.4", "2.5"],
   "fileGroups": {
     "0.1": { "files": ["package.json", "tsconfig.json", "vitest.config.ts", "types/index.ts", "CLAIMS.md", "SECURITY.md", "scripts/verify-claims.ts", "scripts/ens/policy.ts", "web/lib/config.ts", "docs/pipeline/claims.json", "evidence/.gitkeep", "scripts/clean-room.sh", ".github/workflows/ci.yml"], "written": true, "verified": true },
     "0.2": { "files": ["treasury/privy.ts", "treasury/privy.live.ts"], "written": true, "verified": true },
@@ -28,7 +34,12 @@
     "1.1": { "files": ["scripts/ens/register-2ld.ts", "scripts/ens/subregistry.ts", "scripts/ens/subname.ts", "scripts/ens/roles.ts", "scripts/ens/reverse.ts", "scripts/ens/revoke.ts"], "written": true, "verified": true },
     "1.2": { "files": ["scripts/setup.ts", "scripts/hedera/mint-usdc.ts", "scripts/hedera/associate.ts", "scripts/hedera/hcs.ts", "scripts/hedera/fund-agent.ts"], "written": true, "verified": true },
     "1.3": { "files": ["scripts/ens/policy.ts", "scripts/ens/revoke.ts"], "written": true, "verified": true },
-    "1.4": { "files": ["DOMAIN-GUIDE.md"], "written": true, "verified": true }
+    "1.4": { "files": ["DOMAIN-GUIDE.md"], "written": true, "verified": true },
+    "2.1": { "files": ["facilitator/authorize.ts", "facilitator/authorize.test.ts"], "written": true, "verified": true },
+    "2.2": { "files": ["facilitator/ens-read.ts", "facilitator/hedera-scheme.ts", "facilitator/hcs-log.ts", "facilitator/decode-ctx.ts", "facilitator/server.ts", "facilitator/decode-ctx.test.ts"], "written": true, "verified": true },
+    "2.3": { "files": ["facilitator/toctou.integration.ts"], "written": true, "verified": true },
+    "2.4": { "files": ["facilitator/hcs-log.integration.ts"], "written": true, "verified": true },
+    "2.5": { "files": ["vitest.config.ts"], "written": true, "verified": true }
   },
   "deviations": [
     { "step": "0.2", "id": "DEV-001", "description": "createWallet owner shape typed (removed as any)", "reason": "DP-0 verified ^1.32 shape", "class": "COSMETIC", "impact": "none" },
@@ -39,9 +50,14 @@
     { "step": "1.2", "id": "DEV-006", "description": "setup script uses --env-file=.env (no dotenv import existed)", "reason": "process.env undefined otherwise", "class": "COSMETIC", "impact": "all tsx runs need --env-file or sourced env" },
     { "step": "1.1", "id": "DEV-007", "description": "subregistry resume-check treats existing==parentRegistry as unset", "reason": "ETHRegistry returns itself for names without custom subregistry", "class": "DEGRADED", "impact": "none (fixed)" },
     { "step": "1.3", "id": "DEV-008", "description": "R-2 fix: deploy PermissionedResolver proxy, setResolver children to it, setText/text there (not shared PublicResolverV2)", "reason": "PublicResolverV2 reverts setText for self-deployed UserRegistry names; 3-level resolved, no 2-level fallback", "class": "DEGRADED", "impact": "facilitator/ens-read.ts MUST read text on POLICY_RESOLVER, identical primitive" },
-    { "step": "1.1", "id": "DEV-009", "description": "tokenIdOf returns plain v0 labelhash; ownerOf needs version-canonical id", "reason": "ENSv2 versioning", "class": "UNTESTED", "impact": "future direct ownerOf use must version-canonicalize" }
+    { "step": "1.1", "id": "DEV-009", "description": "tokenIdOf returns plain v0 labelhash; ownerOf needs version-canonical id", "reason": "ENSv2 versioning", "class": "UNTESTED", "impact": "future direct ownerOf use must version-canonicalize" },
+    { "step": "2.2", "id": "DEV-010", "description": "server.ts GateDecision narrowing uses 'settle' in d not d.settle===true", "reason": "abort variant has no settle key (TS2339 under strict)", "class": "COSMETIC", "impact": "none" },
+    { "step": "2.2", "id": "DEV-011", "description": "hedera-scheme.ts corrected to pinned real @x402/hedera API", "reason": "ARCHITECTURE imported nonexistent subpath helpers", "class": "DEGRADED", "impact": "none" },
+    { "step": "2.5", "id": "DEV-012", "description": "vitest excludes contracts-v2/** from unit gate", "reason": "vendored hardhat suite polluted the tier", "class": "COSMETIC", "impact": "none" },
+    { "step": "2.3", "id": "DEV-013", "description": "integration/live tests use dotenv/config not --env-file", "reason": "vitest rejects --env-file", "class": "COSMETIC", "impact": "none" },
+    { "step": "2.2", "id": "DEV-014", "description": "E-1: self-hosted @x402/hedera facilitator (Blocky402-equivalent), NOT a literal Blocky402 fork", "reason": "Blocky402 app source not public; live prize bullet = host a live x402-gated service on Hedera, self-hosted qualifies", "class": "DEGRADED", "impact": "demo/README (F2, Task 6.3) must say self-hosted @x402/hedera Blocky402-equivalent, never Blocky402 fork" }
   ],
-  "phaseExecutors": { "phase-0": "subagent", "phase-1": "subagent" },
+  "phaseExecutors": { "phase-0": "subagent", "phase-1": "subagent", "phase-2": "subagent" },
   "contractAddresses": {
     "orgParentRegistry": "0xb36e0ede0Ed38653c5aB8222B409a6b2Ba78b409",
     "sandboxRegistry": "0xB45830aeaf0A00367A450635a110cffA6878A679",
@@ -69,5 +85,5 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T09:25:00Z"
+  "timestamp": "2026-09-12T10:05:00Z"
 }
