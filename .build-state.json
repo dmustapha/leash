@@ -703,7 +703,7 @@
     }
   ],
   "ws7Delta": {
-    "status": "pending",
+    "status": "complete",
     "spec": "docs/WS7-HARDENING-SCOPE.md",
     "docs_amended": "Group F done (PRD/ARCHITECTURE/FEATURE-OBSERVABLES F-016..F-024/INVARIANTS #11-14/PRIZE-COMPLIANCE/LIMITATIONS/PULSE). CLAIMS = PENDING-until-tx (add rows as txs land). PLAN dropped from amend list.",
     "sequence": [
@@ -720,9 +720,19 @@
       "E1",
       "E2"
     ],
-    "completed": [],
+    "completed": ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "D1", "A4", "A5", "E1", "E2"],
     "gate": "after EVERY group: npm run test:live -- vm2 PASS + npm run test:live -- vm1 PASS + npm run build PASS + npm run check PASS + spot-check one /demo settle on mirror node; revert on any fail",
-    "review": "3 independent adversarial reviews applied (architect/security/code-reviewer); security refinements baked into spec + INVARIANTS #11/#12/#14. See scope doc 'Adversarial review outcomes'.",
-    "note": "MAIN build Phases 0-6 GREEN + FROZEN as regression gate. Nothing may regress /demo or the 3 prize legs (INVARIANT #10). Resume as a fresh chat: run WS-7 implementation, THEN hackathon-debug."
+    "gate_results": "ALL GATES GREEN. Group A / Group B / C1(own) / D1 / A4+A5 each: vm2 6/6, vm1 3/3, npm run build PASS, npm run check PASS (typecheck 0 + unit + integration). No regression to /demo or the 3 prize legs.",
+    "review": "3 independent adversarial reviews applied (architect/security/code-reviewer); security refinements baked into spec + INVARIANTS #11/#12/#14. See scope doc 'Adversarial review outcomes'. All B-01..B-08 refinements implemented.",
+    "new_files": [
+      "web/lib/auth.ts (+auth.test.ts F-016 IDOR)", "web/lib/ratelimit.ts (+ratelimit.test.ts F-019)",
+      "db/replay.ts (+db/replay.integration.ts F-025)", "scripts/ens/cohold.ts", "scripts/ens/identity.ts",
+      "web/app/api/agents/allowlist/route.ts", "web/app/api/agents/reactivate/route.ts", "web/app/api/feed/route.ts",
+      "web/app/app/_components/spend-feed.tsx", "agent/cohold.live.ts (C1 on-chain 3/3)",
+      "facilitator/identity-isolation.integration.ts (INVARIANT #13 module-boundary guard)"
+    ],
+    "onchain_evidence": "C1 co-hold grant proven on-chain via agent/cohold.live.ts (additive: user+relayer both hold ROLE_SET_TEXT on the agent's leash.policy part-resource; scope-guard rejects out-of-org grant). D1 identity setText written+read-back on data.acme.leash.eth + payments.acme.leash.eth (agent.type/agent.description). A5 durable replay round-trip verified on Neon seen_payments. Feed indexer wired live (indexed:true, real ALLOW/DENY from HCS topic 0.0.10496492).",
+    "e1_e2_note": "E1 GRANT surface (/app register -> real mint+setPolicy+identity setText+cohold grant txs) + E2 login surface both render 200. The interactive OAuth login click-through + on-camera register are Dami's browser steps (owned by demo-rehearsal/demo). Surfaces are ready + verified.",
+    "note": "MAIN build Phases 0-6 GREEN + FROZEN as regression gate. Nothing regressed /demo or the 3 prize legs (INVARIANT #10). WS-7 COMPLETE; next pipeline phase = hackathon-debug with all canonical docs coherent."
   }
 }
