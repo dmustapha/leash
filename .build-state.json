@@ -44,6 +44,12 @@
       "started_at": "2026-09-12T11:35:00Z",
       "completed_at": "2026-09-12T12:30:00Z",
       "evidence": "Phase 4 gate green (BUILD-REPORT.md): Privy funding rail on REAL USDC 0.0.10496489 orchestrator-verified via mirror node (in-cap real transfer 0xb4ec565c -5/+5 USDC token 0.0.10496489; recipient 0.0.10499287 balance 30 USDC; over-cap FUNDING_DENIED policy_violation on real token); phantom token 0.0.999999 removed (DEV-018->019); DB index layer Neon select 1={ok:1}, markAgentRevoked helper, facilitator imports no DB (INVARIANT #3 grep 0); treasury secp256k1Sign grep 0 (INVARIANT #6); default gate check EXIT=0 (28/28 unit + integration). KZ RISK DEV-020: funded acct != payer acct, seed-demo must unify for VM-2"
+    },
+    {
+      "phase": "Phase 5",
+      "started_at": "2026-09-12T12:35:00Z",
+      "completed_at": null,
+      "evidence": "IN-PROGRESS: Task 5.1 seed-demo complete + orchestrator-verified (idempotent seed EXIT 0 on re-run; both children readPolicy hederaAccount==canonical 0.0.10499595/0.0.10499598 distinct 5/25 USDC caps; on-chain evm_address==key-EVM MATCH both, DEV-020 fixed; 33/33 unit). Remaining: 5.2 sandbox UI, 5.3 VM-2, 5.4a/b real console"
     }
   ],
   "completedSteps": [
@@ -63,7 +69,8 @@
     "3.2",
     "3.3",
     "4.1",
-    "4.2"
+    "4.2",
+    "5.1"
   ],
   "fileGroups": {
     "0.1": {
@@ -220,6 +227,16 @@
         "db/schema.ts",
         "db/client.ts",
         "db/revoke-sync.test.ts"
+      ],
+      "written": true,
+      "verified": true
+    },
+    "5.1": {
+      "files": [
+        "scripts/seed-demo.ts",
+        "scripts/hedera/provision-canonical.ts",
+        "scripts/env.ts",
+        "scripts/env.test.ts"
       ],
       "written": true,
       "verified": true
@@ -385,6 +402,30 @@
       "reason": "key-derived EVM stored as SANDBOX_AGENT_EVM but account created via AccountCreate",
       "class": "DEGRADED",
       "impact": "HIGH: seed-demo.ts (Task 5.1) must unify to ONE canonical agent account for both rails + ENS; VM-2 gate"
+    },
+    {
+      "step": "5.1",
+      "id": "DEV-021",
+      "description": "seed-demo adds explicit process.exit(0) (shared Hedera helpers leave gRPC clients open)",
+      "reason": "open clients keep event loop alive",
+      "class": "COSMETIC",
+      "impact": "future cleanup: add client.close() in helpers"
+    },
+    {
+      "step": "5.1",
+      "id": "DEV-022",
+      "description": "seed primes agent balances via operator real USDC transfer, not the Privy policy-gated rail",
+      "reason": "treasury Privy wallet already exists (Phase 4); Privy policy rail is the demo over-cap DENY beat not the bulk primer",
+      "class": "DEGRADED",
+      "impact": "VM-2 funding BEAT must show the Privy in-cap ALLOW, not just operator priming"
+    },
+    {
+      "step": "5.1",
+      "id": "DEV-023",
+      "description": "canonical agents 0.0.10499595 (data) + 0.0.10499598 (payments) via setECDSAKeyWithAlias so evm_address==key-EVM; fixes DEV-020",
+      "reason": "old 0.0.10497601 setKeyWithoutAlias gave non-matching EVM -> funding hit a different auto-alias account",
+      "class": "DEGRADED",
+      "impact": "none (resolved); both rails+ENS now one account per agent"
     }
   ],
   "phaseExecutors": {
@@ -403,7 +444,9 @@
     "hcsTopicId": "0.0.10496492",
     "agentAccount": "0.0.10497601",
     "receiverAccount": "0.0.10497604",
-    "treasuryWalletHedera": "0.0.10495945"
+    "treasuryWalletHedera": "0.0.10495945",
+    "agentDataAccount": "0.0.10499595",
+    "agentPaymentsAccount": "0.0.10499598"
   },
   "env": {
     "added": [
@@ -471,5 +514,5 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T12:30:00Z"
+  "timestamp": "2026-09-12T12:55:00Z"
 }
