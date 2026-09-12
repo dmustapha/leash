@@ -51,6 +51,7 @@ export default function AgentRow({ agent, onChanged, setNotice, authedFetch }: P
     try {
       const r = await authedFetch(`/api/feed?agent=${encodeURIComponent(agent.ensName)}`, { cache: 'no-store' });
       const j = await r.json();
+      if (!r.ok) throw new Error(j.message || j.error || `HTTP ${r.status}`);
       setActivity(Array.isArray(j.events) ? j.events : []);
     } catch (e) {
       setNotice({ kind: 'err', text: e instanceof Error ? e.message : String(e) });

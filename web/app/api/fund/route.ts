@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server';
 import { fundAgent } from '../../../../treasury/privy';
 import { config } from '../../../lib/config';
-import { requireOwner, verifyCaller, authErrorResponse } from '../../../lib/auth';
+import { requireOwner, authErrorResponse } from '../../../lib/auth';
 import { enforceRateLimit } from '../../../lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const limited = enforceRateLimit(req, 'fund');
   if (limited) return limited;
 
-  let body: { agentId?: string; agentAddress?: string; amountRaw?: string };
+  let body: { agentId?: string; amountRaw?: string };
   try {
     body = await req.json();
   } catch {
@@ -29,23 +29,19 @@ export async function POST(req: Request) {
   if (!body.amountRaw || !/^\d+$/.test(body.amountRaw)) {
     return NextResponse.json({ error: 'amountRaw must be a raw smallest-unit integer string' }, { status: 400 });
   }
+  if (!body.agentId) return NextResponse.json({ error: 'agentId required' }, { status: 400 });
 
-  // A1: resolve + authorize the transfer target. The console path (agentId) must be owned by the caller; the
-  // explicit-address path still requires a valid token (and remains capped by the treasury Privy policy).
-  let agentAddress: string | undefined;
+  // A1 (WS-7 debug hardening): funding targets an agent the caller OWNS. The former explicit-`agentAddress`
+  // branch (no client used it; /demo funds via treasury/privy directly) was a cross-tenant action surface and
+  // is removed - the target EVM is always resolved from the caller's own agent row under requireOwner.
+  let agentAddress: string;
   try {
-    if (body.agentId) {
-      agentAddress = (await requireOwner(req, { agentId: body.agentId })).agent!.agentEvm;
-    } else if (body.agentAddress) {
-      await verifyCaller(req);
-      agentAddress = body.agentAddress;
-    }
+    agentAddress = (await requireOwner(req, { agentId: body.agentId })).agent!.agentEvm;
   } catch (e) {
     const err = authErrorResponse(e);
     if (err) return NextResponse.json(err.body, { status: err.status });
     throw e;
   }
-  if (!agentAddress) return NextResponse.json({ error: 'agentId or agentAddress required' }, { status: 400 });
 
   try {
     const result = await fundAgent(config.treasuryWalletId, { agentAddress, amountRaw: body.amountRaw }, config.usdcEvmAddress);

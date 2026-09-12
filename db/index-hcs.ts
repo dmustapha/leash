@@ -34,7 +34,14 @@ export async function indexTopic(topicId: string, sinceSeq?: number): Promise<nu
 
   let last = from;
   for (const m of json.messages) {
-    const entry = JSON.parse(Buffer.from(m.message, 'base64').toString()) as LogEntry;
+    // A single malformed HCS message must not abort the whole index pass (skip + continue).
+    let entry: LogEntry;
+    try {
+      entry = JSON.parse(Buffer.from(m.message, 'base64').toString()) as LogEntry;
+    } catch {
+      last = Math.max(last, m.sequence_number); // advance the high-water mark past the bad message
+      continue;
+    }
     await db.insert(spendEvents).values({
       agentName: entry.name,
       decision: entry.decision,
