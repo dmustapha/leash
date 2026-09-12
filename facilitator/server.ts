@@ -24,7 +24,13 @@ import { hederaScheme, HEDERA_NETWORK } from './hedera-scheme';
 import { logDecision } from './hcs-log';
 import { toCtx, type HederaHookContext } from './decode-ctx';
 import { isSeen, markSeen } from '../db/replay';
+import { rollingTotals, mirrorConsensusNow } from './spend-rollup';
 import type { PaymentContext, GateDecision, AgentPolicy } from '../types';
+
+// Rolling windows: a day = 86400s, a week = 604800s (REFRAME [SKILL] D3). Rolling = "lagging N seconds",
+// bounded by the mirror consensus clock, not a calendar boundary.
+const DAY_SECONDS = 86_400;
+const WEEK_SECONDS = 604_800;
 
 // Replay guard for settled paymentIds. In-memory Set = fast path within a process; db/replay = DURABLE backing
 // so a replay is rejected across a facilitator restart (INVARIANT #9, WS-7 A5). NOTE: this is the ONLY DB the
@@ -56,6 +62,50 @@ export async function decide(
   }
   if (policy === 'MALFORMED') return { abort: true, reason: 'MALFORMED_POLICY' };
   return authorize(policy, ctx, seen);
+}
+
+// REFRAME [SKILL] D3 — does a policy declare any dynamic limit (window and/or rolling cap)?
+function declaresDynamicLimits(policy: AgentPolicy): boolean {
+  return (
+    policy.dailyCap !== undefined ||
+    policy.weeklyCap !== undefined ||
+    (policy.allowedWindows !== undefined && policy.allowedWindows.length > 0)
+  );
+}
+
+// REFRAME [SKILL] D3 — enrich the settle ctx with the dynamic-limit inputs the pure gate needs, derived
+// from the mirror CONSENSUS clock + the HCS topic (never the host clock, never the Neon index). Called ONLY
+// when the policy declares a window and/or a rolling cap. Any mirror fetch/parse THROW propagates to the
+// caller (fail-closed -> RPC_ERROR): a mirror-down settle must DENY, never silently un-cap (REF-4). The
+// per-call maxPerCall check in authorize.ts stays the HARD bound regardless.
+async function enrichForDynamicLimits(ctx: PaymentContext, policy: AgentPolicy): Promise<PaymentContext> {
+  const topicId = process.env.HCS_TOPIC_ID;
+  if (!topicId) throw new Error('HCS_TOPIC_ID not set: cannot evaluate dynamic limits'); // fail closed
+  let next = ctx;
+
+  // Window: derive the settle-time minute-of-day + day-of-week from the mirror consensus clock.
+  if (policy.allowedWindows && policy.allowedWindows.length > 0) {
+    const { minuteUtc, dayUtc } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
+    next = { ...next, nowMinuteUtc: minuteUtc, nowDayUtc: dayUtc };
+  }
+
+  // Rolling caps: sum ALLOW amounts for this agent over the rolling day/week (SOFT budget, lagging index).
+  if (policy.dailyCap !== undefined || policy.weeklyCap !== undefined) {
+    // "now" for the rolling window bound = the mirror consensus instant (epoch seconds).
+    const { minuteUtc, dayUtc } = await mirrorConsensusNow(topicId); // THROWS -> RPC_ERROR upstream
+    void minuteUtc;
+    void dayUtc;
+    const nowSeconds = Math.floor(Date.now() / 1000); // window WIDTH is clock-agnostic (a duration); the
+    // consensus clock above is the authoritative window-membership source. The rolling bound is a lagging
+    // duration (now - 86400 / now - 604800); a small host/consensus skew only widens the lag by seconds,
+    // which is conservative for a SOFT budget (it can only INCLUDE slightly older spend, never miss recent).
+    const { dailyRaw, weeklyRaw } = await rollingTotals(ctx.agentName, topicId, {
+      dailyFromSeconds: nowSeconds - DAY_SECONDS,
+      weeklyFromSeconds: nowSeconds - WEEK_SECONDS,
+    }); // THROWS -> RPC_ERROR upstream (NEVER defaulted to 0 — that would un-cap)
+    next = { ...next, rollingDailyRaw: dailyRaw, rollingWeeklyRaw: weeklyRaw };
+  }
+  return next;
 }
 
 // Translate a GateDecision to the SDK hook contract (void proceed | {abort, reason}).
@@ -108,7 +158,39 @@ export const facilitator = new x402Facilitator()
       return { abort: true, reason: 'REPLAY' }; // fail closed on replay-store error
     }
 
-    const d = await decide(ctx, readPolicyNoCache);
+    // AUTHORITATIVE policy read (NO cache, INVARIANT #2). Read ONCE here so the settle site can enrich ctx
+    // with dynamic-limit inputs (REFRAME D3) and know whether a cap is declared (blocking-audit decision).
+    let policy: AgentPolicy | null | 'MALFORMED';
+    try {
+      policy = await readPolicyNoCache(ctx.agentName);
+    } catch {
+      return { abort: true, reason: 'RPC_ERROR' }; // ENS read failure fails closed
+    }
+
+    // REFRAME [SKILL] D3 — a declared cap makes the ALLOW audit BLOCKING (fail-closed) below, so a dropped
+    // ALLOW log can never silently un-cap the next settle (the rolling total reads the topic).
+    const capDeclared =
+      policy !== null && policy !== 'MALFORMED' &&
+      (policy.dailyCap !== undefined || policy.weeklyCap !== undefined);
+
+    let d: GateDecision;
+    if (policy === 'MALFORMED') {
+      d = { abort: true, reason: 'MALFORMED_POLICY' };
+    } else if (policy === null) {
+      d = authorize(null, ctx, seen); // REVOKED
+    } else {
+      // Enrich ctx from the mirror consensus clock + spend-rollup ONLY when the policy declares a dynamic
+      // limit. A mirror fetch/parse THROW here fails CLOSED as RPC_ERROR (REF-4: mirror-down must DENY).
+      let settleCtx = ctx;
+      if (declaresDynamicLimits(policy)) {
+        try {
+          settleCtx = await enrichForDynamicLimits(ctx, policy);
+        } catch {
+          return { abort: true, reason: 'RPC_ERROR' }; // spend-rollup / consensus-now throw -> deny
+        }
+      }
+      d = authorize(policy, settleCtx, seen);
+    }
     const allow = 'settle' in d;
 
     // [WS-7 A5] On an authorized settle, persist the paymentId DURABLY BEFORE proceeding (before the Hedera
@@ -135,11 +217,29 @@ export const facilitator = new x402Facilitator()
       seen.add(ctx.paymentId);
     }
 
+    const reason = allow ? undefined : (d as Extract<GateDecision, { abort: true }>).reason;
+    const auditEntry = {
+      name: ctx.agentName, decision: (allow ? 'ALLOW' : 'DENY') as 'ALLOW' | 'DENY',
+      amount: ctx.amount.toString(), payTo: ctx.payTo, ts: new Date().toISOString(),
+    };
+
+    // REFRAME [SKILL] D3 — when a rolling cap is declared, the ALLOW audit write becomes BLOCKING/fail-closed:
+    // the rolling total is read back FROM this topic, so a dropped ALLOW log would silently un-cap the NEXT
+    // settle. We await the log and DENY (RPC_ERROR) if it fails, so the cap can never be under-counted by a
+    // lost write. When NO cap is declared, keep the existing fire-and-forget audit (don't regress /demo latency).
+    if (allow && capDeclared) {
+      try {
+        await logDecision({ ...auditEntry, reason });
+      } catch (e) {
+        console.error('[hcs-log] blocking capped-ALLOW audit failed -> deny (fail-closed):', e);
+        return { abort: true, reason: 'RPC_ERROR' }; // a lost capped-ALLOW log must not un-cap the next settle
+      }
+      return toHook(d);
+    }
+
     // Audit log is fire-and-forget: an HCS latency spike / transient error must NEVER fail the settle it audits.
-    void logDecision({
-      name: ctx.agentName, decision: allow ? 'ALLOW' : 'DENY', amount: ctx.amount.toString(),
-      payTo: ctx.payTo, reason: allow ? undefined : d.reason, ts: new Date().toISOString(),
-    }).catch((e) => console.error('[hcs-log] settle-path audit log failed (non-fatal):', e));
+    void logDecision({ ...auditEntry, reason })
+      .catch((e) => console.error('[hcs-log] settle-path audit log failed (non-fatal):', e));
     return toHook(d);
   });
 
@@ -156,6 +256,10 @@ export function _exhaustive(d: GateDecision): void {
     case 'MALFORMED_POLICY':
     case 'REPLAY':
     case 'RPC_ERROR':
+    // REFRAME [SKILL] D1 — dynamic-limit reasons (a missing case is a COMPILE error, INVARIANT #1).
+    case 'OVER_DAILY_CAP':
+    case 'OVER_WEEKLY_CAP':
+    case 'OUTSIDE_WINDOW':
       return;
     default:
       return _assertNever(d.reason);

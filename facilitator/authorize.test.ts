@@ -1,6 +1,7 @@
 // File: facilitator/authorize.test.ts
 // Exhaustive offline unit tests for the PURE gate (Task 2.1). Zero infra, zero mocks.
-// Covers all 7 GateReason branches + settle happy path + INVARIANT #7 boundary + malformed.
+// Covers all 10 GateReason branches (7 base + REFRAME D1 OVER_DAILY_CAP/OVER_WEEKLY_CAP/OUTSIDE_WINDOW) +
+// settle happy path + INVARIANT #7 boundary + malformed + REFRAME D2 windows + D3 rolling SOFT caps.
 import { describe, it, expect } from 'vitest';
 import { authorize, settleOrReason } from './authorize';
 import type { AgentPolicy, PaymentContext, GateDecision } from '../types';
@@ -127,6 +128,138 @@ describe('authorize() - REFRAME S3 binding reconcile for a KeyList spending acco
   });
 });
 
+// REFRAME [SKILL] D2 — stateless time-window check (pure; consensus-time minute-of-day via ctx).
+// Boundary semantics: start inclusive, end exclusive. Absent window ctx while a window is declared = fail closed.
+describe('authorize() - REFRAME D2 stateless time-window (OUTSIDE_WINDOW)', () => {
+  // 09:00 UTC = minute 540; 17:00 UTC = minute 1020. Window [540,1020) on any day.
+  const WINDOW = [{ startMinuteUtc: 540, endMinuteUtc: 1020 }];
+
+  it('inside the window -> settles', () => {
+    const d = authorize(policy({ allowedWindows: WINDOW }), ctx({ nowMinuteUtc: 600, nowDayUtc: 3 }), new Set());
+    expectSettle(d);
+  });
+
+  it('at the start minute (inclusive) -> settles', () => {
+    const d = authorize(policy({ allowedWindows: WINDOW }), ctx({ nowMinuteUtc: 540, nowDayUtc: 1 }), new Set());
+    expectSettle(d);
+  });
+
+  it('at the end minute (exclusive) -> OUTSIDE_WINDOW', () => {
+    const d = authorize(policy({ allowedWindows: WINDOW }), ctx({ nowMinuteUtc: 1020, nowDayUtc: 1 }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OUTSIDE_WINDOW');
+  });
+
+  it('before the window -> OUTSIDE_WINDOW', () => {
+    const d = authorize(policy({ allowedWindows: WINDOW }), ctx({ nowMinuteUtc: 539, nowDayUtc: 1 }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OUTSIDE_WINDOW');
+  });
+
+  it('day-scoped window: right minute, wrong day -> OUTSIDE_WINDOW', () => {
+    const wd = [{ startMinuteUtc: 540, endMinuteUtc: 1020, days: [1, 2, 3, 4, 5] }]; // weekdays only
+    const d = authorize(policy({ allowedWindows: wd }), ctx({ nowMinuteUtc: 600, nowDayUtc: 0 }), new Set()); // Sunday
+    expectAbort(d);
+    expect(d.reason).toBe('OUTSIDE_WINDOW');
+  });
+
+  it('day-scoped window: right minute, right day -> settles', () => {
+    const wd = [{ startMinuteUtc: 540, endMinuteUtc: 1020, days: [1, 2, 3, 4, 5] }];
+    const d = authorize(policy({ allowedWindows: wd }), ctx({ nowMinuteUtc: 600, nowDayUtc: 2 }), new Set());
+    expectSettle(d);
+  });
+
+  it('multiple windows: matches the second -> settles', () => {
+    const two = [
+      { startMinuteUtc: 0, endMinuteUtc: 60 },       // 00:00-01:00
+      { startMinuteUtc: 1200, endMinuteUtc: 1260 },  // 20:00-21:00
+    ];
+    const d = authorize(policy({ allowedWindows: two }), ctx({ nowMinuteUtc: 1230, nowDayUtc: 4 }), new Set());
+    expectSettle(d);
+  });
+
+  it('window declared but ctx has no consensus-time (undefined) -> fail closed OUTSIDE_WINDOW', () => {
+    const d = authorize(policy({ allowedWindows: WINDOW }), ctx({ nowMinuteUtc: undefined, nowDayUtc: undefined }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OUTSIDE_WINDOW');
+  });
+
+  it('empty allowedWindows array -> no restriction (settles)', () => {
+    const d = authorize(policy({ allowedWindows: [] }), ctx(), new Set());
+    expectSettle(d);
+  });
+});
+
+// REFRAME [SKILL] D3 — rolling SOFT-budget caps (OVER_DAILY_CAP / OVER_WEEKLY_CAP). Compare is
+// rollingRaw + amount > cap, raw-unit BigInt. A present-but-malformed cap -> MALFORMED_POLICY (not skip).
+describe('authorize() - REFRAME D3 rolling SOFT caps (OVER_DAILY_CAP / OVER_WEEKLY_CAP)', () => {
+  it('daily: rolling + amount <= dailyCap -> settles', () => {
+    // rolling 4 USDC + this 1 USDC = 5 == cap 5 -> inclusive, settles.
+    const d = authorize(policy({ dailyCap: '5000000' }), ctx({ amount: 1000000n, rollingDailyRaw: 4000000n }), new Set());
+    expectSettle(d);
+  });
+
+  it('daily: rolling + amount == dailyCap + 1 -> OVER_DAILY_CAP', () => {
+    const d = authorize(policy({ dailyCap: '5000000' }), ctx({ amount: 1000001n, rollingDailyRaw: 4000000n }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OVER_DAILY_CAP');
+  });
+
+  it('daily: near-full rolling total, next pay tips over -> OVER_DAILY_CAP', () => {
+    const d = authorize(policy({ dailyCap: '10000000' }), ctx({ amount: 2000000n, rollingDailyRaw: 9000000n }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OVER_DAILY_CAP');
+  });
+
+  it('daily: missing rollingDailyRaw treated as 0 (fail-closed default is server RPC_ERROR, gate assumes 0)', () => {
+    const d = authorize(policy({ dailyCap: '5000000' }), ctx({ amount: 1000000n }), new Set());
+    expectSettle(d);
+  });
+
+  it('weekly: rolling + amount > weeklyCap -> OVER_WEEKLY_CAP', () => {
+    const d = authorize(policy({ weeklyCap: '20000000' }), ctx({ amount: 5000000n, rollingWeeklyRaw: 18000000n }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('OVER_WEEKLY_CAP');
+  });
+
+  it('daily checked before weekly: over daily even if weekly ok -> OVER_DAILY_CAP', () => {
+    const d = authorize(
+      policy({ dailyCap: '3000000', weeklyCap: '100000000' }),
+      ctx({ amount: 2000000n, rollingDailyRaw: 2000000n, rollingWeeklyRaw: 2000000n }),
+      new Set(),
+    );
+    expectAbort(d);
+    expect(d.reason).toBe('OVER_DAILY_CAP');
+  });
+
+  it('within daily but over weekly -> OVER_WEEKLY_CAP', () => {
+    const d = authorize(
+      policy({ dailyCap: '100000000', weeklyCap: '5000000' }),
+      ctx({ amount: 2000000n, rollingDailyRaw: 0n, rollingWeeklyRaw: 4000000n }),
+      new Set(),
+    );
+    expectAbort(d);
+    expect(d.reason).toBe('OVER_WEEKLY_CAP');
+  });
+
+  it('malformed dailyCap ("abc") present -> MALFORMED_POLICY (not skip)', () => {
+    const d = authorize(policy({ dailyCap: 'abc' }), ctx({ rollingDailyRaw: 0n }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('MALFORMED_POLICY');
+  });
+
+  it('malformed weeklyCap ("-1") present -> MALFORMED_POLICY', () => {
+    const d = authorize(policy({ weeklyCap: '-1' }), ctx({ rollingWeeklyRaw: 0n }), new Set());
+    expectAbort(d);
+    expect(d.reason).toBe('MALFORMED_POLICY');
+  });
+
+  it('no dynamic-limit fields -> unaffected (settles; 94-row back-compat)', () => {
+    const d = authorize(policy(), ctx(), new Set());
+    expectSettle(d);
+  });
+});
+
 describe('authorize() - settle happy path (only affirmative proceed)', () => {
   it('returns {settle:true, auth} with amount/payTo/agentName and a policyHash', () => {
     const d = authorize(policy(), ctx(), new Set());
@@ -200,6 +333,8 @@ describe('settleOrReason() - structural exhaustive switch over the closed union'
     const reasons: GateReasonLocal[] = [
       'OVER_CAP', 'OFF_ALLOWLIST', 'REVOKED', 'BINDING_MISMATCH',
       'MALFORMED_POLICY', 'REPLAY', 'RPC_ERROR',
+      // REFRAME [SKILL] D1 — dynamic-limit reasons.
+      'OVER_DAILY_CAP', 'OVER_WEEKLY_CAP', 'OUTSIDE_WINDOW',
     ];
     for (const reason of reasons) {
       expect(settleOrReason({ abort: true, reason })).toBe(reason);

@@ -2,13 +2,22 @@
 // PURE gate decision. Imports ONLY types. No I/O - unit-testable with zero mocks.
 // INVARIANT #1: returns a closed GateDecision; "proceed" cannot be produced without {settle:true}.
 import { keccak256, toBytes } from 'viem';
-import type { AgentPolicy, PaymentContext, GateDecision } from '../types';
+import type { AgentPolicy, PaymentContext, GateDecision, TimeWindow } from '../types';
 
 // Parse a raw smallest-unit decimal string to bigint; throws on malformed (caught by caller -> MALFORMED_POLICY).
 // Rejects non-numeric ("abc"), negative ("-1"), and empty via the digits-only regex (INVARIANT #7).
 function parseRaw(s: string): bigint {
   if (!/^\d+$/.test(s)) throw new Error('malformed');
   return BigInt(s);
+}
+
+// REFRAME [SKILL] D2 — PURE stateless window match. A window MATCHES when the settle's consensus-time
+// minute-of-day is in [startMinuteUtc, endMinuteUtc) (start inclusive, end exclusive) AND (days omitted
+// OR nowDayUtc ∈ days). No I/O, no host clock — driven entirely by the ctx fields the server derived from
+// the mirror consensus timestamp (INVARIANT #3 addendum: window by consensus_timestamp, never the app clock).
+function matchesWindow(w: TimeWindow, nowMinuteUtc: number, nowDayUtc: number): boolean {
+  if (w.days && !w.days.includes(nowDayUtc)) return false;
+  return nowMinuteUtc >= w.startMinuteUtc && nowMinuteUtc < w.endMinuteUtc;
 }
 
 // seen: replay guard (paymentId set). Injected so the caller owns lifetime/persistence.
@@ -41,6 +50,50 @@ export function authorize(
 
   // Token must match the policy's declared token.
   if (policy.token !== ctx.asset) return { abort: true, reason: 'OFF_ALLOWLIST' };
+
+  // REFRAME [SKILL] D2 — stateless time-window check (PURE). If the policy declares a non-empty
+  // allowedWindows, the settle's consensus-time minute-of-day (ctx.nowMinuteUtc / ctx.nowDayUtc, derived
+  // by the server from the mirror consensus timestamp) MUST fall inside at least one window; else fail
+  // closed OUTSIDE_WINDOW (no settle). Absent window ctx while a window is declared also fails closed —
+  // the server always sets these before calling the gate when a window is declared; a missing value here
+  // is treated as "outside" (fail-closed), never "skip". Boundary: start inclusive, end exclusive.
+  if (policy.allowedWindows && policy.allowedWindows.length > 0) {
+    const min = ctx.nowMinuteUtc;
+    const day = ctx.nowDayUtc;
+    const inside =
+      min !== undefined &&
+      day !== undefined &&
+      policy.allowedWindows.some((w) => matchesWindow(w, min, day));
+    if (!inside) return { abort: true, reason: 'OUTSIDE_WINDOW' };
+  }
+
+  // REFRAME [SKILL] D3 — rolling SOFT-budget caps (over the LAGGING mirror index; NOT trustless/exact/
+  // settle-authoritative — INVARIANT #3 addendum). Evaluated ONLY when the policy declares the cap. A
+  // present-but-malformed cap ⇒ MALFORMED_POLICY (fail closed, NOT skip), reusing the parseRaw pattern.
+  // The rolling total (ctx.rollingDailyRaw/rollingWeeklyRaw) is computed by the server via spend-rollup
+  // BEFORE this call; a missing rolling value while a cap is declared is treated as 0n (the server only
+  // omits it when it could not be computed, and a spend-rollup THROW already fails the settle upstream as
+  // RPC_ERROR — so we never silently un-cap here). Compare is raw-unit BigInt (INVARIANT #7).
+  if (policy.dailyCap !== undefined) {
+    let dailyCap: bigint;
+    try {
+      dailyCap = parseRaw(policy.dailyCap);
+    } catch {
+      return { abort: true, reason: 'MALFORMED_POLICY' };
+    }
+    const rollingDaily = ctx.rollingDailyRaw ?? 0n;
+    if (rollingDaily + ctx.amount > dailyCap) return { abort: true, reason: 'OVER_DAILY_CAP' };
+  }
+  if (policy.weeklyCap !== undefined) {
+    let weeklyCap: bigint;
+    try {
+      weeklyCap = parseRaw(policy.weeklyCap);
+    } catch {
+      return { abort: true, reason: 'MALFORMED_POLICY' };
+    }
+    const rollingWeekly = ctx.rollingWeeklyRaw ?? 0n;
+    if (rollingWeekly + ctx.amount > weeklyCap) return { abort: true, reason: 'OVER_WEEKLY_CAP' };
+  }
 
   const policyHash = keccak256(toBytes(JSON.stringify(policy)));
   return {
@@ -78,6 +131,13 @@ export function settleOrReason(d: GateDecision): string | null {
       return 'REPLAY';
     case 'RPC_ERROR':
       return 'RPC_ERROR';
+    // REFRAME [SKILL] D1 — dynamic-limit reasons (a missing case here is a COMPILE error, INVARIANT #1).
+    case 'OVER_DAILY_CAP':
+      return 'OVER_DAILY_CAP';
+    case 'OVER_WEEKLY_CAP':
+      return 'OVER_WEEKLY_CAP';
+    case 'OUTSIDE_WINDOW':
+      return 'OUTSIDE_WINDOW';
     default:
       return _assertNever(d.reason);
   }
