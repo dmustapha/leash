@@ -306,3 +306,17 @@
 
 #### Blockers for Downstream
 - None.
+
+### design (complete, 2026-09-12)
+
+#### Done
+- Measured REVAMP (not a rebuild): the warm-editorial-dark design SYSTEM already exists in `web/app/globals.css` and is OWNER-LOCKED (Dami's taste: near-black + amber + muted jewel verdicts). Per DP-4 (owner unavailable) auto-selected the existing direction; ran Phase-4 production polish on the highest-value + most-contained surface only.
+- **Landing (`web/app/page.tsx`) rebuilt** to the REFRAME narrative (bind external agents → 2-of-2 co-sign → ENS-declared policy → one-write revoke kill), owner-locked "un-pay it" hero, a before/after POLICY-LIVE→REVOKED WOW panel, a 3-step Bind→Declare→Enforce explainer, and an honest-version `<details>` fold (progressive disclosure per Dami's easy-to-use principle). Fixed a real bug: `maxWidth: 16` (16px headline sliver) → `20ch`.
+- **Gate GREEN + frozen floor UNTOUCHED:** only `page.tsx` changed (globals.css / /demo / provision-canonical all untouched — INVARIANT #10 verified by `git diff --name-only`); `npm run build` green, `npm run check` green (typecheck + unit + integration 8/8); server component (no client/Privy import edge → /demo isolation intact). Honesty locks held (forbidden terms appear only as honest negations in the fold).
+- `/proof` + `/app` left as-is (already on-system, honesty-compliant, functional — risk > reward 16h from deadline).
+
+#### For Next Skill (design_forge)
+- Formalize the EXISTING warm-editorial-dark tokens (globals.css `@theme`) into DESIGN_SYSTEM.md + brand.json; logo forge. Do NOT introduce a new palette or restyle the frozen /demo behavior. Landing narrative is now reframe-coherent.
+
+#### Blockers for Downstream
+- None.

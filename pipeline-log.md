@@ -25,3 +25,4 @@
 2026-09-12T21:31:52Z | hackathon-wire | START | discovery | reframe re-wire; RF-1 authed bind POST + Hedera co-signed paid-request evidence
 2026-09-12T22:16:21Z | hackathon-wire | COMPLETE | report | WIRED; RF-1 PASS (200+403 real JWT), DH-2 PASS, vm3+erc8004 reconfirmed, 0 fixes
 2026-09-12T22:26:44Z | hackathon-verify | COMPLETE | verify_milestone | PROCEED; F-026..F-032 PASS, DH-6 persistent co-hold tx, vm2 6/6, thesis re-gate PASS, 0 KZ
+2026-09-12T22:33:06Z | design | COMPLETE | polish+qa | landing rebuilt to reframe narrative; frozen floor untouched; build+check green; QA APPROVED
