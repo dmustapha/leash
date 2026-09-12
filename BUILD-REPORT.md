@@ -42,6 +42,44 @@ The WS-7 hardening delta is IMPLEMENTED + gated. Every group re-ran the full reg
 - **DEV-035**: raw EAC `grantRoles` is overridden-to-revert on the PermissionedResolver; co-hold MUST go through `authorizeTextRoles` (scoped, DNS-encoded name). The relayer/deployer is the resolver ROOT admin, so the grant is gasless.
 - **PENDING claims**: C1 co-hold-role tx, D1 identity setText tx, and A3 new-agent in-cap fund tx are added to CLAIMS as tx-gated rows; flip PENDING→PROVEN as each live tx resolves (co-hold + identity already have live txs from cohold.live + seed).
 
+## REFRAME build-delta (COMPLETE 2026-09-12)
+Product pivot per `docs/REFRAME-SCOPE.md`: LEASH stops *minting* agents → becomes the **spend-control plane for agents that already exist** (external EVM/ERC-8004 identity bound to an ENS name + a **2-of-2 co-signed Hedera spending account** + policy + Privy funding + one-write revoke). Doc-first (Group F) → co-sign (Group S) → **S-GATE proto-VM3 (PASS, no fallback)** → external identity (Group R) → dynamic limits (Group D) → observables/claims/VM-3 (Group V). Regression gate (vm2 6/6, vm1 3/3, build, check, /demo spot-check) re-run after **every** group; frozen floor (`/demo`, `/api/demo`, `provision-canonical.ts`, `ensureCanonicalAgent`, VM-1/VM-2) untouched throughout.
+
+**Honest framing (locked):** Control = TRUE (LEASH's policy-checked co-signature required; caps + revoke real). Independence = TRUE (agent holds its OWN Hedera key — SR-1; identity external). **Trustless = FALSE** (the chain enforces "two keys signed", not "why"; the cap is LEASH's decision to co-sign). ERC-8004 ownerOf = **on-chain-resolved**, never "verified". Rolling caps = **SOFT budget** (lagging mirror index; worst-case ≈ C×maxPerCall).
+
+| Group | What landed | Live proof |
+|-------|-------------|-----------|
+| **F** | 9 canonical docs amended doc-first (ARCHITECTURE/INVARIANTS/LIMITATIONS/PRD/DECISIONS/FEATURE-OBSERVABLES/PRIZE-COMPLIANCE/CLAIMS/claims.json); F-026..F-032, C-9..C-15. | honesty-grep clean (no affirmative trustless/verified) |
+| **S** | `facilitator/hedera-scheme.ts` network/account-typed scheme selection (REF-1: single-key /demo factories reused verbatim; KeyList co-sign path dual-signs operator(fee)+`LEASH_COSIGNER_KEY`(authority) at the SINGLE post-gate emit). Custom `verifyPayerSignature` accepts the agent's 1-of-2. `facilitator/cosign.ts` `isKeyListAccount` **fails CLOSED on mirror error** (no mis-route). `scripts/hedera/provision-spending-account.ts` KeyList threshold-2 acct + long-zero EVM funding (REF-2). REF-3 assert `LEASH_COSIGNER_KEY≠HEDERA_OPERATOR_KEY` at startup. SR-1: facilitator/config never read `agentPriv`. | **S-GATE proto PASS** on-chain: BEAT-1 co-signed SETTLE `0.0.10487802@1789241326.656309368`; BEAT-2 agent-alone REJECTED; BEAT-3 LEASH-alone REJECTED. Acct `0.0.10508343` (long-zero `0x00..a05837`). |
+| **R** | `scripts/ens/erc8004.ts` resolves the ERC-8004 owner live (real ABI: `ownerOf`); additive bind branch in `/api/agents` (requireOwner preserved) → `provisionSpendingAccount(agentPub)` (SR-1-pure, auto-assoc) → on-chain-resolved `agent.address`/`agent.erc8004` → `leash.policy` LAST (REF-7) → Privy funding UNION. DB +5 nullable cols. | `erc8004.live.ts` 3/3: agentId 7395 → `0x92AA…7522`; mismatch+unknown throw |
+| **D** | `types` +dailyCap/weeklyCap/allowedWindows + 3 GateReasons (both exhaustive switches). `authorize.ts` stateless window gate. `facilitator/spend-rollup.ts` **DB-free** rolling totals by `consensus_timestamp`; **REF-4 fail-closed** (throw→RPC_ERROR, never default-0). Capped-ALLOW audit BLOCKING. | 97 unit tests; VM-3 BEAT-5/6 live |
+| **R3+D4** | `/app` console UI: bind-existing mode + on-chain-resolved badge + 2-of-2 pill + daily/weekly/window inputs & live display (`/api/policy/[name]`). | `next build web` OK; honest copy (no verified/mint-headline) |
+| **V** | `agent/vm3.live.ts` 8-beat hero; CLAIMS C-9..C-15 + claims.json flipped PENDING→PROVEN. | **VM-3 PASS: 7 live + 1 integration** (BEAT-1..6,8 live; BEAT-7 mirror-down at integration tier) |
+
+### REFRAME deviations
+| ID | Component | Scope said | Actual | Class |
+|----|-----------|-----------|--------|-------|
+| DEV-021 | hedera-scheme.ts | import `PublicKey` from `@x402/hedera` | `@x402/hedera@2.25` doesn't re-export it → imported from `@hiero-ledger/sdk` | COSMETIC |
+| DEV-R1-ABI | erc8004.ts | ABI `getAgentWallet`/`ownerOf`/`getAgent`/`resolveByAgentId` | live probe: `ownerOf` resolves, `getAgentWallet` advisory; `getAgent`/`resolveByAgentId` do NOT exist → pinned what resolves | COSMETIC |
+| DEV-R2-DBPUSH | db | `db:push` pushes drizzle schema | `db:push` runs `db/init.sql` → added the 5 cols to both schema.ts + init.sql | COSMETIC |
+| DEV-D01 | server.ts | rolling window by consensus_timestamp | window *membership* uses consensus clock; rolling lookback *width* (now−24h/7d) uses `Date.now()` (conservative disclosed slack for a SOFT budget) | DEGRADED |
+| DEV-R3D4-01/02 | /api/agents PUT + limit editor | — | PUT reads live policy to preserve untouched limits (one extra ENS read); empty limit field clears that limit | COSMETIC/UX |
+
+### REFRAME new observables / known risks (for debug/wire/verify)
+- **F-026..F-032** added: rolling daily (F-026) / window (F-027) / weekly (F-028) caps; on-chain-resolved external-identity binding (F-029); 2-of-2 agent-alone-can't-spend (F-030) / operator-alone-can't-move (F-031); register-BINDS-not-mints (F-032). All PROVEN by VM-3 + S-GATE + erc8004.live.
+- **Register-existing END-TO-END smoke deferred to re-wire** (DS: owner `wire`): the `/api/agents` bind branch needs a live Privy owner token (same headless-auth constraint as DH-1). R1 resolve proven live; the co-signed account model proven via S-GATE; the authed bind POST → co-signed-agent-provisioned round-trip should be proven in the re-wire (a captured Privy token), like DH-1 was.
+- **BEAT-7 mirror-down is integration-tier, not live** (DEV): no env-configurable mirror base exists in `spend-rollup.ts`/`cosign.ts` (hardcoded const), so a true live outage can't be injected honestly. Proven by `spend-rollup.test.ts` + `spend-rollup.integration.ts` (throw→RPC_ERROR). A follow-up could make the mirror base env-configurable to enable a live kill-endpoint beat.
+- **Cosigner shares the operator process/trust-domain** (`LEASH_COSIGNER_KEY≠HEDERA_OPERATOR_KEY` within the process, same host). Separate-trust-domain cosigner service = roadmap (LIMITATIONS).
+- **DEV-D01 follow-up**: anchor the rolling lookback width to the consensus epoch (trivial) for exact consensus-time bounds.
+
+### REFRAME env vars added
+| Key | Source | Value/Description |
+|-----|--------|-------------------|
+| LEASH_COSIGNER_KEY | S1 | LEASH's raw ECDSA co-sign authority key (asserted ≠ HEDERA_OPERATOR_KEY at startup) |
+| COSIGN_AGENT_KEY / COSIGN_AGENT_PUB | S1 | external DEMO agent's Hedera priv (agent-scoped, SR-1) / public key |
+| COSIGN_SPENDING_ACCOUNT / COSIGN_SPENDING_EVM | S1 | KeyList threshold-2 spending account `0.0.10508343` / long-zero EVM `0x00..a05837` |
+| ERC8004_REGISTRY_ADDRESS | S1 | `0x8004A818BFB912233c491871b3d84c89A494BD9e` (Ethereum Sepolia) |
+
 ## Known Risks (for debug)
 - POLICY_RESOLVER (PermissionedResolver, DEV-008) is the enforcement read target: facilitator/ens-read.ts (Phase 2) MUST use the identical `text(namehash,'leash.policy')` primitive on POLICY_RESOLVER, or the enforcement path diverges from the proven round-trip.
 - The Task 1.3 round-trip left the `data` child cleared (revoke proof); `payments` remains live (25 USDC). Phase 3/5 must (re)seed an active policy on the child the hero-path spend targets. seed-demo.ts (Task 5.1) owns this; Phase 3 VM-1 can target `payments` (live) or re-set `data`.

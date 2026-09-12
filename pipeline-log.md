@@ -18,3 +18,5 @@
 2026-09-12T15:40:18Z | hackathon-debug | START | phase-1 | WS-7 delta complete; full-mode 6-phase gate
 2026-09-12T15:51:46Z | hackathon-debug | COMPLETE | phase-6 | confidence 95, PROCEED; 0 MUST-FIX, 0 unresolved, 6 hardening fixes, 8 handoffs
 2026-09-12T16:22:37Z | hackathon-debug | ADVERSARIAL-REVIEW | post-gate | security-auditor + senior-critique; 6 fixes (incl. decode-ctx allowlist-bypass + feed IDOR); re-gated vm2 6/6 vm1 3/3
+2026-09-12T16:26:08Z | hackathon-wire | START | discovery | fresh standalone wire run; build+debug complete, deadline 2026-09-13 16:00 UTC
+2026-09-12T20:30:40Z | hackathon-build | COMPLETE | REFRAME build-delta | Groups F/S/S-GATE/R/D/R3+D4/V built+gated; S-GATE+VM-3 PASS on-chain; C-9..C-15 PROVEN; regression green every group; frozen floor untouched
