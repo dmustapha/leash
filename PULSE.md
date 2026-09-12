@@ -24,7 +24,7 @@
 | DS-4 | intel | warroom | P1 | Track selection (Scratch vs Continuity: Extend Open Source / Ship a Feature) locks prize eligibility; team all-same-track | Warroom explicitly decides track with prize-EV comparison | open |
 | DS-5 | build (WS-7) | deploy | P1 | Render free tier spins down (no persistent disk) -> facilitator/resource cold-start mid-demo + clears in-memory state. A5 makes replay durable (Neon); deploy must add keep-warm or starter plan. | Facilitator/resource stay warm during judging (keep-warm ping or plan:starter); durable replay survives restart | open |
 | DS-6 | build (WS-7) | demo_rehearsal | P1 | Scene 2 GRANT shot from /app live mint; Scene 6 real-product login (5.4a done). Restore-after-KILL uses direct setPolicy (seed has an idempotency edge, DEV-026). | Demo script covers GRANT via /app + Scene 6 login + a clean re-take restore path | open |
-| DS-7 | build (WS-7) | verify_preflight | P1 | New WS-7 observables F-016..F-024 (authz/IDOR, org-collision, funding reconcile, rate-limit, durable replay, allowlist-edit, un-revoke, spend feed, co-hold identity, ENS agent-identity) must be scored. | verify/stress assert F-016..F-024; preflight confirms present | open |
+| DS-7 | build (WS-7) | verify_milestone + stress_test + verify_preflight | P1 | New WS-7 observables F-016..F-024 (authz/IDOR cross-tenant, org-collision, funding reconcile union+non-empty, rate-limit, durable replay fail-closed, allowlist-edit, un-revoke, spend feed, co-hold both-holders, ENS agent-identity) must be scored at EVERY gate, not only preflight. | verify_milestone + stress_test + preflight each assert F-016..F-024 | open |
 
 ## Skill Sections
 ### forge (complete, 2026-09-12)
@@ -162,10 +162,17 @@
 - [SKILL] Canonical demo accounts (DEV-020 fix): agents created via setECDSAKeyWithAlias so on-chain evm_address==key-EVM; ONE account per agent across funding+payment+ENS. data 0.0.10499595 (cap 5 USDC), payments 0.0.10499598 (cap 25 USDC), receiver 0.0.10497604, own HTS USDC 0.0.10496489, HCS topic 0.0.10496492.
 - [SKILL] DEV-027: web/tsconfig must stay strict:true / target ES2020 (viem conditional types + BigInt need it) or next build fails type-check. Root tsconfig is ES2022/strict.
 
-#### For Next Skill (debug/wire, then design_forge/deploy/demo/package)
+#### For Next Skill (WS-7 build-delta FIRST, then debug) - AUTHORITATIVE CURSOR
+- **NEXT ACTION = WS-7 implementation, NOT debug.** Docs are amended doc-first (Group F done, except CLAIMS = PENDING-until-tx; PLAN dropped from the amend list). Do NOT re-amend the done docs. Spec + sequence + regression gate live in `docs/WS7-HARDENING-SCOPE.md`; machine cursor in `.build-state.json` -> `ws7Delta`.
+- Start at code **Group A1 -> A2 -> A3**, then **B1 -> B2 -> B3**, then **C1 (own gate)**, then **D1**, then **A4 -> A5**, then **E1/E2**. REGRESSION GATE after EVERY group: `npm run test:live -- vm2` + `-- vm1` + `npm run build` + `npm run check` all PASS + spot-check one /demo settle; revert on any fail. Main build Phases 0-6 are GREEN + FROZEN (INVARIANT #10).
+- Security refinements from 3 adversarial reviews are BAKED IN (scope doc 'Adversarial review outcomes' + INVARIANTS #11 ownership-join, #12 additive-scoped co-hold, #14 fail-closed replay). Honor them: A1 requireOwner join on every route; C1 grant via relay() scope + additive + embedded-wallet-on-login; A3 union-not-replace + non-empty allowlist; A5 fail-closed on Neon-down.
+- DEV-030 is now CLOSED by A3 (was a KNOWN-RISK; funding a new /app agent reconciles the Privy allowlist at register). Do not treat it as an accepted limitation.
+- After WS-7 completes: add the WS-7 section to BUILD-REPORT.md + PULSE `### build`, flip `ws7Delta.status` to complete, THEN hand to hackathon-debug with all canonical docs coherent.
+
+#### For Next Skill (debug/wire, then design_forge/deploy/demo/package) - runs AFTER WS-7
 - Read BUILD-REPORT.md (grep DEV- for all 32 deviations + Known Risks + on-chain proof pointers) + submission/proof.md (all 3 prize legs, resolvable). Rails: npm run facilitator (:8401), npm run resource (:8402), npm run seed (idempotent), npm run test:live -- vm2 (three-prize hero), npm run verify:claims (recompute, 0 mismatch).
 - OPEN HUMAN STEP (Task 5.4a, deploy-time): Dami must set NEXT_PUBLIC_PRIVY_APP_ID + enable Email/Google login + add the deployed origin to Privy allowed origins, before /app live login (WS-5b login is UNTESTED, DEV-031). Does NOT block the scored /demo sandbox.
-- KNOWN RISK DEV-030 (real-console only): funding a NEW /app agent returns FUNDING_DENIED (off Privy allowlist = correct default-DENY). ALLOW needs a Privy policy allowlist re-provision (policy op). Demo uses the sandbox where fund ALLOWs.
+- DEV-030 SUPERSEDED: now addressed by WS-7 A3 (register-time Privy allowlist reconcile, union-not-replace). Once A3 lands, funding a new /app agent in-cap ALLOWs and over-fund DENIEs on the real token. Not an accepted limitation.
 - Flags: F1 (make live ENS read visible on camera) -> demo/design; F2 (README "Payment Flow" section + Blocky402-equivalent wording) -> deploy/package; F3 (AI-ATTRIBUTION.md + spec files in repo) -> package; F4 (human-voice 2-4min video) -> demo.
 - Deploy (Task 6.1, deploy-to-github): Vercel project leash-ens + leash.ink; Render leash-facilitator + leash-resource; guard .env (R-14). Build did NOT deploy (build boundary).
 
