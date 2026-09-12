@@ -488,6 +488,8 @@ Every owned deliverable routed to its owning skill+phase. build does build-work 
 | demo video (2-4min human-voice) | hackathon-demo | demo |
 | submission bundle (Hacker Dashboard, 3 prize selections, AI-ATTRIBUTION) | hackathon-package | package |
 | FEEDBACK notes per sponsor (free credibility) | hackathon-package | package |
+| WS-7 source code (authz layer, funding reconcile, controls routes, spend-feed indexer wiring, co-hold grant, ENS identity writes, rate-limit, durable replay) | hackathon-build | build (build-delta / WS-7) |
+| new /app UI surfaces (spend feed + drill-down, allowlist-edit, un-revoke/reactivate, agent-identity display, co-hold badge) | ui-revamp / design-forge | design_forge |
 
 Stubs build may create (tagged `stub_for_build: true`): none required - the design phase owns all presentation; build ships the functional spine only.
 

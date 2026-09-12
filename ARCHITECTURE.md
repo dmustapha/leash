@@ -533,7 +533,7 @@ export function _exhaustive(d: GateDecision) {
 
 ### Key Decisions
 - `authorize()` is pure and takes the policy as an argument, so all enforcement branches are tested without RPC/Hedera. The adapter (`server.ts`) owns the I/O and the single guarded proceed emit.
-- The replay `seen` set is process-memory (sufficient for the demo; a production build would back it with the DB/Redis - noted in LIMITATIONS).
+- The replay `seen` set lives in process-memory in the facilitator core, with durability injected via `db/replay.ts` (WS7 A5, INVARIANT #14). The durable store fails CLOSED: a store read/write error on the replay path returns an abort (deny), never "not seen, proceed", and the paymentId is persisted to the `seen_payments` table before a settle is treated as consumed. This survives a facilitator restart; noted in LIMITATIONS.
 
 ### Verified / Unverified Status
 `authorize.ts` [VERIFIED] logic. `ens-read.ts`/`hedera-scheme.ts`/`server.ts` [UNVERIFIED] against pinned installs - WS-2 clears them.

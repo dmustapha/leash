@@ -701,5 +701,28 @@
       "status": "done",
       "owner": "hackathon-build"
     }
-  ]
+  ],
+  "ws7Delta": {
+    "status": "pending",
+    "spec": "docs/WS7-HARDENING-SCOPE.md",
+    "docs_amended": "Group F done (PRD/ARCHITECTURE/FEATURE-OBSERVABLES F-016..F-024/INVARIANTS #11-14/PRIZE-COMPLIANCE/LIMITATIONS/PULSE). CLAIMS = PENDING-until-tx (add rows as txs land). PLAN dropped from amend list.",
+    "sequence": [
+      "A1",
+      "A2",
+      "A3",
+      "B1",
+      "B2",
+      "B3",
+      "C1(own-gate)",
+      "D1",
+      "A4",
+      "A5",
+      "E1",
+      "E2"
+    ],
+    "completed": [],
+    "gate": "after EVERY group: npm run test:live -- vm2 PASS + npm run test:live -- vm1 PASS + npm run build PASS + npm run check PASS + spot-check one /demo settle on mirror node; revert on any fail",
+    "review": "3 independent adversarial reviews applied (architect/security/code-reviewer); security refinements baked into spec + INVARIANTS #11/#12/#14. See scope doc 'Adversarial review outcomes'.",
+    "note": "MAIN build Phases 0-6 GREEN + FROZEN as regression gate. Nothing may regress /demo or the 3 prize legs (INVARIANT #10). Resume as a fresh chat: run WS-7 implementation, THEN hackathon-debug."
+  }
 }

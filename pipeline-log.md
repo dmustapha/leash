@@ -14,3 +14,4 @@
 2026-09-12 | url_preverify | inline | PASS | deploy names + external endpoints verified; Vercel project must be leash-ens (leash/leash-dashboard taken)
 2026-09-12T07:15:55Z | hackathon-build | START | Phase 0 | env + franchise skeleton + WS-0 smokes (DP-0); ~32.8h to deadline
 2026-09-12T12:38:13Z | hackathon-build | COMPLETE | Phase 0-6 (build-owned) | all 3 prizes proven live (ENS revoke + Hedera gas-free + Privy DENY); VM-1 + VM-2 PASS; next build passes; 32 DEVs logged; 6.1 deploy + 6.3 demo/README routed downstream
+2026-09-12T14:23:34Z | hackathon-build | WS-7-SETUP | build-delta docs + 3 adversarial reviews applied | scope+docs amended, security refinements baked into INVARIANTS #11/#12/#14, ws7Delta cursor set; fresh chat implements WS-7 then debug
