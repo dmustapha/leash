@@ -1,32 +1,32 @@
-# LEASH — Implementation Plan
+# LEASH - Implementation Plan
 
 **Project:** LEASH
-**Hackathon:** ETHOnline 2026 — Building from Scratch
+**Hackathon:** ETHOnline 2026 - Building from Scratch
 **Deadline:** 2026-09-13 16:00 UTC (HARD, no late submissions)
 **Stack:** TypeScript · Next.js · @x402 · @hiero-ledger/sdk · @privy-io/server-auth · viem · Postgres
-**Architecture Doc:** `ARCHITECTURE.md` (THE source of truth for all code — copy exactly)
+**Architecture Doc:** `ARCHITECTURE.md` (THE source of truth for all code - copy exactly)
 **Law:** `INVARIANTS.md` (non-negotiable; the build agent reads it as law)
 
 ---
 
 ## How to Use This Plan
 1. Read in order. Do not skip phases or reorder tasks. Wall-clock tripwires (PRD §8) govern cuts, not feature-dropping.
-2. Every phase has a GATE checklist — verify every item before proceeding.
+2. Every phase has a GATE checklist - verify every item before proceeding.
 3. At 🔀 decision points, run the command, then follow the branch that matches the output.
-4. Copy code from ARCHITECTURE.md — do not improvise. Where a block is `[ASSUMED]`/`[UNVERIFIED]`, resolve its Build-Resolve Seam (DP-0..DP-4) BEFORE it becomes load-bearing.
-5. Commit after every task with the specified message (granular history from hour 1 — ETHGlobal DQs single-commit days, R-15).
+4. Copy code from ARCHITECTURE.md - do not improvise. Where a block is `[ASSUMED]`/`[UNVERIFIED]`, resolve its Build-Resolve Seam (DP-0..DP-4) BEFORE it becomes load-bearing.
+5. Commit after every task with the specified message (granular history from hour 1 - ETHGlobal DQs single-commit days, R-15).
 6. Save deployed addresses/ids to `.env` immediately (setup.ts appends them).
 7. If something fails and no decision tree covers it: STOP, record BLOCKED in BUILD-REPORT.md, escalate per INVARIANTS ESCALATE law. Never fabricate/mock a P0 or a [SEC] invariant.
 8. VERIFY-MILESTONE tasks are mandatory and cannot be skipped.
 9. `scripts/seed-demo.ts` must be implemented before any demo phase; run it before every E2E take.
-10. No `forge snapshot` task — there is no custom Solidity (ADR-008).
+10. No `forge snapshot` task - there is no custom Solidity (ADR-008).
 
 ---
 
 ## Mandatory Tasks (injected by forge)
 
 ### Franchise skeleton at C0 (Phase 0, Task 0.1)
-Create at the very first build phase: `CLAIMS.md` (headline-claims ledger), `scripts/verify-claims.ts` (recompute verifier — already specified in ARCHITECTURE §13), `SECURITY.md` (from ARCHITECTURE "Security spec" section), and an honesty ledger stub in `BUILD-REPORT.md`.
+Create at the very first build phase: `CLAIMS.md` (headline-claims ledger), `scripts/verify-claims.ts` (recompute verifier - already specified in ARCHITECTURE §13), `SECURITY.md` (from ARCHITECTURE "Security spec" section), and an honesty ledger stub in `BUILD-REPORT.md`.
 
 ### seed-demo.ts (Phase 5, Task 5.1)
 Implement `scripts/seed-demo.ts` from PRD §6 Demo Prerequisites + ARCHITECTURE §13. Idempotent; run before every E2E test and demo take.
@@ -40,7 +40,7 @@ Implement `scripts/seed-demo.ts` from PRD §6 Demo Prerequisites + ARCHITECTURE 
 ## Phase Overview
 | Phase | Purpose | Est. | Depends on |
 |:--:|---|---|---|
-| 0 | Env + creds + franchise skeleton + WS-0 smokes (DP-0) | 1.0h | — |
+| 0 | Env + creds + franchise skeleton + WS-0 smokes (DP-0) | 1.0h | - |
 | 1 | ENS provisioning (WS-1, day-eater; DP-1) + DOMAIN-GUIDE | 3.0h | 0 |
 | 2 | Facilitator + ENS gate + HCS (WS-2; DP-2, DP-4) | 2.5h | 1 |
 | 3 | Resource server + agent client, real paid request (WS-3; DP-3) + VM-1 | 1.5h | 2 |
@@ -48,7 +48,7 @@ Implement `scripts/seed-demo.ts` from PRD §6 Demo Prerequisites + ARCHITECTURE 
 | 5 | WS-5a judge sandbox (scored, first) + seed + VM-2, then WS-5b real console | 4.0h | 1-4 |
 | 6 | Deploy + proof + demo + submission (WS-6) | 1.5h | 5 |
 
-**Honest critical path (solo builder — "parallel group A" is NOT real for one person):** the path is strictly serial 0→1→2→3, so the P1 hero (VM-1) is not provable before ~8h wall-clock (0:1h + 1:3h + 2:2.5h + 3:1.5h), and Phase 1 (ENSv2 alpha, the day-eater, R-2) is the dominant variance — its 3h is optimistic if DP-1/DP-1b ABIs are wrong. Sum ≈ 15.0h focused vs ≈ 30h wall-clock, but the buffer is only real if ENS does not slip. **Clock-based Phase-1 tripwire (deterministic, not phase-completion):** compute `deadline - 16h` at build start; if ENS is not round-tripping (Task 1.3) by that absolute UTC time, invoke the Task 1.3 ⛔ 2-level fallback immediately, and if not by `deadline - 13h`, cut to the ENS+Hedera two-prize path. This ties Phase-1 slip to the overall clock so a solo builder cannot silently burn 6h "still in Phase 1." Metric 7: 15h ≤ 30h, but planned against the serial floor, not comfortable slack.
+**Honest critical path (solo builder - "parallel group A" is NOT real for one person):** the path is strictly serial 0→1→2→3, so the P1 hero (VM-1) is not provable before ~8h wall-clock (0:1h + 1:3h + 2:2.5h + 3:1.5h), and Phase 1 (ENSv2 alpha, the day-eater, R-2) is the dominant variance - its 3h is optimistic if DP-1/DP-1b ABIs are wrong. Sum ≈ 15.0h focused vs ≈ 30h wall-clock, but the buffer is only real if ENS does not slip. **Clock-based Phase-1 tripwire (deterministic, not phase-completion):** compute `deadline - 16h` at build start; if ENS is not round-tripping (Task 1.3) by that absolute UTC time, invoke the Task 1.3 ⛔ 2-level fallback immediately, and if not by `deadline - 13h`, cut to the ENS+Hedera two-prize path. This ties Phase-1 slip to the overall clock so a solo builder cannot silently burn 6h "still in Phase 1." Metric 7: 15h ≤ 30h, but planned against the serial floor, not comfortable slack.
 
 ---
 
@@ -70,7 +70,7 @@ Implement `scripts/seed-demo.ts` from PRD §6 Demo Prerequisites + ARCHITECTURE 
 
 **Commit:** `git add -A && git commit -m "chore(scaffold): package, tsconfig, types, franchise skeleton (CLAIMS/SECURITY/verify-claims)"`
 
-### Task 0.2: 🔀 DP-0 — Privy owner-policy DENY smoke (WS-0 smoke #1, R-3, INVARIANT #5)
+### Task 0.2: 🔀 DP-0 - Privy owner-policy DENY smoke (WS-0 smoke #1, R-3, INVARIANT #5)
 **Files:** create `treasury/privy.ts` (copy ARCHITECTURE §9); create `treasury/privy.test.ts`.
 
 **Steps:**
@@ -85,13 +85,13 @@ Expected: `FUNDING_DENIED` on the over-cap case; funded on the in-cap case.
 ✅ **If DENY fires before broadcast:** INVARIANT #5 proven. Record the exact `createWallet` owner arg name in ARCHITECTURE §9 + INVARIANTS SOURCE LOCK. Continue.
 
 🔀 **If the over-cap tx reaches broadcast (fails open):**
-1. Confirm the wallet was created WITH the owner (not owner-less) — inspect the createWallet response.
+1. Confirm the wallet was created WITH the owner (not owner-less) - inspect the createWallet response.
 2. Check the `createWallet` owner argument name/casing against `@privy-io/server-auth` ^1.32 types (`node_modules/@privy-io/server-auth`); fix `owner: {...}` shape in `treasury/privy.ts`.
 3. Ensure requests carry the `privy-authorization-signature` (the SDK computes it when the owner key is provided to the client).
 4. Re-run.
 
 ⛔ **If no owner shape enforces after 2 attempts:**
-1. STOP — do not ship an owner-less wallet (INVARIANT #5, fail-open catastrophe).
+1. STOP - do not ship an owner-less wallet (INVARIANT #5, fail-open catastrophe).
 2. Record BLOCKED in BUILD-REPORT.md; escalate to Dami inline.
 3. Tripwire: if unresolved at the WS-4 cutoff, cut the Privy prize (ENS+Hedera two-prize path), do NOT ship a fake DENY.
 
@@ -118,10 +118,10 @@ Expected: `FUNDING_DENIED` on the over-cap case; funded on the in-cap case.
 
 ---
 
-## Phase 1: ENS Provisioning (WS-1 — the day-eater, START HERE in wall-clock)
+## Phase 1: ENS Provisioning (WS-1 - the day-eater, START HERE in wall-clock)
 **Purpose:** the naming hierarchy + policy records + kill switch. **Est. 3.0h.**
 
-### Task 1.1: 🔀 DP-1 — ENS registrar ABI + tokenId scheme
+### Task 1.1: 🔀 DP-1 - ENS registrar ABI + tokenId scheme
 **Files:** create `scripts/ens/register-2ld.ts`, `subregistry.ts`, `subname.ts`, `policy.ts`, `roles.ts`, `reverse.ts`, `revoke.ts` (copy ARCHITECTURE §5).
 
 #### 🔀 Decision Point DP-1: Confirm the deployed ETHRegistrar ABI + tokenId derivation
@@ -130,7 +130,7 @@ Expected: the real `makeCommitment`/`register` signatures + the registry's token
 
 ✅ **If the ABI matches ARCHITECTURE's placeholder:** proceed unchanged.
 
-🔀 **If the signatures differ (likely — placeholder is a guess):**
+🔀 **If the signatures differ (likely - placeholder is a guess):**
 1. `git clone https://github.com/ensdomains/ensv2 contracts-v2` (or the alpha repo); read `deployments/sepolia/*.json` + the registrar ABI.
 2. Replace the `registrarAbi` in `register-2ld.ts` with the real ABI; adjust `makeCommitment`/`register` args (historically include `secret,resolver,data,reverseRecord,fuses`).
 3. Confirm whether the registry keys tokenId by `uint256(namehash(name))` or `uint256(labelhash)`; fix `tokenIdOf` accordingly.
@@ -140,7 +140,7 @@ Expected: the real `makeCommitment`/`register` signatures + the registry's token
 1. Fall back to the pinned addresses with the simplest working name shape you can register.
 2. If still blocked at the 3h WS-1 cutoff: record BLOCKED; the minimum-eligible tripwire keeps ENS if ANY name+record+revoke round-trips, else escalate.
 
-#### 🔀 Decision Point DP-1b: Confirm the UserRegistry ABIs (subregistry + subname) — a SECOND alpha ABI surface
+#### 🔀 Decision Point DP-1b: Confirm the UserRegistry ABIs (subregistry + subname) - a SECOND alpha ABI surface
 Run: `cast interface $UserRegistryImpl --rpc-url $SEPOLIA_RPC_URL` (0x840fa461…) for the `deploy`/`setSubregistry`/`grantRoles`/`register` signatures used by `subregistry.ts` + `subname.ts`.
 Expected: signatures match ARCHITECTURE §5.
 
@@ -158,14 +158,14 @@ Expected: signatures match ARCHITECTURE §5.
 ### Task 1.2: Register + provision the sandbox hierarchy
 **Files:** create `scripts/setup.ts` (copy ARCHITECTURE §13).
 **Steps:**
-1. `npm run setup`  (LOCAL — 60s commit-reveal wait; appends ids to `.env`)
+1. `npm run setup`  (LOCAL - 60s commit-reveal wait; appends ids to `.env`)
    Expected: `setup complete: { root, org, registry, tokenId, evmAddress, topic }`.
 2. Verify org subname registered: `cast call $SANDBOX_REGISTRY "ownerOf(uint256)" <tokenId> --rpc-url $SEPOLIA_RPC_URL`
    Expected: the deployer address.
 
 **Commit:** `git commit -am "feat(ens): register root+org hierarchy, deploy subregistry, mint USDC, create HCS topic"`
 
-### Task 1.3: 🔀 PRD-W5 — 3-level policy round-trip via the enforcement read path
+### Task 1.3: 🔀 PRD-W5 - 3-level policy round-trip via the enforcement read path
 **Steps:**
 1. Mint `data.<org>` + setText, then read back via `scripts/ens/policy.ts readPolicy` (same `namehash`+`text` primitives as `facilitator/ens-read.ts`).
    Command: `npx tsx -e "import('./scripts/ens/policy.ts').then(m=>m.readPolicy(process.env.SANDBOX_ORG_NAME.replace(/^/,'data.')).then(console.log))"`
@@ -217,15 +217,20 @@ Expected: signatures match ARCHITECTURE §5.
 #### 🔀 Decision Point: fail-closed structure (R-6, INVARIANT #1)
 Run: remove one `case` from `_exhaustive` switch and `npm run typecheck`.
 ✅ **If tsc now ERRORS (never-check fires):** structural fail-closed proven. Restore the case.
-🔀 **If tsc passes with a missing case:** the union/never wiring is wrong — fix `GateDecision`/`_assertNever` so an unhandled reason is a compile error. Re-run.
+🔀 **If tsc passes with a missing case:** the union/never wiring is wrong - fix `GateDecision`/`_assertNever` so an unhandled reason is a compile error. Re-run.
 
 **Commit:** `git commit -am "feat(facilitator): pure authorize() gate + exhaustive tests (INVARIANT #1 structural)"`
 
-### Task 2.2: 🔀 DP-2 — ENS read adapter + hook context wiring
+### Task 2.2: 🔀 DP-2 - ENS read adapter + hook context wiring
 **Files:** create `facilitator/ens-read.ts`, `hcs-log.ts`, `hedera-scheme.ts`, `server.ts` (copy ARCHITECTURE §4).
 **Steps:**
 1. `npm run facilitator` (starts the service).
 2. Inspect the real `@x402/core` hook context in a log line on first request.
+3. <!-- [CRITIQUE E-1] VERIFIED 2026-09-12 --> Blocky402 is open-source (MIT), self-hostable (Docker/Node) on Hedera testnet, built on the same @x402/core + @x402/hedera stack this plan uses; onBeforeVerify/onBeforeSettle are official x402 hooks. DECISION (protects the $6K Hedera anchor): FORK the open-source Blocky402 repo and insert the ENS gate via the official `onBeforeSettle` hook, so "host a LIVE x402-gated service via the Blocky402 facilitator" is literally true. Record the fork commit + a HashScan paid-request tx in `submission/proof.md`. README/demo (Task 6.3) state the Blocky402 fork explicitly. Do NOT add a second non-ENS facilitator path.
+
+#### 🔀 Decision Point E-1: does the forked Blocky402 expose the onBeforeSettle extension point?
+✅ **If the Blocky402 fork exposes onBeforeVerify/onBeforeSettle (highly likely - it wraps @x402/core):** insert the ENS gate there; done. This is the primary path.
+🔀 **If the fork cannot carry the hook (unexpected):** fall back to a self-hosted @x402/core + @x402/hedera facilitator (same protocol, Blocky402-equivalent) and state that equivalence in README. The facilitator stays self-hosted so the ENS read runs pre-settlement either way. Surface to Dami before spending >20min on this branch.
 
 #### 🔀 Decision Point DP-2: hook context field names + paymentId
 ✅ **If `payload.paymentId`, `payload.payer`, `payload.amount`, `requirements.payTo/asset` exist:** proceed.
@@ -234,7 +239,7 @@ Run: remove one `case` from `_exhaustive` switch and `npm run typecheck`.
 
 **Commit:** `git commit -am "feat(facilitator): ENS read adapter + hooks (verify advisory, settle authoritative no-cache); DP-2 context confirmed"`
 
-### Task 2.3: 🔀 DP-4 — payer-signature gates settle (R-8, INVARIANT #8) + TOCTOU in-flight (INVARIANT #2)
+### Task 2.3: 🔀 DP-4 - payer-signature gates settle (R-8, INVARIANT #8) + TOCTOU in-flight (INVARIANT #2)
 **Steps:**
 1. Send a payment whose payer ≠ record.hederaAccount.
    Expected: `BINDING_MISMATCH`.
@@ -277,10 +282,10 @@ Expected: two entries with `decision` ALLOW and DENY.
 
 ---
 
-## Phase 3: Resource Server + Agent Client — real paid request (WS-3)
+## Phase 3: Resource Server + Agent Client - real paid request (WS-3)
 **Purpose:** ≥1 real gas-free paid request e2e. **Est. 1.5h.**
 
-### Task 3.1: 🔀 DP-3 — resource server + agent pay (signable hash + price format)
+### Task 3.1: 🔀 DP-3 - resource server + agent pay (signable hash + price format)
 **Files:** create `resource-server/server.ts`, `agent/pay.ts` (copy ARCHITECTURE §7/§8).
 **Steps:**
 1. `npm run resource` (starts the x402-gated endpoint).
@@ -289,7 +294,7 @@ Expected: two entries with `decision` ALLOW and DENY.
 #### 🔀 Decision Point DP-3: signable hash + @x402/express price format
 Run: the in-cap `pay()` call.
 ✅ **If the payment settles gas-free (HashScan receipt; agent paid no gas):** DP-3 resolved.
-🔀 **If the payer signature is rejected:** the signable-hash preimage is wrong — use `@x402/hedera`'s sign helper to build the exact hash instead of the sha384 placeholder; re-run.
+🔀 **If the payer signature is rejected:** the signable-hash preimage is wrong - use `@x402/hedera`'s sign helper to build the exact hash instead of the sha384 placeholder; re-run.
 🔀 **If the endpoint rejects the price/config:** switch `PREMIUM_PRICE` format ($-string vs raw) to what `@x402/express` parses; re-run.
 
 **Commit:** `git commit -am "feat(resource,agent): real gas-free paid request e2e (DP-3)"`
@@ -303,7 +308,7 @@ Run: the in-cap `pay()` call.
    Expected: `REPLAY` (or Hedera `DUPLICATE_TRANSACTION`); HashScan shows no second settle.
 **Commit:** `git commit -am "test(agent): over-cap refused (OVER_CAP) + replay rejected (REPLAY, INVARIANT #9)"`
 
-### Task 3.3: VERIFY-MILESTONE VM-1 (mandatory) — ENS+Hedera hero path
+### Task 3.3: VERIFY-MILESTONE VM-1 (mandatory) - ENS+Hedera hero path
 **Steps:**
 1. Run the ENS+Hedera hero path in the sandbox: grant (Phase 1) → spend (3.1) → refuse (3.2) → revoke (`revoke.ts`) → next in-cap call fails `REVOKED`.
 2. Record results in BUILD-REPORT.md.
@@ -334,7 +339,7 @@ Run: the in-cap `pay()` call.
 **Commit:** `git commit -am "feat(treasury): policy-gated funding + leaked-key over-fund DENY beat"`
 
 ### Task 4.2: DB index layer + revoke→status sync
-**Files:** create `db/schema.ts` AND `db/client.ts` (copy ARCHITECTURE §10) — both here so the DB client exists before any route writes to it (dependency order).
+**Files:** create `db/schema.ts` AND `db/client.ts` (copy ARCHITECTURE §10) - both here so the DB client exists before any route writes to it (dependency order).
 **Steps:**
 1. `npx tsx -e "import('./db/client.ts').then(async m=>{const r=await m.db.execute('select 1 as ok');console.log(r.rows?.[0]??r)})"`
    Expected: `{ ok: 1 }` (Neon reachable).
@@ -343,7 +348,7 @@ Run: the in-cap `pay()` call.
 
 ### Phase 4 Gate
 - [ ] In-cap funding succeeds; over-cap funding returns FUNDING_DENIED
-- [ ] No `secp256k1Sign` self-broadcast on the funding rail (grep: 0 hits) — INVARIANT #5/D-10
+- [ ] No `secp256k1Sign` self-broadcast on the funding rail (grep: 0 hits) - INVARIANT #5/D-10
 **If any fails: do not proceed.**
 
 ---
@@ -356,11 +361,11 @@ Run: the in-cap `pay()` call.
 **Steps:**
 1. `npm run seed`
    Expected: sandbox org + 2 agents + funded treasury + associated USDC + HCS topic present.
-2. Re-run `npm run seed` — idempotent, no errors.
+2. Re-run `npm run seed` - idempotent, no errors.
 **Gate:** idempotent, exits 0.
 **Commit:** `git commit -am "seed(demo): seed-demo.ts from PRD §6 (idempotent, real state)"`
 
-### Task 5.2: WS-5a — judge sandbox UI + orchestration
+### Task 5.2: WS-5a - judge sandbox UI + orchestration
 **Files:** create `web/app/layout.tsx`, `page.tsx`, `demo/page.tsx`, `web/app/api/demo/route.ts`, `web/app/api/policy/[name]/route.ts`, `web/components/SplitScreen.tsx`, `web/components/AgentCard.tsx`, `web/lib/config.ts` (copy ARCHITECTURE §12).
 **Steps:**
 1. `npm run dev` → open `/demo`.
@@ -372,27 +377,27 @@ Run: `grep -rn "app/app" web/app/demo web/app/api/demo` (should be empty).
 ✅ **If no import edge to `/app`:** isolation holds.
 🔀 **If `/demo` imports `/app` modules:** refactor shared code into `web/lib` or duplicate; the sandbox must run with `/app` disabled.
 
-**Commit:** `git commit -am "feat(web): WS-5a judge sandbox — hero flow drivable from /demo (INVARIANT #10)"`
+**Commit:** `git commit -am "feat(web): WS-5a judge sandbox - hero flow drivable from /demo (INVARIANT #10)"`
 
-### Task 5.3: VERIFY-MILESTONE VM-2 (mandatory) — full THREE-prize hero
+### Task 5.3: VERIFY-MILESTONE VM-2 (mandatory) - full THREE-prize hero
 **Gate (cannot skip):**
 - [ ] Full three-prize hero drivable from `/demo`: grant → spend (gas-free) → refuse → revoke (fail-closed) → **Privy leaked-key over-fund DENY** (all four beats, all real txs)
 - [ ] WINNER-READINESS ≥ 70 (run hackathon-verify milestone mode)
 - [ ] Kill Zone 1 clear; ≤1 blocked integration
-- [ ] the A/B SplitScreen revoke is legible (R-10) — resolver record ↔ 402 flip visible
+- [ ] the A/B SplitScreen revoke is legible (R-10) - resolver record ↔ 402 flip visible
 **If gate fails:** STOP, do not start WS-5b, return BLOCKED.
 **Commit:** `git commit -am "test: VM-2 full three-prize hero + winner-readiness >= 70"`
 
-### Task 5.4a: HUMAN STEP — Privy dashboard toggle (surface to Dami, not a build commit)
-Enable Email/Google login + add the deployed origin to allowed origins in the Privy dashboard. This is a human dashboard action (no code, no commit); build surfaces it to Dami and waits for confirmation before Task 5.4b login testing. Real-path only — does NOT block the scored sandbox.
+### Task 5.4a: HUMAN STEP - Privy dashboard toggle (surface to Dami, not a build commit)
+Enable Email/Google login + add the deployed origin to allowed origins in the Privy dashboard. This is a human dashboard action (no code, no commit); build surfaces it to Dami and waits for confirmation before Task 5.4b login testing. Real-path only - does NOT block the scored sandbox.
 
-### Task 5.4b: WS-5b — real console (Privy login + multi-tenant + relayer)
+### Task 5.4b: WS-5b - real console (Privy login + multi-tenant + relayer)
 **Files:** create `web/app/app/page.tsx`, `web/app/api/agents/route.ts`, `web/app/api/revoke/route.ts`, `web/app/api/pay/route.ts`, `db/index-hcs.ts`, `relayer/relay.ts` (copy ARCHITECTURE §10/§11/§12). (`db/client.ts` already created in Task 4.2.)
 **Steps:**
 1. `npm run dev` → `/app` → sign in → provision org subname (relayer-sponsored) → register an agent → set cap → fund → revoke.
    Expected: each step returns a tx hash; the agent appears in the DB and on-chain.
 **Tripwire (PRD §8):** if WS-5b is not done by the real-console cutoff (~T-6h), ship the sandbox + a working sign-in and cut the rest. Never endanger WS-5a.
-**Commit:** `git commit -am "feat(web): WS-5b real console — Privy login + multi-tenant + gas relayer"`
+**Commit:** `git commit -am "feat(web): WS-5b real console - Privy login + multi-tenant + gas relayer"`
 
 ### Phase 5 Gate
 - [ ] `/demo` drives the full hero flow with real txs (WS-5a)
@@ -403,9 +408,9 @@ Enable Email/Google login + add the deployed origin to allowed origins in the Pr
 ---
 
 ## Phase 6: Deploy + Proof + Demo + Submission (WS-6)
-**Purpose:** live URLs, proof artifacts, video, submission. **Est. 1.5h.** *(Owned deliverables route to other skills — see Skill-Ownership Map.)*
+**Purpose:** live URLs, proof artifacts, video, submission. **Est. 1.5h.** *(Owned deliverables route to other skills - see Skill-Ownership Map.)*
 
-### Task 6.1: 🔀 R-14 — deploy (guard .env)
+### Task 6.1: 🔀 R-14 - deploy (guard .env)
 **Steps:**
 1. Move `.env` out before any vercel call; deploy facilitator+resource → Render; dashboard → Vercel; restore `.env`.
 2. `npm run verify:claims` → `evidence/claims-recomputed.json`.
@@ -426,10 +431,13 @@ Enable Email/Google login + add the deployed origin to allowed origins in the Pr
 3. INVARIANT #4 honest-framing grep: `grep -rniE "trustless|chain[ -]enforce" README.md web/ docs/ submission/`
    Expected: 0 hits on the enforcement claim.
 **Commit:** `git commit -am "docs(proof): submission/proof.md + /proof route + honest-framing grep (INVARIANT #4)"`
-**owner:** hackathon-build @ build (`/proof` route + proof capture + verify-claims). The README on-chain-verification section and the README/narration copy the #4 grep guards are owned by **deploy-to-github @ deploy** (README) and **hackathon-demo @ demo** (voiceover) — build produces the proof data + runs the grep; deploy/demo own the copy that must pass it.
+**owner:** hackathon-build @ build (`/proof` route + proof capture + verify-claims). The README on-chain-verification section and the README/narration copy the #4 grep guards are owned by **deploy-to-github @ deploy** (README) and **hackathon-demo @ demo** (voiceover) - build produces the proof data + runs the grep; deploy/demo own the copy that must pass it.
 
 ### Task 6.3: Demo video + README + package
-Routed — see Skill-Ownership Map. Record human-voice 2-4min (R-1 honest framing rehearsed; R-11 price/amount reconciled).
+Routed - see Skill-Ownership Map. Record human-voice 2-4min (R-1 honest framing rehearsed; R-11 price/amount reconciled).
+<!-- [CRITIQUE E-4] Lead the README + demo Scene 1 with the un-pay headline (PRD §1): "Not another agent that pays an API. LEASH is the ENS name that can un-pay it." No trustless/chain-enforce claim (INVARIANT #4 grep still applies). -->
+<!-- [CRITIQUE E-3] First time value moves on camera + in README, name the token "our test USDC (own HTS 6-dec)"; never imply canonical USDC (ADR-005 / LIMITATIONS). -->
+<!-- [CRITIQUE E-1] README + demo must state the facilitator's Blocky402 lineage explicitly (Blocky402-derived, self-hosted to insert the ENS gate) so a sponsor screener recognizes it as a Blocky402 service. -->
 **owner:** hackathon-demo @ demo / deploy-to-github @ deploy / hackathon-package @ package
 
 ### Phase 6 Gate
@@ -481,11 +489,11 @@ Every owned deliverable routed to its owning skill+phase. build does build-work 
 | submission bundle (Hacker Dashboard, 3 prize selections, AI-ATTRIBUTION) | hackathon-package | package |
 | FEEDBACK notes per sponsor (free credibility) | hackathon-package | package |
 
-Stubs build may create (tagged `stub_for_build: true`): none required — the design phase owns all presentation; build ships the functional spine only.
+Stubs build may create (tagged `stub_for_build: true`): none required - the design phase owns all presentation; build ships the functional spine only.
 
 ---
 
-## Appendix A: File → Creation-Task Coverage (Metric 1 — all 35 files)
+## Appendix A: File → Creation-Task Coverage (Metric 1 - all 35 files)
 | File | Task |
 |---|---|
 | package.json, tsconfig.json | 0.1 |
@@ -505,14 +513,14 @@ Stubs build may create (tagged `stub_for_build: true`): none required — the de
 | scripts/seed-demo.ts | 5.1 |
 | web/app/layout.tsx, page.tsx, demo/page.tsx, api/demo/route.ts, api/policy/[name]/route.ts, components/SplitScreen.tsx, components/AgentCard.tsx, lib/config.ts | 5.2 |
 | web/app/app/page.tsx, api/agents/route.ts, api/revoke/route.ts, api/pay/route.ts, db/index-hcs.ts, relayer/relay.ts | 5.4b |
-| .env.example | 6.1 (deploy — generated from ARCHITECTURE §N+6) |
+| .env.example | 6.1 (deploy - generated from ARCHITECTURE §N+6) |
 All ARCHITECTURE tree files (incl. .env.example) have a creation task. PASS.
 
 ## Appendix B: Troubleshooting
 | Error | Likely cause | Fix |
 |---|---|---|
 | `TOKEN_NOT_ASSOCIATED_TO_ACCOUNT` | payer/receiver not associated | run `scripts/hedera/associate.ts` for both |
-| ENS read returns empty on a set record | wrong resolver traversal (alpha) | Task 1.3 tree — read off org registry resolver |
-| Privy over-cap tx broadcasts | owner-less wallet | DP-0 tree — fix owner arg shape |
-| payer signature rejected | wrong signable hash | DP-3 tree — use @x402/hedera sign helper |
+| ENS read returns empty on a set record | wrong resolver traversal (alpha) | Task 1.3 tree - read off org registry resolver |
+| Privy over-cap tx broadcasts | owner-less wallet | DP-0 tree - fix owner arg shape |
+| payer signature rejected | wrong signable hash | DP-3 tree - use @x402/hedera sign helper |
 | `INSUFFICIENT_FUNDS` on Sepolia | deployer out of ETH | top up 0x72A9…d5C5 (R-13) |

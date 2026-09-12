@@ -1,11 +1,11 @@
-# LEASH — Architecture Document
+# LEASH - Architecture Document
 
 **Version:** V1
 **Date:** 2026-09-12
 **Stack:** TypeScript · Next.js (App Router) · @x402/core+hedera+express · @hiero-ledger/sdk · @privy-io/server-auth+react-auth · viem · Postgres (Neon)
 **THIS IS THE SINGLE SOURCE OF TRUTH.** Copy code from this document exactly. Every code block carries a `// File:` header and a `[VERIFIED]/[UNVERIFIED]/[ASSUMED]` tag.
 
-> Tag semantics: **[VERIFIED]** = pattern transcribed from the master build doc's live-verified scoping (which was checked against live source + live API tests 2026-09-12) or confirmed in-forge. **[UNVERIFIED]** = correct-by-docs but not yet run against the pinned install; carries `// WARNING: UNVERIFIED PATTERN — test immediately`. **[ASSUMED]** = glue code with no external source; carries `// CAUTION: ASSUMED PATTERN — test immediately`.
+> Tag semantics: **[VERIFIED]** = pattern transcribed from the master build doc's live-verified scoping (which was checked against live source + live API tests 2026-09-12) or confirmed in-forge. **[UNVERIFIED]** = correct-by-docs but not yet run against the pinned install; carries `// WARNING: UNVERIFIED PATTERN - test immediately`. **[ASSUMED]** = glue code with no external source; carries `// CAUTION: ASSUMED PATTERN - test immediately`.
 
 ---
 
@@ -46,7 +46,7 @@ Turn an org's ENS name hierarchy into a live, revocable spend-permission graph f
 |-----------|---------|---------|
 | Node.js | v24.10.0 | runtime |
 | TypeScript | ^5.x | all code |
-| viem | ^2.56 | ENSv2 reads/writes (thin wrapper; NOT @ensdomains/ensjs — v2 is alpha) |
+| viem | ^2.56 | ENSv2 reads/writes (thin wrapper; NOT @ensdomains/ensjs - v2 is alpha) |
 | @x402/core | ~2.25 | facilitator + hooks |
 | @x402/hedera | 2.25 | native Hedera exact scheme, client helpers |
 | @x402/express | ~2.25 | resource-server payment middleware |
@@ -66,16 +66,16 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
   .env                         (gitignored; present)
   .env.example                 (generated Phase 4)
   types/
-    index.ts                   (shared types — written first)
+    index.ts                   (shared types - written first)
   scripts/
     ens/
       addresses.ts             (pinned ENSv2 set + runtime loader)
       client.ts                (viem public+wallet clients)
       register-2ld.ts          (commit->wait->reveal root/org 2LD; LOCAL only)
       subregistry.ts           (deploy UserRegistry via VerifiableFactory + setSubregistry)
-      roles.ts                 (grantRoles / revokeRoles — the kill switch)
+      roles.ts                 (grantRoles / revokeRoles - the kill switch)
       subname.ts               (mint child name; owner=agent address)
-      policy.ts                (setPolicy / readPolicy — leash.policy text record)
+      policy.ts                (setPolicy / readPolicy - leash.policy text record)
       reverse.ts               (setName reverse record)
       revoke.ts                (clear policy OR revokeRoles)
     hedera/
@@ -85,7 +85,7 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       hcs.ts                   (create topic + submit message)
       fund-agent.ts            (operator-funded HBAR for agent accounts)
   facilitator/
-    authorize.ts               (PURE closed-union gate decision — the enforcement core)
+    authorize.ts               (PURE closed-union gate decision - the enforcement core)
     ens-read.ts                (getLeashPolicy via viem; no-cache + cached variants)
     hedera-scheme.ts           (ExactHederaScheme wiring, feePayer)
     hcs-log.ts                 (ALLOW/DENY -> HCS)
@@ -106,8 +106,8 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
     app/
       layout.tsx
       page.tsx                 (landing: /demo + /app split)
-      demo/page.tsx            (JUDGE SANDBOX hero flow — server-orchestrated)
-      app/page.tsx             (REAL CONSOLE — Privy login + multi-tenant)
+      demo/page.tsx            (JUDGE SANDBOX hero flow - server-orchestrated)
+      app/page.tsx             (REAL CONSOLE - Privy login + multi-tenant)
       api/
         demo/route.ts          (sandbox orchestration: grant/spend/refuse/revoke/deny beats)
         agents/route.ts        (real: mint+setPolicy+DB record, relayer-sponsored)
@@ -122,13 +122,13 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
       AgentCard.tsx           (cap + allowlist + status)
   scripts/
     setup.ts                   (one-time: 2LD register, subregistry, roles, mint USDC, HCS topic)
-    seed-demo.ts               (idempotent judge-sandbox seed state — PRD §6 table)
+    seed-demo.ts               (idempotent judge-sandbox seed state - PRD §6 table)
     verify-claims.ts           (recompute headline numbers from committed data)
   docs/
     (LEASH-MASTER-BUILD-DOC.md, FORGE-KICKOFF-HANDOFF.md, AI-ATTRIBUTION.md, spec/)
 ```
 
-> **Repo-layout discipline (EX-7):** the deterministic enforcement core is `facilitator/authorize.ts` — it performs NO I/O (no network, no DB, no filesystem); its only import beyond `types` is viem's pure synchronous `keccak256`/`toBytes` for the audit policyHash, so it stays unit-testable with zero mocks; I/O adapters (`ens-read.ts`, `hedera-scheme.ts`, `hcs-log.ts`) depend inward on the types + authorize decision, never the reverse. Each external coupling is quarantined to ONE directory: ENS→`scripts/ens/` + `facilitator/ens-read.ts`; Hedera→`scripts/hedera/` + `facilitator/hedera-scheme.ts`; Privy→`treasury/privy.ts` + `agent/pay.ts`. `evidence/` (created by `scripts/verify-claims.ts`) holds recomputed proof output. Sequenced setup steps carry order in the filename.
+> **Repo-layout discipline (EX-7):** the deterministic enforcement core is `facilitator/authorize.ts` - it performs NO I/O (no network, no DB, no filesystem); its only import beyond `types` is viem's pure synchronous `keccak256`/`toBytes` for the audit policyHash, so it stays unit-testable with zero mocks; I/O adapters (`ens-read.ts`, `hedera-scheme.ts`, `hcs-log.ts`) depend inward on the types + authorize decision, never the reverse. Each external coupling is quarantined to ONE directory: ENS→`scripts/ens/` + `facilitator/ens-read.ts`; Hedera→`scripts/hedera/` + `facilitator/hedera-scheme.ts`; Privy→`treasury/privy.ts` + `agent/pay.ts`. `evidence/` (created by `scripts/verify-claims.ts`) holds recomputed proof output. Sequenced setup steps carry order in the filename.
 
 ---
 
@@ -151,10 +151,10 @@ leash/  (== repo root /Users/MAC/ethonline-2026)
 ### Data Flow (with types)
 `AgentPolicy` (from ENS) + decoded `PaymentContext` (from x402) → `authorize(): GateDecision` → HCS `LogEntry` + Hedera settle. Funding: `FundingRequest` → Privy policy eval → allow/`FUNDING_DENIED`. Index: HCS messages → `SpendEvent` rows (DB, read-only for the UI, never for enforcement).
 
-### Dependency Graph (one-way flow — EX-3)
+### Dependency Graph (one-way flow - EX-3)
 ```
 types/index.ts            (no imports)
-facilitator/authorize.ts  -> types + viem(keccak256,toBytes pure)  (NO I/O — the deterministic core)
+facilitator/authorize.ts  -> types + viem(keccak256,toBytes pure)  (NO I/O - the deterministic core)
 facilitator/ens-read.ts   -> types, viem      (I/O adapter, depends inward)
 facilitator/hedera-scheme.ts -> types, @x402/hedera
 facilitator/hcs-log.ts    -> types, @hiero-ledger/sdk
@@ -167,7 +167,7 @@ scripts/hedera/*          -> types, scripts/hedera/client
 db/*                      -> types, drizzle
 relayer/relay.ts          -> types, scripts/ens/client
 web/app/api/*             -> scripts/ens/*, agent/pay, treasury/privy, db/*   (never imports facilitator internals)
-web/app/demo/page.tsx     -> web/app/api/demo   (NO import edge to web/app/app — INVARIANT #10)
+web/app/demo/page.tsx     -> web/app/api/demo   (NO import edge to web/app/app - INVARIANT #10)
 ```
 The arrow direction is strictly inward toward `types` + `authorize`. `authorize.ts` depends on nothing but `types`, so the enforcement decision is unit-testable with zero I/O and cannot be corrupted by an adapter.
 
@@ -175,10 +175,10 @@ The arrow direction is strictly inward toward `types` + `authorize`. `authorize.
 
 ## 3. Shared Types
 
-**Written first — imported everywhere. No imports from other project files.**
+**Written first - imported everywhere. No imports from other project files.**
 
 #### File: `types/index.ts`
-[VERIFIED] — shapes transcribed from master §4.1 (leash.policy JSON), §4.2 (hook context), §4.3 (Privy policy)
+[VERIFIED] - shapes transcribed from master §4.1 (leash.policy JSON), §4.2 (hook context), §4.3 (Privy policy)
 ```typescript
 // File: types/index.ts
 // All shared types. Order: enums -> data structures -> gate decision -> API shapes.
@@ -206,7 +206,7 @@ export interface AgentPolicy {
 
 // ---- Decoded payment context handed to the gate ----
 export interface PaymentContext {
-  agentName: string;   // from X-Leash-Agent header (UNTRUSTED — only names the record)
+  agentName: string;   // from X-Leash-Agent header (UNTRUSTED - only names the record)
   payer: string;       // decoded tx payer Hedera account (from the signed payload)
   amount: bigint;      // raw smallest-unit amount decoded from the transfer
   payTo: string;       // recipient Hedera account
@@ -260,12 +260,12 @@ export interface SpendEvent {
 ```
 
 ### Key Decisions
-- `GateDecision` is a closed union with no `void` — "proceed" is impossible to express without an affirmative `{settle:true, auth}` (INVARIANT #1, structural).
+- `GateDecision` is a closed union with no `void` - "proceed" is impossible to express without an affirmative `{settle:true, auth}` (INVARIANT #1, structural).
 - `amount` is `bigint`; `AgentPolicy.maxPerCall` is a decimal string parsed to `bigint` before compare (INVARIANT #7). No floats anywhere.
 
 ---
 
-## 4. Facilitator + ENS Gate (component 4 — the enforcement core)
+## 4. Facilitator + ENS Gate (component 4 - the enforcement core)
 
 ### Purpose
 Read the ENS policy, decide `GateDecision`, settle native Hedera gas-free on `{settle:true}`, log to HCS. `authorize.ts` is pure (no I/O) so the decision is structurally isolated.
@@ -273,13 +273,18 @@ Read the ENS policy, decide `GateDecision`, settle native Hedera gas-free on `{s
 ### Dependencies
 `types/index.ts`; viem (ens-read); @x402/hedera (scheme); @hiero-ledger/sdk (hcs-log); @x402/core (server).
 
+<!-- [CRITIQUE E-1] Blocky402 provenance (VERIFIED 2026-09-12 via docs.hedera.com/solutions/ai/x402 + blocky402.com + github.com/x402-foundation/x402):
+  FACTS: (1) Blocky402 is an open-source (MIT) x402 facilitator that is BOTH hosted AND self-hostable ("run your own instance via Docker or Node.js"), live on Hedera testnet + mainnet. (2) Blocky402 is built on the SAME packages this design uses: @x402/core + @x402/hedera (its own examples import @x402/hedera, @x402/hedera/exact/client). (3) onBeforeVerify/onBeforeSettle are OFFICIAL x402 lifecycle hooks (see x402-foundation/x402 issue #2299 "behavioral trust scoring via onBeforeSettle") - gating settlement on an external read is a supported, in-the-wild pattern, exactly what the ENS gate does.
+  DECISION: FORK the open-source Blocky402 and insert the ENS gate via the official onBeforeSettle hook, rather than building a bespoke facilitator from @x402/hedera. Same package stack, same effort, but "host a LIVE x402-gated service via the Blocky402 facilitator" becomes literally true = unambiguous Hedera-prize qualification. Build (Task 2.2) confirms Blocky402's repo exposes the onBeforeSettle extension point (highly likely: it wraps @x402/core); if for any reason the fork cannot carry the hook, fall back to a self-hosted @x402/core+@x402/hedera facilitator (same protocol, Blocky402-equivalent) and state that equivalence in README. Either way the facilitator is self-hosted so the ENS read runs PRE-settlement. Do NOT add a second non-ENS facilitator path. -->
+
+
 ### Code
 
 #### File: `facilitator/authorize.ts`
-[VERIFIED] — enforces INVARIANTS #1/#6/#7/#8/#9 exactly; pure function, no I/O
+[VERIFIED] - enforces INVARIANTS #1/#6/#7/#8/#9 exactly; pure function, no I/O
 ```typescript
 // File: facilitator/authorize.ts
-// PURE gate decision. Imports ONLY types. No I/O — unit-testable with zero mocks.
+// PURE gate decision. Imports ONLY types. No I/O - unit-testable with zero mocks.
 // INVARIANT #1: returns a closed GateDecision; "proceed" cannot be produced without {settle:true}.
 import { keccak256, toBytes } from 'viem';
 import type { AgentPolicy, PaymentContext, GateDecision } from '../types';
@@ -330,10 +335,10 @@ export function authorize(
 ```
 
 #### File: `facilitator/ens-read.ts`
-[UNVERIFIED] — viem text-read on a 3-level name via UniversalResolverV2 is the ENSv2-alpha path (PRD-W5); WS-1 read-back must exercise THIS exact function
+[UNVERIFIED] - viem text-read on a 3-level name via UniversalResolverV2 is the ENSv2-alpha path (PRD-W5); WS-1 read-back must exercise THIS exact function
 ```typescript
 // File: facilitator/ens-read.ts
-// WARNING: UNVERIFIED PATTERN — test immediately (3-level getEnsText on ENSv2 alpha).
+// WARNING: UNVERIFIED PATTERN - test immediately (3-level getEnsText on ENSv2 alpha).
 // Reads leash.policy. Two variants: no-cache (settle path) and 30s-cached (advisory pre-screen).
 import { createPublicClient, http, namehash } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -358,14 +363,14 @@ async function readText(name: string): Promise<string> {
 }
 
 // Parse the text value into AgentPolicy, or null if empty/revoked.
-// Throws only on transport/RPC failure (caller maps to RPC_ERROR — INVARIANT #1 fail-closed).
+// Throws only on transport/RPC failure (caller maps to RPC_ERROR - INVARIANT #1 fail-closed).
 function parsePolicy(raw: string): AgentPolicy | null {
   if (!raw || raw.trim() === '') return null;
   const p = JSON.parse(raw) as AgentPolicy;
   return p;
 }
 
-// AUTHORITATIVE settle-time read — NO cache (INVARIANT #2). Malformed JSON returns a sentinel
+// AUTHORITATIVE settle-time read - NO cache (INVARIANT #2). Malformed JSON returns a sentinel
 // the caller treats as MALFORMED_POLICY; empty returns null (REVOKED).
 export async function readPolicyNoCache(name: string): Promise<AgentPolicy | null | 'MALFORMED'> {
   const raw = await readText(name); // throws -> RPC_ERROR upstream
@@ -376,7 +381,7 @@ export async function readPolicyNoCache(name: string): Promise<AgentPolicy | nul
   }
 }
 
-// Advisory pre-screen read — 30s TTL cache permitted (INVARIANT #3).
+// Advisory pre-screen read - 30s TTL cache permitted (INVARIANT #3).
 const cache = new Map<string, { value: AgentPolicy | null | 'MALFORMED'; exp: number }>();
 export async function readPolicyCached(name: string): Promise<AgentPolicy | null | 'MALFORMED'> {
   const hit = cache.get(name);
@@ -395,7 +400,7 @@ export async function readPolicyCached(name: string): Promise<AgentPolicy | null
 ```
 
 #### File: `facilitator/hcs-log.ts`
-[VERIFIED] — master §4.2 HCS (TopicMessageSubmitTransaction)
+[VERIFIED] - master §4.2 HCS (TopicMessageSubmitTransaction)
 ```typescript
 // File: facilitator/hcs-log.ts
 import { TopicMessageSubmitTransaction } from '@hiero-ledger/sdk';
@@ -412,10 +417,10 @@ export async function logDecision(entry: LogEntry): Promise<void> {
 ```
 
 #### File: `facilitator/hedera-scheme.ts`
-[UNVERIFIED] — master §4.2 scheme wiring; WARNING: pin-verify @x402/hedera exports at WS-2
+[UNVERIFIED] - master §4.2 scheme wiring; WARNING: pin-verify @x402/hedera exports at WS-2
 ```typescript
 // File: facilitator/hedera-scheme.ts
-// WARNING: UNVERIFIED PATTERN — test immediately (confirm @x402/hedera 2.25 export names at install).
+// WARNING: UNVERIFIED PATTERN - test immediately (confirm @x402/hedera 2.25 export names at install).
 import {
   ExactHederaScheme,
   createHederaSignAndSubmitTransaction,
@@ -438,10 +443,10 @@ export function hederaScheme() {
 ```
 
 #### File: `facilitator/server.ts`
-[UNVERIFIED] — master §4.2 hook registration; encodes INVARIANTS #1/#2/#3 (verify advisory, settle authoritative no-cache)
+[UNVERIFIED] - master §4.2 hook registration; encodes INVARIANTS #1/#2/#3 (verify advisory, settle authoritative no-cache)
 ```typescript
 // File: facilitator/server.ts
-// WARNING: UNVERIFIED PATTERN — test immediately (confirm @x402/core hook signatures at install).
+// WARNING: UNVERIFIED PATTERN - test immediately (confirm @x402/core hook signatures at install).
 import { x402Facilitator } from '@x402/core';
 import { authorize } from './authorize';
 import { readPolicyCached, readPolicyNoCache } from './ens-read';
@@ -517,14 +522,14 @@ export function _exhaustive(d: GateDecision) {
 
 ### Key Decisions
 - `authorize()` is pure and takes the policy as an argument, so all enforcement branches are tested without RPC/Hedera. The adapter (`server.ts`) owns the I/O and the single guarded proceed emit.
-- The replay `seen` set is process-memory (sufficient for the demo; a production build would back it with the DB/Redis — noted in LIMITATIONS).
+- The replay `seen` set is process-memory (sufficient for the demo; a production build would back it with the DB/Redis - noted in LIMITATIONS).
 
 ### Verified / Unverified Status
-`authorize.ts` [VERIFIED] logic. `ens-read.ts`/`hedera-scheme.ts`/`server.ts` [UNVERIFIED] against pinned installs — WS-2 clears them.
+`authorize.ts` [VERIFIED] logic. `ens-read.ts`/`hedera-scheme.ts`/`server.ts` [UNVERIFIED] against pinned installs - WS-2 clears them.
 
 ---
 
-## 5. ENS Provisioning (component 2 — the RISKIEST, WS-1 first)
+## 5. ENS Provisioning (component 2 - the RISKIEST, WS-1 first)
 
 ### Purpose
 Provision the naming hierarchy and per-agent policy records; the kill switch is here (`revoke`).
@@ -535,7 +540,7 @@ Provision the naming hierarchy and per-agent policy records; the kill switch is 
 ### Code
 
 #### File: `scripts/ens/addresses.ts`
-[VERIFIED] — master §4.1 pinned 2026-06-29 set; ETHRegistry bytecode reachability confirmed in-forge
+[VERIFIED] - master §4.1 pinned 2026-06-29 set; ETHRegistry bytecode reachability confirmed in-forge
 ```typescript
 // File: scripts/ens/addresses.ts
 // Pinned ENSv2 Sepolia set (2026-06-29). Prefer runtime load from contracts-v2/deployments/sepolia/*.json
@@ -581,7 +586,7 @@ export const ADMIN_SHIFT = 128n; // admin variant = role << 128
 ```
 
 #### File: `scripts/ens/client.ts`
-[VERIFIED] — standard viem client construction
+[VERIFIED] - standard viem client construction
 ```typescript
 // File: scripts/ens/client.ts
 import { createPublicClient, createWalletClient, http } from 'viem';
@@ -597,10 +602,10 @@ export function walletClient(pk: `0x${string}` = process.env.LEASH_DEPLOYER_KEY 
 ```
 
 #### File: `scripts/ens/register-2ld.ts`
-[ASSUMED] — the ENSv2-alpha ETHRegistrar commit-reveal ABI is NOT given by the master doc; this signature is a placeholder. WS-1 MUST confirm the real ABI (clone `contracts-v2` or read the deployed contract) BEFORE build copies this. Returns the real tokenId (read via `tokenIdOf`), not a positional-log guess.
+[ASSUMED] - the ENSv2-alpha ETHRegistrar commit-reveal ABI is NOT given by the master doc; this signature is a placeholder. WS-1 MUST confirm the real ABI (clone `contracts-v2` or read the deployed contract) BEFORE build copies this. Returns the real tokenId (read via `tokenIdOf`), not a positional-log guess.
 ```typescript
 // File: scripts/ens/register-2ld.ts
-// CAUTION: ASSUMED PATTERN — the registrar ABI + commit-reveal args are a PLACEHOLDER guess.
+// CAUTION: ASSUMED PATTERN - the registrar ABI + commit-reveal args are a PLACEHOLDER guess.
 // WS-1 RESOLVE (decision tree DP-1 in PLAN): confirm the deployed ETHRegistrar's real makeCommitment/register
 // signature (historically makeCommitment(name,owner,duration,secret,resolver,data,reverseRecord,fuses)) and the
 // exact tokenId scheme. Do NOT trust this signature; do NOT copy to build before DP-1 resolves it.
@@ -610,7 +615,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { publicClient, walletClient } from './client';
 import { ENS } from './addresses';
 
-// PLACEHOLDER ABI — replace with the confirmed registrar ABI at WS-1/DP-1.
+// PLACEHOLDER ABI - replace with the confirmed registrar ABI at WS-1/DP-1.
 const registrarAbi = parseAbi([
   'function available(string label) view returns (bool)',
   'function commit(bytes32 commitment)',
@@ -623,7 +628,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // tokenId candidate: ENSv2 nodes are namehashes; registries key by node. WS-1/DP-1 confirms whether the
 // registry keys by uint256(namehash(fullName)) or uint256(labelhash). Threaded through so callers never guess.
 export function tokenIdOf(fullName: string): bigint {
-  return BigInt(namehash(fullName)); // [ASSUMED candidate — confirm at DP-1]
+  return BigInt(namehash(fullName)); // [ASSUMED candidate - confirm at DP-1]
 }
 
 // Returns { label, fullName, tokenId } for the registered name (preferred or a free fallback).
@@ -654,10 +659,10 @@ export async function register2LD(preferred: string, fallbacks: string[], parent
 ```
 
 #### File: `scripts/ens/subregistry.ts`
-[UNVERIFIED] — master §3.5 step 2 (VerifiableFactory + setSubregistry)
+[UNVERIFIED] - master §3.5 step 2 (VerifiableFactory + setSubregistry)
 ```typescript
 // File: scripts/ens/subregistry.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { parseAbi } from 'viem';
 import { publicClient, walletClient } from './client';
 import { ENS, ROLE } from './addresses';
@@ -683,10 +688,10 @@ export async function deploySubregistry(parentTokenId: bigint): Promise<`0x${str
 ```
 
 #### File: `scripts/ens/subname.ts`
-[UNVERIFIED] — master §4.1 register ABI; tokenId via confirmed scheme (tokenIdOf), not positional log
+[UNVERIFIED] - master §4.1 register ABI; tokenId via confirmed scheme (tokenIdOf), not positional log
 ```typescript
 // File: scripts/ens/subname.ts
-// WARNING: UNVERIFIED PATTERN — test immediately. tokenId derivation confirmed at WS-1/DP-1.
+// WARNING: UNVERIFIED PATTERN - test immediately. tokenId derivation confirmed at WS-1/DP-1.
 import { parseAbi } from 'viem';
 import { publicClient, walletClient } from './client';
 import { ENS, ROLE, ADMIN_SHIFT } from './addresses';
@@ -714,10 +719,10 @@ export async function mintSubname(registry: `0x${string}`, label: string, parent
 ```
 
 #### File: `scripts/ens/policy.ts`
-[UNVERIFIED] — master §4.1 setText/text; the write side of the enforcement policy
+[UNVERIFIED] - master §4.1 setText/text; the write side of the enforcement policy
 ```typescript
 // File: scripts/ens/policy.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { parseAbi, namehash } from 'viem';
 import { publicClient, walletClient } from './client';
 import { ENS } from './addresses';
@@ -744,10 +749,10 @@ export async function readPolicy(name: string): Promise<AgentPolicy | null> {
 ```
 
 #### File: `scripts/ens/reverse.ts`
-[UNVERIFIED] — master §4.1 reverse adapter setName
+[UNVERIFIED] - master §4.1 reverse adapter setName
 ```typescript
 // File: scripts/ens/reverse.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { parseAbi } from 'viem';
 import { publicClient, walletClient } from './client';
 import { ENS } from './addresses';
@@ -763,10 +768,10 @@ export async function setReverse(name: string, pk?: `0x${string}`): Promise<`0x$
 ```
 
 #### File: `scripts/ens/roles.ts`
-[UNVERIFIED] — master §4.1 grantRoles/revokeRoles — the kill switch
+[UNVERIFIED] - master §4.1 grantRoles/revokeRoles - the kill switch
 ```typescript
 // File: scripts/ens/roles.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { parseAbi } from 'viem';
 import { publicClient, walletClient } from './client';
 
@@ -791,10 +796,10 @@ export async function revokeRoles(registry: `0x${string}`, tokenId: bigint, bitm
 ```
 
 #### File: `scripts/ens/revoke.ts`
-[UNVERIFIED] — the two revocation modes (clear record OR revoke role). Both are one Sepolia tx.
+[UNVERIFIED] - the two revocation modes (clear record OR revoke role). Both are one Sepolia tx.
 ```typescript
 // File: scripts/ens/revoke.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { parseAbi, namehash } from 'viem';
 import { publicClient, walletClient } from './client';
 import { ENS, ROLE } from './addresses';
@@ -833,7 +838,7 @@ Mint the own HTS USDC, associate it, create the HCS topic, fund agent accounts.
 ### Code
 
 #### File: `scripts/hedera/client.ts`
-[VERIFIED] — master §4.2/§8 operator creds (live-verified)
+[VERIFIED] - master §4.2/§8 operator creds (live-verified)
 ```typescript
 // File: scripts/hedera/client.ts
 import { Client, PrivateKey, AccountId } from '@hiero-ledger/sdk';
@@ -849,10 +854,10 @@ export function hederaClient(): Client {
 ```
 
 #### File: `scripts/hedera/mint-usdc.ts`
-[UNVERIFIED] — master §4.2 TokenCreateTransaction 6-dec; EVM facade via deterministic HIP-719 (no forbidden SDK method) (PRD-W3)
+[UNVERIFIED] - master §4.2 TokenCreateTransaction 6-dec; EVM facade via deterministic HIP-719 (no forbidden SDK method) (PRD-W3)
 ```typescript
 // File: scripts/hedera/mint-usdc.ts
-// WARNING: UNVERIFIED PATTERN — test immediately (confirm TokenCreateTransaction shape on @hiero-ledger/sdk 2.85.0).
+// WARNING: UNVERIFIED PATTERN - test immediately (confirm TokenCreateTransaction shape on @hiero-ledger/sdk 2.85.0).
 // Mints own 6-decimal HTS USDC. The token has TWO identifiers: the HTS id (0.0.x, used natively by the
 // facilitator transfer) AND an EVM-facade address (0x..., used by Privy's ERC-20 transfer calldata policy).
 import { TokenCreateTransaction, TokenType, AccountId, PrivateKey } from '@hiero-ledger/sdk';
@@ -887,10 +892,10 @@ export async function mintUsdc(): Promise<{ tokenId: string; evmAddress: string 
 ```
 
 #### File: `scripts/hedera/associate.ts`
-[UNVERIFIED] — master §4.2 TokenAssociateTransaction (else TOKEN_NOT_ASSOCIATED)
+[UNVERIFIED] - master §4.2 TokenAssociateTransaction (else TOKEN_NOT_ASSOCIATED)
 ```typescript
 // File: scripts/hedera/associate.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { TokenAssociateTransaction, AccountId, PrivateKey } from '@hiero-ledger/sdk';
 import { hederaClient } from './client';
 
@@ -907,10 +912,10 @@ export async function associate(accountId: string, accountKey: string, tokenId: 
 ```
 
 #### File: `scripts/hedera/hcs.ts`
-[UNVERIFIED] — master §4.2 TopicCreateTransaction
+[UNVERIFIED] - master §4.2 TopicCreateTransaction
 ```typescript
 // File: scripts/hedera/hcs.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { TopicCreateTransaction } from '@hiero-ledger/sdk';
 import { hederaClient } from './client';
 
@@ -923,10 +928,10 @@ export async function createTopic(): Promise<string> {
 ```
 
 #### File: `scripts/hedera/fund-agent.ts`
-[UNVERIFIED] — operator HBAR transfer to give a new agent account gas presence
+[UNVERIFIED] - operator HBAR transfer to give a new agent account gas presence
 ```typescript
 // File: scripts/hedera/fund-agent.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 import { TransferTransaction, AccountId, Hbar } from '@hiero-ledger/sdk';
 import { hederaClient } from './client';
 
@@ -954,10 +959,10 @@ The live x402-gated service Hedera requires; points at OUR facilitator.
 ### Code
 
 #### File: `resource-server/server.ts`
-[UNVERIFIED] — master §4.2 paymentMiddlewareFromConfig + HttpFacilitatorClient
+[UNVERIFIED] - master §4.2 paymentMiddlewareFromConfig + HttpFacilitatorClient
 ```typescript
 // File: resource-server/server.ts
-// WARNING: UNVERIFIED PATTERN — test immediately (confirm @x402/express 2.25 API at install).
+// WARNING: UNVERIFIED PATTERN - test immediately (confirm @x402/express 2.25 API at install).
 import express from 'express';
 import { paymentMiddlewareFromConfig, HttpFacilitatorClient } from '@x402/express';
 
@@ -966,7 +971,7 @@ const facilitatorClient = new HttpFacilitatorClient({ url: process.env.FACILITAT
 
 // Demo endpoint price reconciled with narrated amounts (R-11): priced so a 3-USDC in-cap spend is a
 // literal charge against a 5-USDC cap. DP-3 RESOLVE: confirm @x402/express price FORMAT against the pinned
-// install — master §4.2 uses the dollar-string form '$0.10'; here we express the raw-unit charge. Use whichever
+// install - master §4.2 uses the dollar-string form '$0.10'; here we express the raw-unit charge. Use whichever
 // the installed middleware parses (env PREMIUM_PRICE lets us switch without a code edit). The over-cap demo
 // (50 USDC) is driven by the AGENT overriding its transfer amount, not by a second endpoint price.
 const PREMIUM_PRICE = process.env.PREMIUM_PRICE ?? '$3.00';
@@ -998,14 +1003,14 @@ Build + sign the native transfer via Privy custody, retry with the `X-PAYMENT` p
 ### Code
 
 #### File: `agent/pay.ts`
-[UNVERIFIED] — master §3.5 step 3 / §4.2 gas-free mechanism (feePayer); Privy secp256k1Sign custody. WS-3/DP-3 confirms the exact signable-hash construction from @x402/hedera.
+[UNVERIFIED] - master §3.5 step 3 / §4.2 gas-free mechanism (feePayer); Privy secp256k1Sign custody. WS-3/DP-3 confirms the exact signable-hash construction from @x402/hedera.
 ```typescript
 // File: agent/pay.ts
-// WARNING: UNVERIFIED PATTERN — test immediately.
+// WARNING: UNVERIFIED PATTERN - test immediately.
 // Builds a partially-signed native TransferTransaction (transactionId.accountId = feePayer, gas-free),
 // signs the transfer HASH (not the raw body) via Privy secp256k1Sign (custody), and pays the x402 endpoint.
 // WS-3/DP-3 RESOLVE: confirm the exact signable-hash the Hedera ECDSA scheme expects (from @x402/hedera's
-// sign helper); the sha384 below is the placeholder preimage — do not assume it is final.
+// sign helper); the sha384 below is the placeholder preimage - do not assume it is final.
 import { TransferTransaction, TransactionId, AccountId } from '@hiero-ledger/sdk';
 import { createHederaClient } from '@x402/hedera';
 import { PrivyClient } from '@privy-io/server-auth';
@@ -1073,7 +1078,7 @@ Org treasury as a P-256-owner server wallet; funding policy (cap + allowlist); p
 ### Code
 
 #### File: `treasury/privy.ts`
-[UNVERIFIED] — owner+auth-sig REQUIREMENT is [VERIFIED] live (§8/§10b, platformProbe, INVARIANT #5); the exact createWallet/createPolicy SDK argument SHAPES are [UNVERIFIED] against pinned ^1.32 — WS-0 smoke #1 (DP-0) confirms them
+[UNVERIFIED] - owner+auth-sig REQUIREMENT is [VERIFIED] live (§8/§10b, platformProbe, INVARIANT #5); the exact createWallet/createPolicy SDK argument SHAPES are [UNVERIFIED] against pinned ^1.32 - WS-0 smoke #1 (DP-0) confirms them
 ```typescript
 // File: treasury/privy.ts
 // The treasury wallet MUST have a P-256 owner and be driven via @privy-io/server-auth (INVARIANT #5).
@@ -1108,14 +1113,14 @@ export async function createFundingPolicy(agentEvmAddrs: string[], fundingCapRaw
 
 // Create the P-256-owner treasury wallet bound to the policy (INVARIANT #5: owner is mandatory).
 // The owner REQUIREMENT is [VERIFIED] (owner-less fails open, proven live 2026-09-12). The exact createWallet
-// owner ARGUMENT SHAPE below is [ASSUMED] — master §4.3 pins createWallet WITHOUT an owner field (its verified
+// owner ARGUMENT SHAPE below is [ASSUMED] - master §4.3 pins createWallet WITHOUT an owner field (its verified
 // line predates the fail-open finding). WS-0 smoke #1 (DP-0) MUST confirm the real owner-binding arg name +
 // casing against installed @privy-io/server-auth ^1.32 and prove an over-cap tx returns DENY BEFORE broadcast
-// with an OWNED wallet — do NOT ship an owner-less wallet (that is the exact fail-open catastrophe).
+// with an OWNED wallet - do NOT ship an owner-less wallet (that is the exact fail-open catastrophe).
 export async function createTreasury(policyId: string, ownerPublicKey: string): Promise<string> {
   const wallet = await privy.walletApi.createWallet({
     chainType: 'ethereum',
-    owner: { publicKey: ownerPublicKey }, // [ASSUMED shape — confirm at DP-0]; presence of an owner is MANDATORY
+    owner: { publicKey: ownerPublicKey }, // [ASSUMED shape - confirm at DP-0]; presence of an owner is MANDATORY
     policyIds: [policyId],
   });
   return wallet.id;
@@ -1160,15 +1165,15 @@ function isPolicyDenial(e: any): boolean {
 ```
 
 ### Key Decisions
-- `createTreasury` requires `owner.publicKey` — a wallet without it fails open (proven live). This is the structural lever for INVARIANT #5.
-- No `secp256k1Sign` self-broadcast on this file — funding always goes through the owner-driven policy-gated `sendTransaction` (D-10).
+- `createTreasury` requires `owner.publicKey` - a wallet without it fails open (proven live). This is the structural lever for INVARIANT #5.
+- No `secp256k1Sign` self-broadcast on this file - funding always goes through the owner-driven policy-gated `sendTransaction` (D-10).
 
 ### Verified / Unverified Status
-Owner+auth-sig requirement [VERIFIED] live 2026-09-12; exact `createPolicy` rule schema [UNVERIFIED] against the pinned @privy-io/server-auth ^1.32 — WS-0 smoke #1 must re-prove DENY against the installed version.
+Owner+auth-sig requirement [VERIFIED] live 2026-09-12; exact `createPolicy` rule schema [UNVERIFIED] against the pinned @privy-io/server-auth ^1.32 - WS-0 smoke #1 must re-prove DENY against the installed version.
 
 ---
 
-## 10. Database (component 9 — index layer ONLY)
+## 10. Database (component 9 - index layer ONLY)
 
 ### Purpose
 Per-user views, activity feed, metadata not on-chain. INVARIANT #3: the DB is NEVER read on any enforcement path.
@@ -1176,10 +1181,10 @@ Per-user views, activity feed, metadata not on-chain. INVARIANT #3: the DB is NE
 ### Code
 
 #### File: `db/schema.ts`
-[ASSUMED] — drizzle schema for the app/index layer
+[ASSUMED] - drizzle schema for the app/index layer
 ```typescript
 // File: db/schema.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { pgTable, text, timestamp, integer, uuid } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -1223,10 +1228,10 @@ export const spendEvents = pgTable('spend_events', {
 ```
 
 #### File: `db/client.ts`
-[ASSUMED] — Neon pooled connection (DATABASE_URL live-verified)
+[ASSUMED] - Neon pooled connection (DATABASE_URL live-verified)
 ```typescript
 // File: db/client.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
@@ -1235,17 +1240,17 @@ export const db = drizzle(pool);
 ```
 
 #### File: `db/index-hcs.ts`
-[ASSUMED] — poll HCS via Mirror Node -> spend_events (index only, off the enforcement path)
+[ASSUMED] - poll HCS via Mirror Node -> spend_events (index only, off the enforcement path)
 ```typescript
 // File: db/index-hcs.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { db } from './client';
 import { spendEvents } from './schema';
 import type { LogEntry } from '../types';
 
 const MIRROR = 'https://testnet.mirrornode.hedera.com';
 
-// Poll the HCS topic messages and upsert into spend_events. Index layer ONLY — never gates a payment.
+// Poll the HCS topic messages and upsert into spend_events. Index layer ONLY - never gates a payment.
 export async function indexTopic(topicId: string, sinceSeq = 0): Promise<number> {
   const res = await fetch(`${MIRROR}/api/v1/topics/${topicId}/messages?sequencenumber=gt:${sinceSeq}&limit=100`);
   const json = (await res.json()) as { messages: { sequence_number: number; message: string }[] };
@@ -1275,10 +1280,10 @@ Gas sponsor: the deployer key pays Sepolia gas for a connected user's ENS op, SC
 ### Code
 
 #### File: `relayer/relay.ts`
-[ASSUMED] — scoped relayer; only mints/sets/revokes under the caller's own verified org subname
+[ASSUMED] - scoped relayer; only mints/sets/revokes under the caller's own verified org subname
 ```typescript
 // File: relayer/relay.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 // Scoped gas sponsor: the op MUST target a name under the authenticated user's org subname.
 import { mintSubname } from '../scripts/ens/subname';
 import { setPolicy } from '../scripts/ens/policy';
@@ -1318,10 +1323,10 @@ next, viem, @privy-io/react-auth; server routes import `scripts/ens/*`, `agent/p
 ### Code
 
 #### File: `web/lib/config.ts`
-[ASSUMED] — typed env access shared by routes
+[ASSUMED] - typed env access shared by routes
 ```typescript
 // File: web/lib/config.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 export const config = {
   root: process.env.ENS_PARENT_NAME!,            // e.g. leash.eth (resolved WS-1)
   sandboxOrg: process.env.SANDBOX_ORG_NAME!,     // e.g. acme.leash.eth
@@ -1335,10 +1340,10 @@ export const config = {
 ```
 
 #### File: `web/app/layout.tsx`
-[ASSUMED] — root layout
+[ASSUMED] - root layout
 ```tsx
 // File: web/app/layout.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 export const metadata = { title: 'LEASH', description: 'Your ENS name is your revocable spend policy' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -1351,10 +1356,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```
 
 #### File: `web/app/page.tsx`
-[ASSUMED] — landing: /demo + /app split
+[ASSUMED] - landing: /demo + /app split
 ```tsx
 // File: web/app/page.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import Link from 'next/link';
 
 export default function Landing() {
@@ -1372,10 +1377,10 @@ export default function Landing() {
 ```
 
 #### File: `web/app/api/demo/route.ts`
-[ASSUMED] — sandbox orchestration: drives grant/spend/refuse/revoke/deny beats server-side (keys-off-host)
+[ASSUMED] - sandbox orchestration: drives grant/spend/refuse/revoke/deny beats server-side (keys-off-host)
 ```typescript
 // File: web/app/api/demo/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 // Judge-sandbox orchestration. Server-side pre-seeded keys (INVARIANT #10, keysOffHostDemoPath = /demo).
 // Each beat is a REAL on-chain tx (INVARIANT: no fabricated state).
 import { NextRequest, NextResponse } from 'next/server';
@@ -1412,10 +1417,10 @@ export async function POST(req: NextRequest) {
 ```
 
 #### File: `web/app/api/agents/route.ts`
-[ASSUMED] — real console: mint + setPolicy + DB record, relayer-sponsored
+[ASSUMED] - real console: mint + setPolicy + DB record, relayer-sponsored
 ```typescript
 // File: web/app/api/agents/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { NextRequest, NextResponse } from 'next/server';
 import { relay } from '../../../../relayer/relay';
 import { db } from '../../../../db/client';
@@ -1438,10 +1443,10 @@ export async function POST(req: NextRequest) {
 ```
 
 #### File: `web/app/api/revoke/route.ts`
-[ASSUMED] — real+demo revoke (clear policy), scoped through the relayer
+[ASSUMED] - real+demo revoke (clear policy), scoped through the relayer
 ```typescript
 // File: web/app/api/revoke/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { NextRequest, NextResponse } from 'next/server';
 import { relay } from '../../../../relayer/relay';
 import { db } from '../../../../db/client';
@@ -1457,10 +1462,10 @@ export async function POST(req: NextRequest) {
 ```
 
 #### File: `web/app/api/pay/route.ts`
-[ASSUMED] — trigger an agent payment (real console)
+[ASSUMED] - trigger an agent payment (real console)
 ```typescript
 // File: web/app/api/pay/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { NextRequest, NextResponse } from 'next/server';
 import { pay } from '../../../../agent/pay';
 import { config } from '../../../lib/config';
@@ -1473,10 +1478,10 @@ export async function POST(req: NextRequest) {
 ```
 
 #### File: `web/app/api/fund/route.ts`
-[ASSUMED] — Privy policy-gated funding + leaked-key DENY surfacing
+[ASSUMED] - Privy policy-gated funding + leaked-key DENY surfacing
 ```typescript
 // File: web/app/api/fund/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { NextRequest, NextResponse } from 'next/server';
 import { fundAgent } from '../../../../treasury/privy';
 import { config } from '../../../lib/config';
@@ -1489,10 +1494,10 @@ export async function POST(req: NextRequest) {
 ```
 
 #### File: `web/app/api/policy/[name]/route.ts`
-[ASSUMED] — read live leash.policy for the UI (from ENS, not DB — matches enforcement source)
+[ASSUMED] - read live leash.policy for the UI (from ENS, not DB - matches enforcement source)
 ```typescript
 // File: web/app/api/policy/[name]/route.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import { NextRequest, NextResponse } from 'next/server';
 import { readPolicy } from '../../../../../scripts/ens/policy';
 
@@ -1503,10 +1508,10 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
 ```
 
 #### File: `web/app/demo/page.tsx`
-[ASSUMED] — judge sandbox hero flow UI (no import edge to /app — INVARIANT #10)
+[ASSUMED] - judge sandbox hero flow UI (no import edge to /app - INVARIANT #10)
 ```tsx
 // File: web/app/demo/page.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 'use client';
 import { useState } from 'react';
 import SplitScreen from '../../components/SplitScreen';
@@ -1521,7 +1526,7 @@ export default function DemoPage() {
   }
   return (
     <main>
-      <h1>Judge sandbox — acme.leash.eth</h1>
+      <h1>Judge sandbox - acme.leash.eth</h1>
       <SplitScreen />
       <div>
         <button onClick={() => beat('spend')}>1. Spend 3 USDC (in cap)</button>
@@ -1536,10 +1541,10 @@ export default function DemoPage() {
 ```
 
 #### File: `web/app/app/page.tsx`
-[ASSUMED] — real console (Privy login + multi-tenant); depends on Privy dashboard toggle
+[ASSUMED] - real console (Privy login + multi-tenant); depends on Privy dashboard toggle
 ```tsx
 // File: web/app/app/page.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 'use client';
 import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 
@@ -1568,10 +1573,10 @@ export default function AppConsole() {
 ```
 
 #### File: `web/components/SplitScreen.tsx`
-[ASSUMED] — A/B resolver-record | live-402 view (the negative-WOW legibility device, R-10)
+[ASSUMED] - A/B resolver-record | live-402 view (the negative-WOW legibility device, R-10)
 ```tsx
 // File: web/components/SplitScreen.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 'use client';
 import { useEffect, useState } from 'react';
 import type { AgentPolicy } from '../../types';
@@ -1603,10 +1608,10 @@ export default function SplitScreen() {
 ```
 
 #### File: `web/components/AgentCard.tsx`
-[ASSUMED] — per-agent cap + allowlist + status card
+[ASSUMED] - per-agent cap + allowlist + status card
 ```tsx
 // File: web/components/AgentCard.tsx
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 import type { AgentPolicy } from '../../types';
 
 export default function AgentCard({ name, policy, status }: { name: string; policy: AgentPolicy | null; status: string }) {
@@ -1629,7 +1634,7 @@ export default function AgentCard({ name, policy, status }: { name: string; poli
 ```
 
 ### Key Decisions
-- `/demo` imports only `web/app/api/demo` + `SplitScreen` — NO import edge to `/app`'s Privy modules (INVARIANT #10 structural boundary).
+- `/demo` imports only `web/app/api/demo` + `SplitScreen` - NO import edge to `/app`'s Privy modules (INVARIANT #10 structural boundary).
 - The policy read route (`api/policy/[name]`) reads ENS live, matching the enforcement source, so the UI can never show a stale/DB-derived policy on the demo path.
 
 ---
@@ -1637,10 +1642,10 @@ export default function AgentCard({ name, policy, status }: { name: string; poli
 ## 13. Orchestration Scripts
 
 #### File: `scripts/setup.ts`
-[UNVERIFIED] — one-time provisioning (2LD register, subregistry, roles, mint USDC, HCS topic); writes ids to .env
+[UNVERIFIED] - one-time provisioning (2LD register, subregistry, roles, mint USDC, HCS topic); writes ids to .env
 ```typescript
 // File: scripts/setup.ts
-// WARNING: UNVERIFIED PATTERN — test immediately. Run LOCALLY (commit-reveal 60s wait).
+// WARNING: UNVERIFIED PATTERN - test immediately. Run LOCALLY (commit-reveal 60s wait).
 import { register2LD } from './ens/register-2ld';
 import { deploySubregistry } from './ens/subregistry';
 import { mintUsdc } from './hedera/mint-usdc';
@@ -1662,10 +1667,10 @@ main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
 #### File: `scripts/seed-demo.ts`
-[UNVERIFIED] — idempotent judge-sandbox seed (PRD §6 table); REAL state, not fabricated
+[UNVERIFIED] - idempotent judge-sandbox seed (PRD §6 table); REAL state, not fabricated
 ```typescript
 // File: scripts/seed-demo.ts
-// WARNING: UNVERIFIED PATTERN — test immediately. Idempotent: safe to re-run.
+// WARNING: UNVERIFIED PATTERN - test immediately. Idempotent: safe to re-run.
 import { mintSubname } from './ens/subname';
 import { setPolicy, readPolicy } from './ens/policy';
 import { associate } from './hedera/associate';
@@ -1699,10 +1704,10 @@ main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
 #### File: `scripts/verify-claims.ts`
-[ASSUMED] — recompute headline numbers from committed data into evidence/ (VERIFY-BEFORE-CLAIMING)
+[ASSUMED] - recompute headline numbers from committed data into evidence/ (VERIFY-BEFORE-CLAIMING)
 ```typescript
 // File: scripts/verify-claims.ts
-// CAUTION: ASSUMED PATTERN — test immediately.
+// CAUTION: ASSUMED PATTERN - test immediately.
 // Re-derives every headline claim (agent count, cap values, tx hashes) from ENS live reads + committed
 // submission/proof.md, writing evidence/claims-recomputed.json. Refuses to read back a stored success.
 import { readPolicy } from './ens/policy';
@@ -1728,7 +1733,7 @@ main().catch((e) => { console.error(e); process.exit(1); });
 ## 14. Project Config Files
 
 #### File: `package.json`
-[ASSUMED] — pinned deps (SOURCE LOCK); scripts
+[ASSUMED] - pinned deps (SOURCE LOCK); scripts
 ```json
 {
   "name": "leash",
@@ -1772,7 +1777,7 @@ main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
 #### File: `tsconfig.json`
-[ASSUMED] — strict TS (INVARIANT #1 exhaustiveness relies on strict)
+[ASSUMED] - strict TS (INVARIANT #1 exhaustiveness relies on strict)
 ```json
 {
   "compilerOptions": {
@@ -1822,13 +1827,13 @@ Generation: `screenshots/` (demo phase), `proof.md` (build post-hero-run via `ve
 Primary depth = ENS (the load-bearing interlock). The three integration points are physically distinct directories (repo-layout discipline).
 
 ## N+4. Safety Architecture (tiered defenses)
-- **Layer 1 — Input validation:** `authorize.ts` rejects malformed policy (`MALFORMED_POLICY`), binding mismatch, off-token; header is treated as untrusted (only names the record). Prevents spoofed/garbage-policy spend.
-- **Layer 2 — Rate/replay limiting:** `seen` paymentId set + Hedera duplicate-tx rejection (`REPLAY`); funding aggregate bounded by `fundingCap`. Prevents replay + budget drain.
-- **Layer 3 — Circuit breaker (fail-closed):** any ENS read throw → `RPC_ERROR` abort (no allow-on-error branch, INVARIANT #1). Prevents fail-open on RPC outage.
-- **Layer 4 — Graceful degradation:** advisory pre-screen may use a 30s cache; the authoritative settle read never does, so degradation never weakens enforcement (INVARIANT #2/#3). DB outage degrades the UI feed only, never the gate.
+- **Layer 1 - Input validation:** `authorize.ts` rejects malformed policy (`MALFORMED_POLICY`), binding mismatch, off-token; header is treated as untrusted (only names the record). Prevents spoofed/garbage-policy spend.
+- **Layer 2 - Rate/replay limiting:** `seen` paymentId set + Hedera duplicate-tx rejection (`REPLAY`); funding aggregate bounded by `fundingCap`. Prevents replay + budget drain.
+- **Layer 3 - Circuit breaker (fail-closed):** any ENS read throw → `RPC_ERROR` abort (no allow-on-error branch, INVARIANT #1). Prevents fail-open on RPC outage.
+- **Layer 4 - Graceful degradation:** advisory pre-screen may use a 30s cache; the authoritative settle read never does, so degradation never weakens enforcement (INVARIANT #2/#3). DB outage degrades the UI feed only, never the gate.
 Two+ independent layers, each tested in Testing Strategy.
 
-## N+5. Agent Architecture (light — the "agent" is a paying client, not an autonomous LLM loop)
+## N+5. Agent Architecture (light - the "agent" is a paying client, not an autonomous LLM loop)
 - **Self-correction:** on a 402 refusal the agent client surfaces the `reason` code; there is no blind retry loop (a retry of an over-cap payment is pointless and would be `REPLAY`-guarded). Bounded: one build + one pay attempt per call.
 - **Worker isolation:** each `pay()` call is independent (its own paymentId); a failed payment does not affect others. Result validated by HTTP status + the facilitator's decision, not by the agent self-reporting success.
 
@@ -1910,7 +1915,7 @@ Two+ independent layers, each tested in Testing Strategy.
 | Over-fund | amount > fundingCap | `FUNDING_DENIED` before broadcast |
 | Owner-less (negative) | wallet without P-256 owner | build gate FAILS (forbidden by INVARIANT #5) |
 
-### Security Invariants (debug writes a test for each — from INVARIANTS.md)
+### Security Invariants (debug writes a test for each - from INVARIANTS.md)
 - [ ] No settle without an affirmative `{settle:true}` (grep: one guarded emit site)
 - [ ] Settle-time read is no-cache (grep + integration TOCTOU test)
 - [ ] Enforcement path imports no DB client (grep)
@@ -1920,16 +1925,16 @@ Two+ independent layers, each tested in Testing Strategy.
 
 ## N+8. Component Build Order
 1. `types/index.ts` (no deps).
-2. `facilitator/authorize.ts` + its unit test (pure; risk-first — the enforcement core, testable with zero infra).
+2. `facilitator/authorize.ts` + its unit test (pure; risk-first - the enforcement core, testable with zero infra).
 3. **Parallel group A:** `scripts/ens/*` (WS-1, the day-eater, START HERE in wall-clock) ∥ `scripts/hedera/*` (WS-0/WS-2 scaffolding).
 4. `facilitator/ens-read.ts` → `facilitator/hedera-scheme.ts` → `facilitator/hcs-log.ts` → `facilitator/server.ts` (WS-2).
 5. `resource-server/server.ts` + `agent/pay.ts` (WS-3, e2e paid request).
 6. `treasury/privy.ts` (WS-4; but WS-0 smoke #1 proves DENY FIRST).
 7. **Parallel group B:** `db/*` ∥ `relayer/relay.ts`.
-8. `web/*` — WS-5a `/demo` + `api/demo` FIRST (scored), then WS-5b `/app` + real routes.
+8. `web/*` - WS-5a `/demo` + `api/demo` FIRST (scored), then WS-5b `/app` + real routes.
 9. `scripts/setup.ts` + `scripts/seed-demo.ts` + `scripts/verify-claims.ts`.
 
-P1 (the three-prize hero) is deliverable after steps 1-6 + step 8's WS-5a alone — the real console (WS-5b) is P2. This matches PRD priority (sandbox-first).
+P1 (the three-prize hero) is deliverable after steps 1-6 + step 8's WS-5a alone - the real console (WS-5b) is P2. This matches PRD priority (sandbox-first).
 
 ## N+9. Deployment Sequence
 | Step | Action | Command | Verify | depends-on |
@@ -2010,9 +2015,9 @@ Build fills `SECURITY.md` at C0 to this shape:
 | `/demo` first paint | FCP | < 2000ms | Lighthouse |
 | policy read route | p95 | < 1500ms (Sepolia eth_call) | curl timing |
 | facilitator decide | p95 (excl. Hedera submit) | < 1500ms | log timing |
-| gas: N/A (no custom Solidity) | — | — | — |
+| gas: N/A (no custom Solidity) | - | - | - |
 
-## Build-Resolve Seams (DP-0..DP-4 — PLAN carries each as a decision tree)
+## Build-Resolve Seams (DP-0..DP-4 - PLAN carries each as a decision tree)
 These are the on-chain/SDK shapes forge could NOT verify (verification is build work). Each is a copyable placeholder marked in-code; PLAN gives each a decision tree so build resolves it BEFORE it becomes load-bearing. Do not treat any as trusted until resolved.
 
 | Seam | Where | Resolve at | What must be confirmed | Fallback |
