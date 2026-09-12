@@ -1,8 +1,8 @@
 {
   "project": "leash",
   "currentPhase": "phase-5",
-  "currentStep": "5.1",
-  "currentSubStep": "5.1.a",
+  "currentStep": "5.4b",
+  "currentSubStep": "5.4a-human-pending",
   "status": "in-progress",
   "autonomous_mode": false,
   "expected_phases": [
@@ -49,7 +49,7 @@
       "phase": "Phase 5",
       "started_at": "2026-09-12T12:35:00Z",
       "completed_at": null,
-      "evidence": "IN-PROGRESS: Task 5.1 seed-demo complete + orchestrator-verified (idempotent seed EXIT 0 on re-run; both children readPolicy hederaAccount==canonical 0.0.10499595/0.0.10499598 distinct 5/25 USDC caps; on-chain evm_address==key-EVM MATCH both, DEV-020 fixed; 33/33 unit). Remaining: 5.2 sandbox UI, 5.3 VM-2, 5.4a/b real console"
+      "evidence": "IN-PROGRESS->5.1/5.2/5.3 done: seed canonical accounts (DEV-020 fixed, evm==key-EVM MATCH); WS-5a /demo 4 real beats, next build PASSES (web/tsconfig strict+ES2020 fix DEV-027), isolation 0 edges, honest-framing 0, SPEND real settle 0.0.10487802@1789213788; VM-2 orchestrator re-ran 6/6 three-prize hero on canonical 0.0.10499595 (spend gas-free @1789214406, revoke Sepolia 0x12945fe4, Privy FUNDING_DENIED real token), WINNER-READINESS ~80. Remaining: 5.4a human Privy toggle + 5.4b real console"
     }
   ],
   "completedSteps": [
@@ -70,7 +70,9 @@
     "3.3",
     "4.1",
     "4.2",
-    "5.1"
+    "5.1",
+    "5.2",
+    "5.3"
   ],
   "fileGroups": {
     "0.1": {
@@ -237,6 +239,34 @@
         "scripts/hedera/provision-canonical.ts",
         "scripts/env.ts",
         "scripts/env.test.ts"
+      ],
+      "written": true,
+      "verified": true
+    },
+    "5.2": {
+      "files": [
+        "web/next.config.ts",
+        "web/postcss.config.mjs",
+        "web/app/globals.css",
+        "web/lib/demo.ts",
+        "web/app/api/policy/[name]/route.ts",
+        "web/app/api/demo/route.ts",
+        "web/components/AgentCard.tsx",
+        "web/components/SplitScreen.tsx",
+        "web/app/layout.tsx",
+        "web/app/page.tsx",
+        "web/app/demo/page.tsx",
+        "web/app/demo/demo-client.tsx",
+        "web/app/demo/loading.tsx",
+        "web/app/demo/error.tsx",
+        "web/tsconfig.json"
+      ],
+      "written": true,
+      "verified": true
+    },
+    "5.3": {
+      "files": [
+        "agent/vm2.live.ts"
       ],
       "written": true,
       "verified": true
@@ -426,6 +456,38 @@
       "reason": "old 0.0.10497601 setKeyWithoutAlias gave non-matching EVM -> funding hit a different auto-alias account",
       "class": "DEGRADED",
       "impact": "none (resolved); both rails+ENS now one account per agent"
+    },
+    {
+      "step": "5.2",
+      "id": "DEV-024",
+      "description": "DENY beat sends one raw unit over the funding cap to the allowlisted recipient (isolates the cap rule) via TREASURY_FUNDING_ALLOWLIST",
+      "reason": "prior payload hit INSUFFICIENT_TOKEN_BALANCE not a policy denial",
+      "class": "DEGRADED",
+      "impact": "honest leaked-key over-cap DENY preserved"
+    },
+    {
+      "step": "5.2",
+      "id": "DEV-025",
+      "description": "pay() real signature used; root .env symlinked to web/.env so Next loads env into route handlers",
+      "reason": "stale ARCHITECTURE \u00a712 snapshot signature; Next 16 env-load timing",
+      "class": "COSMETIC",
+      "impact": "web/.env gitignored"
+    },
+    {
+      "step": "5.2",
+      "id": "DEV-026",
+      "description": "seed-demo idempotency edge: readPolicy==null treated as not-seeded re-mints existing name",
+      "reason": "revoke leaves policy null",
+      "class": "DEGRADED",
+      "impact": "downstream: seed owner should guard mintSubname by name-existence not policy-presence"
+    },
+    {
+      "step": "5.2",
+      "id": "DEV-027",
+      "description": "web/tsconfig target ES2017->ES2020 + strict:false->true + types:[node] so next build type-checks imported viem rails (BigInt + viem conditional types need strict/ES2020)",
+      "reason": "next build FAILED type-check under ES2017/strict:false; root tsc (ES2022/strict) passed",
+      "class": "DEGRADED",
+      "impact": "none (next build now passes); orchestrator caught this - subagent only ran dev"
     }
   ],
   "phaseExecutors": {
@@ -433,7 +495,8 @@
     "phase-1": "subagent",
     "phase-2": "subagent",
     "phase-3": "subagent",
-    "phase-4": "subagent"
+    "phase-4": "subagent",
+    "phase-5": "subagent+inline(tsconfig fix)"
   },
   "contractAddresses": {
     "orgParentRegistry": "0xb36e0ede0Ed38653c5aB8222B409a6b2Ba78b409",
@@ -514,5 +577,5 @@
     "real_console_cut_deadline_minus_6h": "2026-09-13T10:00:00Z",
     "lockdown_deadline_minus_4h": "2026-09-13T12:00:00Z"
   },
-  "timestamp": "2026-09-12T12:55:00Z"
+  "timestamp": "2026-09-12T13:40:00Z"
 }
