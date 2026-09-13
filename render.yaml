@@ -1,0 +1,60 @@
+services:
+  # Self-hosted x402 facilitator (verify/settle, gas-free fee-payer).
+  # Reads process.env.PORT (Render injects it). Do NOT set FACILITATOR_PORT.
+  - type: web
+    name: leash-facilitator
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npx tsx facilitator/server.ts
+    envVars:
+      - key: HEDERA_NETWORK
+        sync: false
+      - key: HEDERA_EVM_RPC
+        sync: false
+      - key: HEDERA_OPERATOR_ID
+        sync: false
+      - key: HEDERA_OPERATOR_KEY
+        sync: false
+      - key: HEDERA_OPERATOR_KEY_DER
+        sync: false
+      - key: HEDERA_OPERATOR_EVM_ADDRESS
+        sync: false
+      - key: LEASH_COSIGNER_KEY
+        sync: false
+      - key: COSIGN_AGENT_PUB
+        sync: false
+      - key: COSIGN_AGENT_KEY
+        sync: false
+      - key: COSIGN_SPENDING_ACCOUNT
+        sync: false
+      - key: COSIGN_SPENDING_EVM
+        sync: false
+      - key: USDC_TOKEN_ID
+        sync: false
+      - key: USDC_EVM_ADDRESS
+        sync: false
+      - key: RECEIVER_ACCOUNT_ID
+        sync: false
+      - key: RECEIVER_EVM
+        sync: false
+      - key: RECEIVER_KEY
+        sync: false
+      - key: HCS_TOPIC_ID
+        sync: false
+
+  # x402-gated resource server. Reads process.env.PORT. Do NOT set RESOURCE_PORT.
+  # FACILITATOR_URL points at the leash-facilitator service (set after it deploys).
+  - type: web
+    name: leash-resource
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npx tsx resource-server/server.ts
+    envVars:
+      - key: USDC_TOKEN_ID
+        sync: false
+      - key: RECEIVER_ACCOUNT_ID
+        sync: false
+      - key: FACILITATOR_URL
+        sync: false
