@@ -45,7 +45,7 @@ Open [leash.ink/demo](https://leash.ink/demo). Nothing to install, connect, or f
 
 Each verdict is written to the Hedera Consensus Service audit topic, so every outcome is checkable on-chain. A new user binds their own agent in [`/app`](https://leash.ink/app) the same way, with no Hedera setup: give the agent's EVM / ERC-8004 identity (the agent already lives on another chain), and LEASH generates its Hedera spending key for you, shows the private half once for you to save, provisions a 2-of-2 co-owned Hedera account, and writes the ENS policy. Advanced users can paste their agent's own Hedera public key instead. Either way LEASH never retains the private key, so LEASH alone still cannot move the agent's funds.
 
-![The judge sandbox governing SOLV-001](docs/images/demo.png)
+![The judge sandbox governing SOLV-001](docs/images/page-demo-full.png)
 
 Full walkthrough for both paths: [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md).
 
@@ -173,7 +173,7 @@ These transactions collectively prove the full loop: policy set on ENS, in-cap c
 
 ## On-chain verification
 
-![The /proof verification surface](docs/images/proof.png)
+![The /proof verification surface](docs/images/page-proof-full.png)
 
 `npm run verify:claims` re-derives each headline number from a committed source (USDC = raw / 1e6) and, when a Sepolia RPC is configured, live-reads the `leash.policy` caps via the PermissionedResolver. It writes the result to `evidence/claims-recomputed.json` and diffs it against the asserted values in [`docs/pipeline/claims.json`](docs/pipeline/claims.json). It refuses to read back a stored success; a non-zero exit means an asserted number did not recompute.
 
