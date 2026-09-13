@@ -1,14 +1,15 @@
 // File: web/app/layout.tsx
-// Root layout. Imports the design floor (globals.css). No /app or Privy imports here so the /demo tree
-// stays free of any import edge to /app (INVARIANT #10).
+// Root layout. Imports the design system (globals.css). Fonts (Clash Display / Manrope / JetBrains Mono)
+// load via @import inside globals.css. No /app or Privy imports here so the /demo, /, /proof trees stay
+// free of any import edge to /app (INVARIANT #10). Copy rule: no em dashes.
 import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://leash.ink'),
-  title: 'LEASH — the ENS name that can un-pay it',
+  title: 'LEASH · keep your agents on a leash',
   description:
-    'LEASH binds external agents to a 2-of-2 co-signed account and an ENS-declared spend policy. The facilitator we run enforces the org’s ENS cap and allowlist on every payment — revoke one resolver record and that agent’s spending dies everywhere.',
+    'LEASH is the control layer for your AI agent fleet. Bind each agent to an on-chain identity, a co-owned spending account, and the limits you set, then change or cut off any agent everywhere with one on-chain write. ENS, Hedera x402, Privy.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -17,12 +18,12 @@ export const metadata: Metadata = {
     apple: '/logo-256.png',
   },
   openGraph: {
-    title: 'LEASH — the ENS name that can un-pay it',
-    description: 'Spend control for external agents: 2-of-2 co-signed accounts + an ENS-declared, revocable spend policy. ENS · Hedera x402 · Privy.',
+    title: 'LEASH · keep your agents on a leash',
+    description: 'The control layer for your AI agent fleet: identity, co-owned account, limits, funding, kill-switch, audit. ENS, Hedera x402, Privy.',
     images: ['/og-image.png'],
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'LEASH', description: 'The ENS name that can un-pay it.', images: ['/og-image.png'] },
+  twitter: { card: 'summary_large_image', title: 'LEASH', description: 'Keep your agents on a leash.', images: ['/og-image.png'] },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

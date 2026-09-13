@@ -59,13 +59,14 @@ export async function readIdentity(name: string): Promise<AgentIdentity> {
   const node = namehash(name);
   const read = async (key: string) =>
     (await publicClient.readContract({ address: resolver, abi: resolverAbi, functionName: 'text', args: [node, key] })) as string;
-  const [description, type, avatar, erc8004] = await Promise.all([
-    read(IDENTITY_KEYS.description), read(IDENTITY_KEYS.type), read(IDENTITY_KEYS.avatar), read(IDENTITY_KEYS.erc8004),
+  const [description, type, avatar, erc8004, address] = await Promise.all([
+    read(IDENTITY_KEYS.description), read(IDENTITY_KEYS.type), read(IDENTITY_KEYS.avatar), read(IDENTITY_KEYS.erc8004), read(IDENTITY_KEYS.address),
   ]);
   return {
     description: description || undefined,
     type: type || undefined,
     avatar: avatar || undefined,
     erc8004: erc8004 || undefined,
+    address: address || undefined,
   };
 }

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="LEASH clasp L">
+  <title>LEASH mark — clasp L carabiner</title>
+  <rect width="32" height="32" rx="7" fill="#0a0a0b"/>
+  <g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- carabiner L body -->
+    <path d="M13 6
+             C 8 6, 7 9, 7 13
+             L 7 22
+             C 7 26, 9 28, 13 28
+             L 22 28"/>
+    <!-- spring gate -->
+    <path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/>
+  </g>
+  <circle cx="20" cy="13" r="2" fill="#d6ff6a"/>
+</svg>

@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEASH — Terminal Teal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --base:#0b0f0e;      --s1:#111716;      --s2:#17201e;
+  --line:#24302d;      --line-hi:#31413d;
+  --ink:#e6f0ed;       --dim:#93a8a2;     --faint:#5c6f6a;
+  --teal:#3fd9c0;      --teal-hi:#6ff0dc; --teal-soft:#0d2622;
+  --allow:#55d39a;     --deny:#f0687e;
+  --allow-soft:#0f221a; --deny-soft:#241318;
+
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --data:'JetBrains Mono',ui-monospace,monospace;
+
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+
+  /* pure-glow (teal) shadow philosophy — no black drop shadows */
+  --e1:0 0 0 1px var(--line), 0 1px 0 0 rgba(63,217,192,.04);
+  --e2:0 0 0 1px var(--line-hi), 0 0 24px -6px rgba(63,217,192,.14), inset 0 1px 0 0 rgba(255,255,255,.02);
+  --e3:0 0 0 1px var(--teal), 0 0 34px -4px rgba(63,217,192,.32);
+  --glow:0 0 18px -2px rgba(63,217,192,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--base);
+  color:var(--ink);
+  min-height:100dvh;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* faint static teal grid + scan texture — never a flat fill */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(63,217,192,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(63,217,192,.025) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 120% 80% at 50% 0%,#000 30%,transparent 78%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.14) 3px 4px);
+  opacity:.35;
+}
+main,nav,footer{position:relative;z-index:1}
+::selection{background:var(--teal);color:var(--base)}
+
+h1,h2,h3,h4,.eyebrow,.label,.mono{font-family:var(--mono);}
+.data{font-family:var(--data);}
+
+a{color:inherit;text-decoration:none}
+button{font-family:var(--mono);cursor:pointer;border:none;background:none;color:inherit}
+
+:focus-visible{outline:none;box-shadow:0 0 0 2px var(--base),0 0 0 4px var(--teal);border-radius:var(--r-xs)}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:20px;
+  padding:14px clamp(16px,4vw,44px);
+  background:rgba(11,15,14,.82);
+  backdrop-filter:blur(14px) saturate(1.2);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600;font-size:16px;letter-spacing:.14em}
+.brand svg{display:block}
+.tabs{display:flex;gap:4px;margin-left:auto;background:var(--s1);padding:4px;border-radius:var(--r-pill);box-shadow:var(--e1)}
+.tab{
+  font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 15px;border-radius:var(--r-pill);color:var(--dim);
+  transition:color .15s ease, background .15s ease;
+}
+.tab:hover{color:var(--ink)}
+.tab.active{background:var(--teal-soft);color:var(--teal-hi);box-shadow:inset 0 0 0 1px rgba(63,217,192,.4)}
+.nav-live{display:flex;align-items:center;gap:7px;font-family:var(--data);font-size:11px;color:var(--faint);letter-spacing:.06em}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:var(--glow);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ============ PAGES ============ */
+.page{display:none;animation:fade .4s ease both}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.wrap{max-width:1160px;margin:0 auto;padding:0 clamp(16px,4vw,44px)}
+section{padding:clamp(56px,8vw,110px) 0}
+.eyebrow{
+  font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--teal);display:inline-flex;align-items:center;gap:9px;
+}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--teal);opacity:.6}
+.label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+
+/* stagger util */
+.stg{opacity:0;transform:translateY(14px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ============ HERO ============ */
+.hero{padding-top:clamp(48px,7vw,96px);position:relative}
+.hero .eyebrow{margin-bottom:26px}
+.hero h1{
+  font-weight:600;font-size:clamp(2.3rem,6.2vw,5rem);line-height:1.02;
+  letter-spacing:-.02em;max-width:16ch;
+}
+.hero h1 .hl{color:var(--teal);position:relative}
+.hero h1 .hl::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.09em;background:var(--teal);opacity:.35}
+.hero .sub{
+  font-family:var(--sans);font-size:clamp(1rem,1.6vw,1.22rem);color:var(--dim);
+  max-width:56ch;margin:30px 0 38px;line-height:1.7;
+}
+.cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:14px;letter-spacing:.02em;font-weight:500;
+  padding:14px 24px;border-radius:var(--r-sm);
+  transition:transform .16s ease, box-shadow .16s ease;
+}
+.btn-primary{background:var(--teal);color:var(--base);box-shadow:var(--glow)}
+.btn-ghost{color:var(--dim);box-shadow:var(--e1)}
+.btn-sm{padding:9px 15px;font-size:12.5px;border-radius:var(--r-xs)}
+@media(hover:hover){
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 26px -1px rgba(63,217,192,.6)}
+  .btn-ghost:hover{transform:translateY(-2px);box-shadow:var(--e2);color:var(--ink)}
+}
+.judge-side{font-size:12.5px;color:var(--faint);text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--line-hi)}
+.judge-side:hover{color:var(--teal)}
+
+.stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  margin-top:clamp(48px,7vw,80px);background:var(--line);
+  border-radius:var(--r-md);overflow:hidden;box-shadow:var(--e2);
+}
+.stat{background:var(--s1);padding:26px 24px}
+.stat b{display:block;font-family:var(--mono);font-weight:600;font-size:clamp(1.1rem,2vw,1.5rem);color:var(--teal-hi)}
+.stat span{font-size:12.5px;color:var(--dim);font-family:var(--sans)}
+
+/* ============ PROBLEM ============ */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,40px);align-items:start}
+h2.sec{font-weight:600;font-size:clamp(1.7rem,3.4vw,2.7rem);letter-spacing:-.015em;line-height:1.1}
+.lead{color:var(--dim);font-family:var(--sans);font-size:1.05rem;margin-top:18px;max-width:52ch}
+.prob-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.prob-list li{
+  display:flex;gap:14px;padding:18px 20px;background:var(--s1);
+  border-radius:var(--r-sm);box-shadow:var(--e1);font-family:var(--sans);color:var(--dim);font-size:.97rem;
+}
+.prob-list .x{color:var(--deny);font-family:var(--mono);font-weight:600;flex-shrink:0}
+
+/* ============ HOW ============ */
+.beats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;counter-reset:b}
+.beat{
+  background:var(--s1);padding:26px 22px;border-radius:var(--r-md);box-shadow:var(--e1);
+  position:relative;transition:transform .18s ease,box-shadow .18s ease;
+}
+.beat::before{
+  counter-increment:b;content:"0" counter(b);
+  font-family:var(--data);font-size:13px;color:var(--teal);
+  display:block;margin-bottom:16px;letter-spacing:.1em;
+}
+.beat h4{font-size:15px;letter-spacing:.04em;margin-bottom:9px}
+.beat p{font-family:var(--sans);color:var(--dim);font-size:.9rem;line-height:1.55}
+@media(hover:hover){.beat:hover{transform:translateY(-4px);box-shadow:var(--e2)}}
+
+/* ============ MONEY SHOT (one-write kill) ============ */
+.kill-wrap{background:var(--s1);border-radius:var(--r-lg);box-shadow:var(--e2);padding:clamp(24px,4vw,46px);margin-top:44px}
+.kill-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between;margin-bottom:30px}
+.ab{display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(14px,3vw,34px);align-items:center}
+.ab-card{background:var(--s2);border-radius:var(--r-md);padding:24px;box-shadow:var(--e1);min-height:210px;display:flex;flex-direction:column}
+.ab-card .label{margin-bottom:16px}
+.rec-line{font-family:var(--data);font-size:12.5px;color:var(--dim);padding:7px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:12px}
+.rec-line b{color:var(--ink)}
+.rec-empty{color:var(--faint);font-family:var(--data);font-size:12.5px;font-style:italic;margin-top:8px}
+.result{margin-top:auto;padding:16px;border-radius:var(--r-sm);font-family:var(--mono);font-weight:600;font-size:1.05rem;display:flex;align-items:center;gap:11px;transition:all .5s cubic-bezier(.2,.7,.2,1)}
+.result.paid{background:var(--allow-soft);color:var(--allow);box-shadow:inset 0 0 0 1px rgba(85,211,154,.3)}
+.result.blocked{background:var(--deny-soft);color:var(--deny);box-shadow:inset 0 0 0 1px rgba(240,104,126,.3)}
+.result .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.result.paid .ic{background:var(--allow);color:var(--base)}
+.result.blocked .ic{background:var(--deny);color:var(--base)}
+.ab-mid{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--teal);font-family:var(--data);font-size:11px;letter-spacing:.08em;text-align:center}
+.ab-arrow{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;box-shadow:var(--e3);font-size:20px}
+.flip{opacity:0;transform:translateY(6px)}
+.flip.show{animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards}
+
+/* ============ LEVERS ============ */
+.levers{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(120px,auto);gap:14px;margin-top:44px}
+.lever{background:var(--s1);border-radius:var(--r-md);padding:22px;box-shadow:var(--e1);display:flex;flex-direction:column;gap:9px;transition:transform .18s ease,box-shadow .18s ease}
+.lever .num{font-family:var(--data);font-size:11px;color:var(--teal);letter-spacing:.1em}
+.lever h4{font-size:15px;letter-spacing:.03em}
+.lever p{font-family:var(--sans);font-size:.85rem;color:var(--dim);line-height:1.5}
+.lever.span3{grid-column:span 3}.lever.span2{grid-column:span 2}
+.lever.kill{grid-column:span 6;background:linear-gradient(120deg,var(--deny-soft),var(--s1) 60%);box-shadow:0 0 0 1px rgba(240,104,126,.35),0 0 30px -8px rgba(240,104,126,.25)}
+.lever.kill h4{color:var(--deny)}.lever.kill .num{color:var(--deny)}
+@media(hover:hover){.lever:hover{transform:translateY(-3px);box-shadow:var(--e2)}.lever.kill:hover{box-shadow:0 0 0 1px var(--deny),0 0 34px -6px rgba(240,104,126,.4)}}
+
+/* ============ HONEST FOLD ============ */
+details.fold{background:var(--s1);border-radius:var(--r-md);box-shadow:var(--e1);overflow:hidden;margin-top:32px}
+details.fold[open]{box-shadow:var(--e2)}
+summary{list-style:none;cursor:pointer;padding:22px 26px;display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:15px;letter-spacing:.02em}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;color:var(--teal);transition:transform .25s ease}
+details[open] summary .chev{transform:rotate(90deg)}
+.fold-body{padding:0 26px 26px}
+.honest-list{list-style:none;display:grid;gap:12px}
+.honest-list li{display:flex;gap:12px;font-family:var(--sans);color:var(--dim);font-size:.94rem;line-height:1.55}
+.honest-list .k{color:var(--teal);font-family:var(--mono);flex-shrink:0;width:15px}
+
+/* ============ PROOF STRIP ============ */
+.proof-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:40px}
+.proof-card{background:var(--s1);border-radius:var(--r-md);padding:20px;box-shadow:var(--e1);transition:transform .18s ease,box-shadow .18s ease}
+.proof-card .label{margin-bottom:10px}
+.proof-card .addr{font-family:var(--data);font-size:12px;color:var(--teal-hi);word-break:break-all;line-height:1.5}
+.proof-card .net{font-family:var(--data);font-size:10.5px;color:var(--faint);margin-top:8px;letter-spacing:.06em}
+@media(hover:hover){.proof-card:hover{transform:translateY(-3px);box-shadow:var(--e2)}}
+
+/* ============ CTA / FOOTER ============ */
+.cta-band{background:linear-gradient(160deg,var(--s2),var(--s1));border-radius:var(--r-lg);box-shadow:var(--e2);padding:clamp(40px,6vw,72px);text-align:center;margin:0 auto}
+.cta-band h2{font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:600;letter-spacing:-.015em}
+.cta-band .cta-row{justify-content:center;margin-top:30px}
+footer{border-top:1px solid var(--line);padding:34px 0;margin-top:80px}
+.foot{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;font-family:var(--data);font-size:11.5px;color:var(--faint);letter-spacing:.06em}
+
+/* ============ CONSOLE ============ */
+.console{padding:clamp(28px,4vw,48px) 0 90px}
+.statusbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:16px;
+  background:var(--s1);border-radius:var(--r-sm);padding:12px 18px;box-shadow:var(--e1);
+  font-family:var(--data);font-size:11.5px;color:var(--dim);letter-spacing:.04em;margin-bottom:26px;
+}
+.statusbar .seg{display:flex;align-items:center;gap:8px}
+.statusbar .ok{color:var(--allow)}
+.statusbar .divider{width:1px;height:14px;background:var(--line)}
+.card{background:var(--s1);border-radius:var(--r-md);box-shadow:var(--e1);padding:clamp(20px,3vw,30px)}
+.card + .card{margin-top:22px}
+.card-h{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between;margin-bottom:22px}
+.card-h h3{font-size:16px;letter-spacing:.04em}
+.card-h .label{font-family:var(--data);font-size:11px}
+
+/* login step */
+.login-box{max-width:420px;margin:0 auto;text-align:center;padding:14px 0}
+.login-box h3{font-size:18px;margin-bottom:8px}
+.login-box p{font-family:var(--sans);color:var(--dim);font-size:.9rem;margin-bottom:22px}
+.field{display:flex;flex-direction:column;gap:7px;text-align:left;margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.field input,.field select{
+  font-family:var(--data);font-size:13px;color:var(--ink);
+  background:var(--s2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:11px 13px;transition:border-color .15s ease,box-shadow .15s ease;
+}
+.field input:focus,.field select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(63,217,192,.12);outline:none}
+.field .hint{font-family:var(--sans);font-size:11.5px;color:var(--faint)}
+.oauth{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.oauth .btn{justify-content:center;width:100%}
+.provisions{font-family:var(--sans);font-size:11.5px;color:var(--faint);margin-top:18px;line-height:1.6}
+
+/* provision org */
+.org-provision{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.org-provision .field{flex:1;min-width:220px;margin:0}
+.ens-suffix{font-family:var(--data);color:var(--teal);font-size:13px;padding-bottom:11px}
+
+/* fleet */
+.org-header{display:flex;flex-wrap:wrap;align-items:center;gap:18px;justify-content:space-between;margin-bottom:24px}
+.org-id{display:flex;align-items:center;gap:12px}
+.org-avatar{width:44px;height:44px;border-radius:var(--r-sm);background:var(--teal-soft);display:grid;place-items:center;color:var(--teal);box-shadow:inset 0 0 0 1px rgba(63,217,192,.35)}
+.org-id b{font-family:var(--mono);font-size:17px;letter-spacing:.02em;display:block}
+.org-id span{font-family:var(--data);font-size:11px;color:var(--faint)}
+.fleet-stats{display:flex;gap:1px;background:var(--line);border-radius:var(--r-sm);overflow:hidden;box-shadow:var(--e1)}
+.fleet-stats .fs{background:var(--s2);padding:12px 18px;text-align:center}
+.fleet-stats .fs b{font-family:var(--mono);font-size:18px;color:var(--teal-hi);display:block}
+.fleet-stats .fs span{font-family:var(--data);font-size:10px;color:var(--dim);letter-spacing:.05em}
+
+.agent-list{display:grid;gap:12px}
+.agent-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
+  background:var(--s2);border-radius:var(--r-sm);padding:16px 18px;box-shadow:var(--e1);
+  transition:transform .16s ease,box-shadow .16s ease;cursor:pointer;
+}
+@media(hover:hover){.agent-row:hover{transform:translateX(3px);box-shadow:var(--e2)}}
+.agent-row.revoked{opacity:.72}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot.active{background:var(--allow);box-shadow:0 0 10px -1px rgba(85,211,154,.7)}
+.dot.revoked{background:var(--deny)}
+.agent-meta b{font-family:var(--mono);font-size:14px;letter-spacing:.02em;display:block}
+.agent-meta .tags{font-family:var(--data);font-size:11px;color:var(--dim);margin-top:4px}
+.agent-meta .tags .sep{color:var(--faint);margin:0 6px}
+.agent-right{text-align:right;font-family:var(--data);font-size:11px;color:var(--faint)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:var(--r-pill)}
+.pill.active{background:var(--allow-soft);color:var(--allow)}
+.pill.revoked{background:var(--deny-soft);color:var(--deny)}
+.badge-res{display:inline-flex;align-items:center;gap:5px;font-family:var(--data);font-size:10px;color:var(--teal);background:var(--teal-soft);padding:3px 8px;border-radius:var(--r-pill);letter-spacing:.05em}
+
+/* feed */
+.feed{display:grid;gap:2px}
+.feed-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r-xs);font-family:var(--sans);font-size:.88rem;color:var(--dim);transition:background .15s ease}
+.feed-row:hover{background:var(--s2)}
+.feed-row .tick{width:7px;height:7px;border-radius:50%}
+.feed-row.allow .tick{background:var(--allow)}
+.feed-row.deny .tick{background:var(--deny)}
+.feed-row .who b{color:var(--ink);font-family:var(--mono);font-size:.85rem}
+.feed-row .verdict{font-family:var(--mono);font-size:11px;letter-spacing:.05em}
+.feed-row.allow .verdict{color:var(--allow)}
+.feed-row.deny .verdict{color:var(--deny)}
+.feed-row time{font-family:var(--data);font-size:10.5px;color:var(--faint)}
+
+/* register form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid .full{grid-column:1/-1}
+.req{color:var(--teal)}
+.adv-toggle{margin-top:20px}
+.adv{display:none;margin-top:16px;padding-top:20px;border-top:1px dashed var(--line)}
+.adv.show{display:block;animation:fade .3s ease both}
+.timewin{display:flex;gap:12px;align-items:flex-end}
+.timewin .field{flex:1;margin:0}
+
+/* agent detail */
+.detail-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start}
+.mini-card{background:var(--s2);border-radius:var(--r-sm);padding:18px;box-shadow:var(--e1)}
+.mini-card + .mini-card{margin-top:14px}
+.mini-card h4{font-size:13px;letter-spacing:.06em;margin-bottom:14px;color:var(--dim)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-family:var(--data);font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--faint)}
+.kv .v{color:var(--ink);text-align:right}
+.kv .v.teal{color:var(--teal-hi)}
+.inline-edit{display:flex;gap:10px;align-items:center;margin-top:12px}
+.inline-edit input{flex:1}
+.danger-zone{background:linear-gradient(150deg,var(--deny-soft),var(--s2) 70%);border-radius:var(--r-sm);padding:20px;box-shadow:0 0 0 1px rgba(240,104,126,.3)}
+.danger-zone h4{color:var(--deny);margin-bottom:8px}
+.danger-zone p{font-family:var(--sans);font-size:.85rem;color:var(--dim);margin-bottom:16px}
+.btn-danger{background:var(--deny);color:var(--base);box-shadow:0 0 16px -3px rgba(240,104,126,.5)}
+.btn-danger:hover{transform:translateY(-2px)}
+.test-out{margin-top:14px;min-height:0}
+
+/* toast */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120%);
+  background:var(--s2);color:var(--ink);font-family:var(--mono);font-size:13px;
+  padding:14px 22px;border-radius:var(--r-sm);box-shadow:var(--e3);z-index:200;
+  display:flex;align-items:center;gap:12px;transition:transform .35s cubic-bezier(.2,.7,.2,1);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px}
+.toast.allow .ic{background:var(--allow);color:var(--base)}
+.toast.deny .ic{background:var(--deny);color:var(--base)}
+.toast.info .ic{background:var(--teal);color:var(--base)}
+
+/* ============ SANDBOX ============ */
+.sandbox{padding:clamp(28px,4vw,48px) 0 90px}
+.sb-intro{text-align:center;max-width:60ch;margin:0 auto 40px}
+.sb-intro h2{font-weight:600;font-size:clamp(1.6rem,3.4vw,2.5rem);letter-spacing:-.015em}
+.sb-intro p{font-family:var(--sans);color:var(--dim);margin-top:14px}
+.sb-nologin{display:inline-flex;align-items:center;gap:8px;font-family:var(--data);font-size:11px;color:var(--teal);background:var(--teal-soft);padding:6px 14px;border-radius:var(--r-pill);margin-top:18px}
+.sb-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:22px;align-items:start}
+.sb-controls{display:grid;gap:12px}
+.sb-btn{
+  display:flex;align-items:center;gap:14px;text-align:left;width:100%;
+  background:var(--s1);border-radius:var(--r-md);padding:18px 20px;box-shadow:var(--e1);
+  transition:transform .16s ease,box-shadow .16s ease;font-family:var(--mono);
+}
+.sb-btn .beat-n{font-family:var(--data);font-size:12px;color:var(--teal);width:22px}
+.sb-btn .txt b{display:block;font-size:14px;letter-spacing:.02em}
+.sb-btn .txt span{font-family:var(--sans);font-size:12px;color:var(--dim);font-weight:400}
+.sb-btn .arw{margin-left:auto;color:var(--faint)}
+@media(hover:hover){.sb-btn:hover{transform:translateY(-3px);box-shadow:var(--e2)}.sb-btn:hover .arw{color:var(--teal)}}
+.sb-btn.danger .beat-n{color:var(--deny)}
+.sb-split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sb-pane{background:var(--s1);border-radius:var(--r-md);box-shadow:var(--e1);padding:20px;min-height:280px;display:flex;flex-direction:column}
+.sb-pane .label{margin-bottom:16px}
+.sb-audit{margin-top:22px}
+.audit-scroll{background:var(--s1);border-radius:var(--r-md);box-shadow:var(--e1);padding:16px 18px;max-height:200px;overflow:hidden;position:relative}
+.audit-scroll::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(transparent,var(--s1))}
+.audit-line{font-family:var(--data);font-size:11.5px;padding:6px 0;display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;color:var(--dim)}
+.audit-line .vd{font-weight:700;letter-spacing:.06em}
+.audit-line.allow .vd{color:var(--allow)}
+.audit-line.deny .vd{color:var(--deny)}
+.audit-line time{color:var(--faint)}
+
+/* ============ PROOF PAGE ============ */
+.proof-page{padding:clamp(28px,4vw,48px) 0 90px}
+.proof-hero{text-align:center;max-width:60ch;margin:0 auto 44px}
+.proof-hero h2{font-weight:600;font-size:clamp(1.7rem,3.6vw,2.6rem);letter-spacing:-.015em}
+.proof-hero p{font-family:var(--sans);color:var(--dim);margin-top:14px}
+.prize-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.prize{background:var(--s1);border-radius:var(--r-lg);box-shadow:var(--e2);padding:26px;display:flex;flex-direction:column}
+.prize-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.prize-head .ring{width:38px;height:38px;border-radius:var(--r-sm);background:var(--teal-soft);display:grid;place-items:center;color:var(--teal);box-shadow:inset 0 0 0 1px rgba(63,217,192,.35)}
+.prize-head b{font-family:var(--mono);font-size:15px;letter-spacing:.04em}
+.prize-head span{font-family:var(--data);font-size:10px;color:var(--faint);display:block}
+.prize p{font-family:var(--sans);font-size:.9rem;color:var(--dim);margin-bottom:18px}
+.proof-row{padding:12px 0;border-top:1px dashed var(--line)}
+.proof-row .label{margin-bottom:6px}
+.proof-row .val{font-family:var(--data);font-size:11.5px;color:var(--teal-hi);word-break:break-all;line-height:1.5}
+.proof-row .via{font-family:var(--data);font-size:10px;color:var(--faint);margin-top:5px}
+.proof-note{text-align:center;margin-top:36px;font-family:var(--data);font-size:12px;color:var(--faint);letter-spacing:.06em}
+.proof-note b{color:var(--teal)}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:900px){
+  .grid-2,.detail-grid,.sb-layout,.prize-grid{grid-template-columns:1fr}
+  .beats{grid-template-columns:1fr 1fr}
+  .levers{grid-template-columns:1fr 1fr}
+  .lever.span3,.lever.span2,.lever.kill{grid-column:span 2}
+  .ab{grid-template-columns:1fr}
+  .ab-mid{flex-direction:row;justify-content:center;padding:8px 0}
+  .ab-arrow{transform:rotate(90deg)}
+  .form-grid{grid-template-columns:1fr}
+  .sb-split{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .tabs{margin-left:0;order:3;width:100%;justify-content:center}
+  .nav{flex-wrap:wrap}
+  .nav-live{display:none}
+  .stats-row{grid-template-columns:1fr}
+  .beats{grid-template-columns:1fr}
+  .levers{grid-template-columns:1fr}
+  .lever.span3,.lever.span2,.lever.kill{grid-column:span 1}
+  .fleet-stats{flex-wrap:wrap}
+  .agent-row{grid-template-columns:auto 1fr;gap:12px}
+  .agent-right{grid-column:1/-1;text-align:left;display:flex;gap:10px;align-items:center}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .stg,.flip{opacity:1;transform:none}
+  .pulse-dot{opacity:.8}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="brand" onclick="go('landing');return false">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8" r="5.2" stroke="#3fd9c0" stroke-width="1.8"/>
+      <circle cx="12" cy="8" r="1.9" fill="#3fd9c0"/>
+      <path d="M12 13.2V19M8.5 21h7" stroke="#3fd9c0" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    LEASH
+  </a>
+  <div class="tabs" role="tablist" aria-label="Pages">
+    <button class="tab active" role="tab" data-tab="landing" onclick="go('landing')">Landing</button>
+    <button class="tab" role="tab" data-tab="console" onclick="go('console')">Console</button>
+    <button class="tab" role="tab" data-tab="sandbox" onclick="go('sandbox')">Sandbox</button>
+    <button class="tab" role="tab" data-tab="proof" onclick="go('proof')">Proof</button>
+  </div>
+  <div class="nav-live"><span class="pulse-dot"></span>facilitator online</div>
+</nav>
+
+<!-- ============ LANDING ============ -->
+<main id="landing" class="page active" role="tabpanel">
+  <section class="hero wrap">
+    <span class="eyebrow stg">ENS · Hedera x402 · Privy</span>
+    <h1 class="stg" style="animation-delay:.06s">Mission control for the <span class="hl">agents that spend your money.</span></h1>
+    <p class="sub stg" style="animation-delay:.12s">
+      LEASH binds each autonomous agent you already run to an on-chain identity, a co-owned spending account,
+      and the exact limits you set. Change or cut off any agent — everywhere — in one on-chain write.
+      Revoke a leaked agent and its very next payment fails closed.
+    </p>
+    <div class="cta-row stg" style="animation-delay:.18s">
+      <button class="btn btn-primary" onclick="go('console')">Open your console →</button>
+      <a class="judge-side" href="#" onclick="go('sandbox');return false">For judges — try the live demo (no login) →</a>
+    </div>
+    <div class="stats-row stg" style="animation-delay:.26s">
+      <div class="stat"><b>1 write</b><span>cut off everywhere</span></div>
+      <div class="stat"><b>2-of-2</b><span>co-owned account · neither spends alone</span></div>
+      <div class="stat"><b>gas-free</b><span>the agent pays $0</span></div>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section class="wrap">
+    <div class="grid-2">
+      <div>
+        <span class="eyebrow">The problem</span>
+        <h2 class="sec" style="margin-top:18px">A raw key has no cap and no off-switch.</h2>
+        <p class="lead">Companies now run fleets of agents that pay for things on their own. The moment you hand an agent a key, you've handed it your wallet — with no ceiling and no brakes.</p>
+      </div>
+      <ul class="prob-list">
+        <li><span class="x">✕</span><span>An agent with a raw key can spend without limit, at any hour, to anyone.</span></li>
+        <li><span class="x">✕</span><span>A leaked key keeps paying until you notice — and revoking it means touching every service by hand.</span></li>
+        <li><span class="x">✕</span><span>No single place shows what the fleet spent, what got blocked, or who was cut off.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2 class="sec" style="margin-top:18px">Four plain beats.</h2>
+    <div class="beats">
+      <div class="beat stg"><h4>Bind</h4><p>Point LEASH at an agent you already run. It binds the agent's on-chain-resolved identity and a co-owned account.</p></div>
+      <div class="beat stg" style="animation-delay:.08s"><h4>Declare</h4><p>Set the limits: a hard per-payment cap, optional soft daily/weekly budgets, and active hours.</p></div>
+      <div class="beat stg" style="animation-delay:.16s"><h4>Enforce</h4><p>The facilitator LEASH runs checks every payment against the policy the chain stores. Over-limit fails closed.</p></div>
+      <div class="beat stg" style="animation-delay:.24s"><h4>Revoke</h4><p>One on-chain write cuts the agent off everywhere. The next payment is blocked. Reversible.</p></div>
+    </div>
+  </section>
+
+  <!-- Money shot -->
+  <section class="wrap">
+    <span class="eyebrow">The one-write kill</span>
+    <h2 class="sec" style="margin-top:18px">One on-chain write. Cut off everywhere.</h2>
+    <p class="lead">Same agent, same payment. Before the write it pays. After a single on-chain revoke, the policy record is gone and the next identical payment fails closed.</p>
+    <div class="kill-wrap">
+      <div class="kill-head">
+        <span class="label">data.acme.leash.eth → api.acme.dev · $3</span>
+        <button class="btn btn-danger btn-sm" onclick="fireKill()" id="killBtn">Revoke on-chain →</button>
+      </div>
+      <div class="ab">
+        <div class="ab-card">
+          <span class="label">Spend policy — on-chain record</span>
+          <div id="recBefore">
+            <div class="rec-line"><span>identity</span><b>on-chain-resolved</b></div>
+            <div class="rec-line"><span>per-payment cap</span><b>$5</b></div>
+            <div class="rec-line"><span>can pay</span><b>api.acme.dev</b></div>
+            <div class="rec-line"><span>status</span><b style="color:var(--allow)">active</b></div>
+          </div>
+          <div id="recAfter" style="display:none">
+            <div class="rec-empty">— record cleared —</div>
+            <div class="rec-line" style="margin-top:12px"><span>status</span><b style="color:var(--deny)">revoked · cut off everywhere</b></div>
+          </div>
+          <div class="result paid" id="resultCard">
+            <span class="ic">✓</span><span id="resultText">Paid $3 to api.acme.dev</span>
+          </div>
+        </div>
+        <div class="ab-mid">
+          <span>ONE</span>
+          <div class="ab-arrow">→</div>
+          <span>ON-CHAIN<br>WRITE</span>
+        </div>
+        <div class="ab-card">
+          <span class="label">What the payment does</span>
+          <div style="font-family:var(--sans);color:var(--dim);font-size:.9rem;line-height:1.6">
+            The agent tries the exact same $3 payment. Nothing about the request changed — only the on-chain policy did.
+          </div>
+          <div class="rec-line" style="margin-top:16px"><span>request</span><b>$3 → api.acme.dev</b></div>
+          <div class="rec-line"><span>policy check</span><b id="checkVal" style="color:var(--allow)">within cap</b></div>
+          <div class="result paid flip show" id="resultCard2">
+            <span class="ic">✓</span><span id="resultText2">Paid</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Levers -->
+  <section class="wrap">
+    <span class="eyebrow">What you control</span>
+    <h2 class="sec" style="margin-top:18px">Six levers over every agent.</h2>
+    <div class="levers">
+      <div class="lever span2"><span class="num">01</span><h4>Identity</h4><p>Bind the agent's external on-chain-resolved ERC-8004 / EVM identity. Badge reads on-chain-resolved.</p></div>
+      <div class="lever span2"><span class="num">02</span><h4>Co-owned account</h4><p>A 2-of-2 Hedera account: the agent and LEASH must both approve. Neither spends alone.</p></div>
+      <div class="lever span2"><span class="num">03</span><h4>Limits</h4><p>A hard per-payment cap, optional rolling daily/weekly soft budgets, and an active-hours window.</p></div>
+      <div class="lever span3"><span class="num">04</span><h4>Funding</h4><p>Privy is the independent funding rail. An over-fund is denied before it ever goes out.</p></div>
+      <div class="lever span3"><span class="num">06</span><h4>Audit</h4><p>Every ALLOW / DENY decision is logged to Hedera Consensus Service. The console shows a live spend feed.</p></div>
+      <div class="lever kill"><span class="num">05</span><h4>Kill-switch — the one that matters</h4><p>One on-chain write revokes the agent everywhere; the very next payment fails closed. Fully reversible — reactivate when you're ready.</p></div>
+    </div>
+  </section>
+
+  <!-- Honest model -->
+  <section class="wrap">
+    <span class="eyebrow">The honest model</span>
+    <h2 class="sec" style="margin-top:18px">What's true — and what isn't.</h2>
+    <details class="fold">
+      <summary>How LEASH actually enforces (read before you trust it) <span class="chev">›</span></summary>
+      <div class="fold-body">
+        <ul class="honest-list">
+          <li><span class="k">→</span><span>This is a <b>corporate-card model, not trustless.</b> The chain stores the policy and records the revocation; the <b>facilitator LEASH runs</b> enforces the limits you set.</span></li>
+          <li><span class="k">→</span><span>Identity is <b>on-chain-resolved</b>, not "verified" — LEASH resolves the agent's identity from the chain.</span></li>
+          <li><span class="k">→</span><span>Rolling daily/weekly caps are a <b>soft budget</b>. The hard per-payment cap is the firm ceiling.</span></li>
+          <li><span class="k">→</span><span><b>Privy is the independent funding rail</b> and denies an over-fund before it goes out. Privy does not co-sign payments.</span></li>
+          <li><span class="k">→</span><span>The account is <b>co-owned (2-of-2)</b>: the agent holds its own key; LEASH holds its co-signer key plus the agent's public key. Neither can spend alone.</span></li>
+          <li><span class="k">→</span><span>LEASH <b>binds agents you already run — it doesn't mint them.</b></span></li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <!-- Proof strip -->
+  <section class="wrap">
+    <span class="eyebrow">On-chain proof</span>
+    <h2 class="sec" style="margin-top:18px">Every claim resolves on-chain.</h2>
+    <div class="proof-strip">
+      <div class="proof-card"><span class="label">ENS ETHRegistry</span><div class="addr">0x67b728a792e789a8978b30cf1b3b641f19354b43</div><div class="net">Sepolia · Etherscan</div></div>
+      <div class="proof-card"><span class="label">ERC-8004 Identity Registry</span><div class="addr">0x8004A818BFB912233c491871b3d84c89A494BD9e</div><div class="net">Sepolia · Etherscan</div></div>
+      <div class="proof-card"><span class="label">Co-signed KeyList account</span><div class="addr">0.0.10508343</div><div class="net">Hedera testnet · HashScan</div></div>
+      <div class="proof-card"><span class="label">On-chain-resolved binding</span><div class="addr">agentId 7395 → 0x92AA…7522</div><div class="net">ERC-8004 · Sepolia</div></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="wrap">
+    <div class="cta-band">
+      <span class="eyebrow" style="justify-content:center">Take control</span>
+      <h2 style="margin-top:16px">Bind an agent. Set the limits. Keep the kill-switch.</h2>
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="go('console')">Open your console →</button>
+        <a class="judge-side" href="#" onclick="go('sandbox');return false">For judges — try the live demo (no login) →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div class="foot">
+      <span>LEASH · the control layer for your AI agent fleet</span>
+      <span>ENS · Hedera x402 · Privy · on-chain-resolved, not verified</span>
+    </div>
+  </footer>
+</main>
+
+<!-- ============ CONSOLE ============ -->
+<main id="console" class="page" role="tabpanel">
+  <div class="console wrap">
+    <div class="statusbar">
+      <span class="seg"><span class="pulse-dot"></span> <span class="ok">facilitator online</span></span>
+      <span class="divider"></span>
+      <span class="seg">org acme.leash.eth</span>
+      <span class="divider"></span>
+      <span class="seg">gas sponsored</span>
+      <span class="divider"></span>
+      <span class="seg">$46 spent today</span>
+      <span class="divider"></span>
+      <span class="seg" style="margin-left:auto">Sepolia · Hedera testnet</span>
+    </div>
+
+    <!-- Login step -->
+    <div class="card">
+      <div class="card-h"><h3>1 · Connect</h3><span class="label">Privy sign-in</span></div>
+      <div class="login-box">
+        <h3>Sign in to LEASH</h3>
+        <p>Sign in with email or Google. Privy provisions an embedded wallet for you and gas is sponsored — you'll never pay a gas fee to operate the console.</p>
+        <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="you@acme.dev" value="ops@acme.dev" /></div>
+        <div class="oauth">
+          <button class="btn btn-primary" onclick="toast('info','Privy would send a magic link — this is a static mockup')">Continue with email</button>
+          <button class="btn btn-ghost" onclick="toast('info','Privy Google OAuth — static mockup')">Continue with Google</button>
+        </div>
+        <p class="provisions">Provisions an embedded wallet via Privy · gas sponsored · never a fake session</p>
+      </div>
+    </div>
+
+    <!-- Provision org -->
+    <div class="card">
+      <div class="card-h"><h3>2 · Provision org</h3><span class="label">gas-sponsored ENS</span></div>
+      <div class="org-provision">
+        <div class="field"><label for="orgname">Org name</label><input id="orgname" value="acme" /></div>
+        <span class="ens-suffix">.leash.eth</span>
+        <button class="btn btn-primary" onclick="toast('allow','acme.leash.eth provisioned — gas sponsored')">Provision acme.leash.eth →</button>
+      </div>
+      <p class="provisions" style="margin-top:14px">Registers <b>acme.leash.eth</b> on ENS. Each agent you bind gets a subname (data.acme.leash.eth). Gas is sponsored.</p>
+    </div>
+
+    <!-- Fleet -->
+    <div class="card">
+      <div class="org-header">
+        <div class="org-id">
+          <div class="org-avatar">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M12 13v6M9 20h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div><b>acme.leash.eth</b><span>org · 3 agents bound</span></div>
+        </div>
+        <div class="fleet-stats">
+          <div class="fs"><b>3</b><span>agents</span></div>
+          <div class="fs"><b>2</b><span>active</span></div>
+          <div class="fs"><b style="color:var(--deny)">1</b><span>revoked</span></div>
+          <div class="fs"><b>$46</b><span>today</span></div>
+        </div>
+      </div>
+
+      <div class="card-h"><h3>Fleet</h3><button class="btn btn-primary btn-sm" onclick="scrollToReg()">+ Bind an agent</button></div>
+
+      <div class="agent-list">
+        <div class="agent-row" onclick="openDetail()">
+          <span class="dot active"></span>
+          <div class="agent-meta">
+            <b>data.acme.leash.eth <span class="badge-res">◈ on-chain-resolved</span></b>
+            <div class="tags">Up to $5 / payment <span class="sep">·</span> up to $50/day (soft) <span class="sep">·</span> can pay: api.acme.dev <span class="sep">·</span> funded $40 of $100</div>
+          </div>
+          <div class="agent-right"><span class="pill active">● Active</span><div style="margin-top:6px">co-owned · 2-of-2</div></div>
+        </div>
+
+        <div class="agent-row">
+          <span class="dot active"></span>
+          <div class="agent-meta">
+            <b>payments.acme.leash.eth</b>
+            <div class="tags">Up to $25 / payment <span class="sep">·</span> up to $200/week (soft) <span class="sep">·</span> can pay: billing.acme.dev, stripe.com</div>
+          </div>
+          <div class="agent-right"><span class="pill active">● Active</span><div style="margin-top:6px">co-owned · 2-of-2</div></div>
+        </div>
+
+        <div class="agent-row revoked">
+          <span class="dot revoked"></span>
+          <div class="agent-meta">
+            <b>research.acme.leash.eth</b>
+            <div class="tags">Revoked — cut off everywhere</div>
+          </div>
+          <div class="agent-right"><span class="pill revoked">✕ Revoked</span><div style="margin-top:6px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toast('allow','research.acme.leash.eth reactivated')">Reactivate</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live feed -->
+    <div class="card">
+      <div class="card-h"><h3>Live org spend feed</h3><span class="label"><span class="pulse-dot" style="display:inline-block;vertical-align:middle"></span> Hedera Consensus Service</span></div>
+      <div class="feed">
+        <div class="feed-row allow"><span class="tick"></span><span class="who"><b>data</b> agent paid $3 to api.acme.dev</span><span class="verdict">ALLOW</span></div>
+        <div class="feed-row deny"><span class="tick"></span><span class="who"><b>payments</b> agent blocked — over daily limit</span><span class="verdict">DENY</span></div>
+        <div class="feed-row deny"><span class="tick"></span><span class="who"><b>research</b> agent revoked — cut off everywhere</span><span class="verdict">DENY</span></div>
+        <div class="feed-row allow"><span class="tick"></span><span class="who"><b>data</b> agent paid $2 to api.acme.dev</span><span class="verdict">ALLOW</span></div>
+      </div>
+    </div>
+
+    <!-- Register agent -->
+    <div class="card" id="regcard">
+      <div class="card-h"><h3>3 · Bind an agent</h3><span class="label">register existing agent</span></div>
+      <form onsubmit="event.preventDefault();toast('allow','Agent bound — subname minted, co-owned account created')">
+        <div class="form-grid">
+          <div class="field full"><label for="pk">Agent's Hedera public key <span class="req">*</span></label><input id="pk" required placeholder="302a300506032b6570032100…" /><span class="hint">The agent holds its own key. LEASH never sees the private key.</span></div>
+          <div class="field"><label for="aid">ERC-8004 agentId</label><input id="aid" placeholder="7395" /></div>
+          <div class="field"><label for="evm">External EVM address</label><input id="evm" placeholder="0x42D7…8919" /><span class="hint">Resolved on-chain — badge reads on-chain-resolved, not verified.</span></div>
+          <div class="field"><label for="label">Label</label><input id="label" placeholder="data agent" /></div>
+          <div class="field"><label for="cap">Per-payment cap (hard) <span class="req">*</span></label><input id="cap" required placeholder="$5" /></div>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm adv-toggle" onclick="toggleAdv(this)">Advanced ▾</button>
+        <div class="adv" id="adv">
+          <div class="form-grid">
+            <div class="field full"><label for="allow">Allowlist — who it can pay</label><input id="allow" placeholder="api.acme.dev, billing.acme.dev" /></div>
+            <div class="field"><label for="atype">Agent type (advisory)</label>
+              <select id="atype"><option>Data / retrieval</option><option>Payments</option><option>Research</option><option>Ops</option></select>
+            </div>
+            <div class="field"><label for="desc">Description (advisory identity)</label><input id="desc" placeholder="reads api.acme.dev, pays per call" /></div>
+            <div class="field"><label for="daily">Rolling daily cap (soft budget)</label><input id="daily" placeholder="$50/day" /></div>
+            <div class="field"><label for="weekly">Rolling weekly cap (soft budget)</label><input id="weekly" placeholder="$200/week" /></div>
+            <div class="field full">
+              <label>Active-hours window (UTC)</label>
+              <div class="timewin">
+                <div class="field" style="margin:0"><label for="from">From</label><input id="from" placeholder="08:00" /></div>
+                <div class="field" style="margin:0"><label for="to">To</label><input id="to" placeholder="20:00" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:22px"><button type="submit" class="btn btn-primary">Bind agent — mint subname (gas-sponsored) →</button></div>
+      </form>
+    </div>
+
+    <!-- Agent detail -->
+    <div class="card" id="detailcard" style="display:none">
+      <div class="card-h">
+        <h3>Agent · data.acme.leash.eth</h3>
+        <span class="pill active" id="detailPill">● Active</span>
+      </div>
+      <div class="detail-grid">
+        <div>
+          <div class="mini-card">
+            <h4>Identity</h4>
+            <div class="kv"><span class="k">status</span><span class="v"><span class="badge-res">◈ on-chain-resolved</span></span></div>
+            <div class="kv"><span class="k">ERC-8004 agentId</span><span class="v teal">7395</span></div>
+            <div class="kv"><span class="k">external EVM</span><span class="v teal">0x42D7…8919</span></div>
+            <div class="kv"><span class="k">co-owned account</span><span class="v">0.0.10508343 · 2-of-2</span></div>
+          </div>
+          <div class="mini-card">
+            <h4>Current limits</h4>
+            <div class="kv"><span class="k">per-payment cap (hard)</span><span class="v teal">$5</span></div>
+            <div class="kv"><span class="k">daily (soft budget)</span><span class="v">$50/day</span></div>
+            <div class="kv"><span class="k">weekly (soft budget)</span><span class="v">—</span></div>
+            <div class="kv"><span class="k">active hours (UTC)</span><span class="v">08:00 – 20:00</span></div>
+            <div class="kv"><span class="k">can pay</span><span class="v">api.acme.dev</span></div>
+            <div class="inline-edit"><input class="field" style="padding:9px 12px" placeholder="new per-payment cap ($)" /><button class="btn btn-ghost btn-sm" onclick="toast('allow','Per-payment cap updated on-chain')">Save cap</button></div>
+            <div class="inline-edit"><input class="field" style="padding:9px 12px" placeholder="edit allowlist" /><button class="btn btn-ghost btn-sm" onclick="toast('allow','Allowlist updated on-chain')">Save allowlist</button></div>
+            <div class="inline-edit"><input class="field" style="padding:9px 12px" placeholder="daily / weekly / active window" /><button class="btn btn-ghost btn-sm" onclick="toast('allow','Soft budgets + active window updated')">Save budgets</button></div>
+          </div>
+          <div class="mini-card">
+            <h4>Per-agent activity</h4>
+            <div class="feed">
+              <div class="feed-row allow"><span class="tick"></span><span class="who">paid $3 to api.acme.dev</span><span class="verdict">ALLOW</span></div>
+              <div class="feed-row allow"><span class="tick"></span><span class="who">paid $2 to api.acme.dev</span><span class="verdict">ALLOW</span></div>
+              <div class="feed-row deny"><span class="tick"></span><span class="who">$8 to api.acme.dev — over per-payment cap</span><span class="verdict">DENY</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="mini-card">
+            <h4>Funding — Privy independent rail</h4>
+            <div class="kv"><span class="k">funded</span><span class="v teal">$40 of $100</span></div>
+            <div class="inline-edit">
+              <button class="btn btn-ghost btn-sm" onclick="toast('allow','Funded $10 via Privy — independent rail')">Fund $10</button>
+              <button class="btn btn-ghost btn-sm" style="box-shadow:0 0 0 1px rgba(240,104,126,.35)" onclick="toast('deny','Over-fund denied — Privy blocks it before it goes out')">Try an over-fund →</button>
+            </div>
+            <p class="provisions">Privy is the independent funding rail — an over-fund is denied before it ever leaves.</p>
+          </div>
+
+          <div class="mini-card">
+            <h4>Test a payment</h4>
+            <div class="inline-edit">
+              <button class="btn btn-ghost btn-sm" onclick="testPay(true)">Pay $3 (in cap)</button>
+              <button class="btn btn-ghost btn-sm" onclick="testPay(false)">Pay $8 (over cap)</button>
+            </div>
+            <div class="test-out" id="testOut"></div>
+          </div>
+
+          <div class="danger-zone" id="dangerZone">
+            <h4>Danger zone — kill-switch</h4>
+            <p>One on-chain write revokes this agent everywhere. Its next payment fails closed. Reversible.</p>
+            <button class="btn btn-danger" id="detailKill" onclick="detailRevoke()">Revoke on-chain — cut off everywhere</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ============ SANDBOX ============ -->
+<main id="sandbox" class="page" role="tabpanel">
+  <div class="sandbox wrap">
+    <div class="sb-intro">
+      <span class="eyebrow" style="justify-content:center">Judge demo</span>
+      <h2>Four beats. No login, no wallet, no ETH.</h2>
+      <p>Run each control and watch the agent's spend-policy record (left) and the live payment result (right) move together. Revoke, and the record empties — the next identical payment flips to Blocked.</p>
+      <div class="sb-nologin">◈ zero login · zero wallet · zero ETH</div>
+    </div>
+
+    <div class="sb-layout">
+      <div class="sb-controls">
+        <button class="sb-btn" onclick="sbSpend()"><span class="beat-n">01</span><span class="txt"><b>Spend $3</b><span>in cap · gas-free</span></span><span class="arw">→</span></button>
+        <button class="sb-btn" onclick="sbOver()"><span class="beat-n">02</span><span class="txt"><b>Try $50</b><span>over cap → refused</span></span><span class="arw">→</span></button>
+        <button class="sb-btn danger" onclick="sbRevoke()"><span class="beat-n">03</span><span class="txt"><b>Revoke on-chain</b><span>cut off everywhere</span></span><span class="arw">→</span></button>
+        <button class="sb-btn" onclick="sbLeak()"><span class="beat-n">04</span><span class="txt"><b>Leaked-key over-fund</b><span>Privy blocks it</span></span><span class="arw">→</span></button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:6px;justify-content:center" onclick="sbReset()">↺ Reset demo</button>
+      </div>
+
+      <div>
+        <div class="sb-split">
+          <div class="sb-pane">
+            <span class="label">ENS spend-policy record</span>
+            <div id="sbRecord">
+              <div class="rec-line"><span>agent</span><b>data.acme.leash.eth</b></div>
+              <div class="rec-line"><span>identity</span><b>on-chain-resolved</b></div>
+              <div class="rec-line"><span>per-payment cap</span><b>$5</b></div>
+              <div class="rec-line"><span>can pay</span><b>api.acme.dev</b></div>
+              <div class="rec-line"><span>status</span><b style="color:var(--allow)">active</b></div>
+            </div>
+          </div>
+          <div class="sb-pane">
+            <span class="label">Live payment result</span>
+            <div id="sbResult" style="margin-top:auto">
+              <div class="result paid" style="margin-top:0"><span class="ic">✓</span>Ready — run a beat</div>
+            </div>
+            <div style="font-family:var(--data);font-size:11px;color:var(--faint);margin-top:14px" id="sbNote">The record and the result move together.</div>
+          </div>
+        </div>
+
+        <div class="sb-audit">
+          <span class="label" style="display:block;margin-bottom:12px">Live audit — Hedera Consensus Service</span>
+          <div class="audit-scroll" id="auditScroll">
+            <div class="audit-line allow"><span class="vd">ALLOW</span><span>data</span><span>paid $3 → api.acme.dev</span><time>just now</time></div>
+            <div class="audit-line deny"><span class="vd">DENY</span><span>payments</span><span>over daily limit</span><time>5m ago</time></div>
+            <div class="audit-line deny"><span class="vd">DENY</span><span>research</span><span>revoked — cut off everywhere</span><time>8m ago</time></div>
+            <div class="audit-line allow"><span class="vd">ALLOW</span><span>data</span><span>paid $2 → api.acme.dev</span><time>12m ago</time></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ PROOF ============ -->
+<main id="proof" class="page" role="tabpanel">
+  <div class="proof-page wrap">
+    <div class="proof-hero">
+      <span class="eyebrow" style="justify-content:center">On-chain proof</span>
+      <h2>Deployed, real, verifiable.</h2>
+      <p>Every integration below points to a real contract, account, or transaction you can open on a public explorer. Identity is on-chain-resolved, not verified.</p>
+    </div>
+
+    <div class="prize-grid">
+      <!-- ENS -->
+      <div class="prize">
+        <div class="prize-head">
+          <div class="ring"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 5v8l-7 5-7-5V8l7-5z" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div><b>ENS</b><span>the agent's spend policy lives in its ENS record</span></div>
+        </div>
+        <p>Each agent gets a subname under acme.leash.eth. Its policy is stored on-chain and the revocation is recorded there.</p>
+        <div class="proof-row"><span class="label">ETHRegistry (Sepolia)</span><div class="val">0x67b728a792e789a8978b30cf1b3b641f19354b43</div><div class="via">verify on Etherscan (Sepolia)</div></div>
+        <div class="proof-row"><span class="label">Org subname</span><div class="val">acme.leash.eth · data.acme.leash.eth</div></div>
+      </div>
+
+      <!-- Hedera -->
+      <div class="prize">
+        <div class="prize-head">
+          <div class="ring"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 9h8M8 15h8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div><b>Hedera x402</b><span>gas-free co-owned payments, every decision logged</span></div>
+        </div>
+        <p>A co-signed in-cap payment settles on the 2-of-2 KeyList account. Every ALLOW / DENY is logged to Hedera Consensus Service.</p>
+        <div class="proof-row"><span class="label">Co-signed KeyList account</span><div class="val">0.0.10508343</div><div class="via">verify on HashScan / Hedera Mirror (testnet)</div></div>
+        <div class="proof-row"><span class="label">Kill-switch grant tx</span><div class="val">0x31559a9b7300bb5e4eeb8759d7e1285f14b423050ae451eb16f187eab49e0101</div><div class="via">user co-holds the kill-switch role</div></div>
+      </div>
+
+      <!-- Privy -->
+      <div class="prize">
+        <div class="prize-head">
+          <div class="ring"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M5 20c0-3.3 3.1-5 7-5s7 1.7 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div><b>Privy</b><span>login + the independent funding rail</span></div>
+        </div>
+        <p>Privy handles login, provisions an embedded wallet, and is the independent funding rail — an over-fund is denied before it goes out. Privy does not co-sign payments.</p>
+        <div class="proof-row"><span class="label">On-chain-resolved binding</span><div class="val">agentId 7395 → 0x92AAe0857979a139344f5b6F008e71F27A507522</div><div class="via">ERC-8004 Identity Registry (Sepolia)</div></div>
+        <div class="proof-row"><span class="label">Identity Registry</span><div class="val">0x8004A818BFB912233c491871b3d84c89A494BD9e</div><div class="via">verify on Etherscan (Sepolia)</div></div>
+      </div>
+    </div>
+
+    <p class="proof-note"><b>on-chain-resolved, not verified</b> — every claim above resolves on Etherscan (Sepolia) / HashScan / Hedera Mirror.</p>
+  </div>
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="ic" id="toastIc">✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ---- page routing ---- */
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
+  window.scrollTo({top:0,behavior:'instant' in window? 'instant':'auto'});
+}
+
+/* ---- toast ---- */
+let toastT;
+function toast(kind,msg){
+  const el=document.getElementById('toast');
+  el.className='toast '+kind+' show';
+  document.getElementById('toastIc').textContent = kind==='deny'?'✕':(kind==='info'?'i':'✓');
+  document.getElementById('toastMsg').textContent=msg;
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+/* ---- landing money-shot flip ---- */
+let killed=false;
+function fireKill(){
+  if(killed){ // reset
+    document.getElementById('recBefore').style.display='';
+    document.getElementById('recAfter').style.display='none';
+    setResult('resultCard','resultText','paid','✓','Paid $3 to api.acme.dev');
+    setResult('resultCard2','resultText2','paid','✓','Paid');
+    document.getElementById('checkVal').textContent='within cap';
+    document.getElementById('checkVal').style.color='var(--allow)';
+    document.getElementById('killBtn').textContent='Revoke on-chain →';
+    killed=false;return;
+  }
+  document.getElementById('recBefore').style.display='none';
+  document.getElementById('recAfter').style.display='';
+  setResult('resultCard','resultText','blocked','✕','Blocked — revoked');
+  const r2=document.getElementById('resultCard2');
+  r2.classList.remove('show');
+  setResult('resultCard2','resultText2','blocked','✕','Blocked — revoked');
+  document.getElementById('checkVal').textContent='no policy — cut off';
+  document.getElementById('checkVal').style.color='var(--deny)';
+  void r2.offsetWidth; r2.classList.add('show');
+  document.getElementById('killBtn').textContent='↺ Reset';
+  killed=true;
+}
+function setResult(card,txt,cls,ic,msg){
+  const c=document.getElementById(card);
+  c.className='result '+cls+(card==='resultCard2'?' flip show':'');
+  c.querySelector('.ic').textContent=ic;
+  document.getElementById(txt).textContent=msg;
+}
+
+/* ---- console ---- */
+function scrollToReg(){go('console');setTimeout(()=>document.getElementById('regcard').scrollIntoView({behavior:'smooth'}),60);}
+function toggleAdv(btn){const a=document.getElementById('adv');a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Advanced ▴':'Advanced ▾';}
+function openDetail(){document.getElementById('detailcard').style.display='';setTimeout(()=>document.getElementById('detailcard').scrollIntoView({behavior:'smooth'}),60);}
+function testPay(inCap){
+  const out=document.getElementById('testOut');
+  if(inCap){out.innerHTML='<div class="result paid" style="margin-top:12px"><span class="ic">✓</span>Paid $3 to api.acme.dev — within cap</div>';}
+  else{out.innerHTML='<div class="result blocked" style="margin-top:12px"><span class="ic">✕</span>Blocked — over per-payment cap ($5)</div>';}
+}
+let detailRevoked=false;
+function detailRevoke(){
+  const btn=document.getElementById('detailKill');
+  const pill=document.getElementById('detailPill');
+  if(!detailRevoked){
+    pill.className='pill revoked';pill.textContent='✕ Revoked';
+    btn.textContent='Reactivate — restore this agent';
+    btn.style.background='var(--teal)';btn.style.boxShadow='var(--glow)';
+    document.getElementById('testOut').innerHTML='<div class="result blocked" style="margin-top:12px"><span class="ic">✕</span>Cut off everywhere — next payment fails closed</div>';
+    toast('deny','data.acme.leash.eth revoked — one on-chain write, cut off everywhere');
+    detailRevoked=true;
+  }else{
+    pill.className='pill active';pill.textContent='● Active';
+    btn.textContent='Revoke on-chain — cut off everywhere';
+    btn.style.background='var(--deny)';btn.style.boxShadow='0 0 16px -3px rgba(240,104,126,.5)';
+    document.getElementById('testOut').innerHTML='';
+    toast('allow','data.acme.leash.eth reactivated');
+    detailRevoked=false;
+  }
+}
+
+/* ---- sandbox ---- */
+function sbSet(html){document.getElementById('sbResult').innerHTML=html;}
+function sbAudit(cls,vd,agent,txt){
+  const s=document.getElementById('auditScroll');
+  const l=document.createElement('div');
+  l.className='audit-line '+cls;
+  l.innerHTML='<span class="vd">'+vd+'</span><span>'+agent+'</span><span>'+txt+'</span><time>just now</time>';
+  s.insertBefore(l,s.firstChild);
+  l.style.opacity=0;requestAnimationFrame(()=>{l.style.transition='opacity .4s ease';l.style.opacity=1;});
+}
+function sbSpend(){
+  sbSet('<div class="result paid" style="margin-top:auto"><span class="ic">✓</span>Paid $3 — gas-free</div>');
+  document.getElementById('sbNote').textContent='In cap ($5). Co-signed on the 2-of-2 account, agent pays $0.';
+  sbAudit('allow','ALLOW','data','paid $3 → api.acme.dev');
+}
+function sbOver(){
+  sbSet('<div class="result blocked" style="margin-top:auto"><span class="ic">✕</span>Refused — over cap</div>');
+  document.getElementById('sbNote').textContent='$50 exceeds the $5 per-payment cap. Fails closed.';
+  sbAudit('deny','DENY','data','$50 over per-payment cap');
+}
+function sbRevoke(){
+  document.getElementById('sbRecord').innerHTML='<div class="rec-empty">— record cleared —</div><div class="rec-line" style="margin-top:12px"><span>status</span><b style="color:var(--deny)">revoked · cut off everywhere</b></div>';
+  sbSet('<div class="result blocked flip show" style="margin-top:auto"><span class="ic">✕</span>Blocked — revoked</div>');
+  document.getElementById('sbNote').textContent='One on-chain write cleared the policy. The next identical $3 payment now flips to Blocked.';
+  sbAudit('deny','DENY','data','revoked — cut off everywhere');
+}
+function sbLeak(){
+  sbSet('<div class="result blocked" style="margin-top:auto"><span class="ic">✕</span>Over-fund blocked</div>');
+  document.getElementById('sbNote').textContent='A leaked-key over-fund is denied by Privy on the independent rail before it goes out.';
+  sbAudit('deny','DENY','data','over-fund blocked by Privy');
+}
+function sbReset(){
+  document.getElementById('sbRecord').innerHTML=
+    '<div class="rec-line"><span>agent</span><b>data.acme.leash.eth</b></div>'+
+    '<div class="rec-line"><span>identity</span><b>on-chain-resolved</b></div>'+
+    '<div class="rec-line"><span>per-payment cap</span><b>$5</b></div>'+
+    '<div class="rec-line"><span>can pay</span><b>api.acme.dev</b></div>'+
+    '<div class="rec-line"><span>status</span><b style="color:var(--allow)">active</b></div>';
+  sbSet('<div class="result paid" style="margin-top:auto"><span class="ic">✓</span>Ready — run a beat</div>');
+  document.getElementById('sbNote').textContent='The record and the result move together.';
+}
+</script>
+</body>
+</html>

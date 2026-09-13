@@ -58,3 +58,11 @@ LIVETEST-V3-REPORT.md
 STRESS-TEST-PLAN.md
 .vercel
 .env*
+docs/FORGE-KICKOFF-PROMPT.md
+
+# Internal planning/handoff/scope docs (not shipped)
+docs/*-HANDOFF.md
+docs/*-KICKOFF*.md
+docs/*-SCOPE.md
+docs/LEASH-MASTER-BUILD-DOC.md
+docs/FORGE-KICKOFF-PROMPT.md

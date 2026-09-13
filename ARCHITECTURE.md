@@ -14,6 +14,8 @@
 ### Purpose
 Turn an org's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents: a self-hosted Hedera x402 facilitator reads each agent's ENS resolver policy record before settling a gas-free payment and refuses over-cap/off-allowlist/revoked payments; Privy is the independent second rail on funding.
 
+> **[DESIGN/IA NOTE: current UI state, 2026-09-13].** The shipped frontend is the **Signal Grid** system (electric-lime on near-black; Clash Display + Manrope + JetBrains Mono; jade/coral verdicts) with an **owner-first multi-page IA**: `/` owner landing (`web/components/SiteNav.tsx` + `web/components/HeroFleet.tsx`) → `/app` console (Privy connect gate → provision org → fleet) → `/app/agent/[ensName]` agent detail → `/demo` restyled side-door → `/proof`. `web/app/globals.css` is the design system; fonts load via `@import` and `next/font` was removed from `layout.tsx`. The `/demo` guided-sandbox BEHAVIOR and INVARIANT #10 are unchanged; the "demo-first" / "two front doors" / "spend-control plane" wording below describes demo priority and the reframe headline, not the current front-door IA or visual system. `brand.json` + `DESIGN_SYSTEM.md` are now re-formalized to the Signal Grid tokens and the final Concept A "Tether" logo (design-forge complete this session); both are FINAL. See `docs/REDESIGN-STATE-HANDOFF.md`.
+>
 > **REFRAME — the current product model (`[SKILL]`, per REFRAME-SCOPE §0/§4-F; product decision `[USER]` 2026-09-12).** LEASH is now the **spend-control plane for agents that already exist** — it no longer *mints* the agent. An external agent's real self — identity, logic, LLM, and its controlling key — lives **outside** LEASH as an EVM address / ERC-8004 registration the agent itself controls. LEASH binds that external identity to five governed things: an **ENS name (the leash)** + a **2-of-2 co-signed Hedera spending account** (the agent holds one key, LEASH the other) + a **policy** (per-call cap, allowlist, rolling daily/weekly caps, time-windows) + **funding** (Privy) + **one-write revoke**. The create-your-own-agent product (LEASH provisions the agent, strategy, LLM, and direction) is the **roadmap ("coming soon")**. The original create-agent text below is retained as design history where relevant; the reframe is the *current* model and is `/app`-only + a **network-typed scheme selection** — `/demo`, `/api/demo`, `provision-canonical.ts`, `ensureCanonicalAgent`, and VM-1/VM-2 are the FROZEN floor and are NO-TOUCH (INVARIANT #10).
 
 ### Trust Model (REFRAME — `[SKILL]`, per REFRAME-SCOPE §0 + REF-3; honesty framing `[USER]`-locked)
@@ -46,7 +48,7 @@ The 2-of-2 co-signature is **facilitator-TRUSTED, NOT chain-enforced.** Three pr
  +-------------------------------------+                             |
                                               resource-server/ (@x402/express) GET /premium
   web/ (Next.js on Vercel)                    db/ (Neon Postgres: users/orgs/agents/spend_events, index only)
-   /demo -> JUDGE SANDBOX (server-side, no login/wallet/ETH)  [SCORED, first]   relayer/ (gas sponsor, scoped)
+   /demo -> GUIDED SANDBOX (server-side, no login/wallet/ETH)  [demo, first]   relayer/ (gas sponsor, scoped)
    /app  -> REAL CONSOLE (Privy login -> org subname -> DB)   [second]
 ```
 
@@ -303,7 +305,7 @@ Read the ENS policy, decide `GateDecision`, settle native Hedera gas-free on `{s
 
 <!-- [CRITIQUE E-1] Blocky402 provenance (VERIFIED 2026-09-12 via docs.hedera.com/solutions/ai/x402 + blocky402.com + github.com/x402-foundation/x402):
   FACTS: (1) Blocky402 is an open-source (MIT) x402 facilitator that is BOTH hosted AND self-hostable ("run your own instance via Docker or Node.js"), live on Hedera testnet + mainnet. (2) Blocky402 is built on the SAME packages this design uses: @x402/core + @x402/hedera (its own examples import @x402/hedera, @x402/hedera/exact/client). (3) onBeforeVerify/onBeforeSettle are OFFICIAL x402 lifecycle hooks (see x402-foundation/x402 issue #2299 "behavioral trust scoring via onBeforeSettle") - gating settlement on an external read is a supported, in-the-wild pattern, exactly what the ENS gate does.
-  DECISION: FORK the open-source Blocky402 and insert the ENS gate via the official onBeforeSettle hook, rather than building a bespoke facilitator from @x402/hedera. Same package stack, same effort, but "host a LIVE x402-gated service via the Blocky402 facilitator" becomes literally true = unambiguous Hedera-prize qualification. Build (Task 2.2) confirms Blocky402's repo exposes the onBeforeSettle extension point (highly likely: it wraps @x402/core); if for any reason the fork cannot carry the hook, fall back to a self-hosted @x402/core+@x402/hedera facilitator (same protocol, Blocky402-equivalent) and state that equivalence in README. Either way the facilitator is self-hosted so the ENS read runs PRE-settlement. Do NOT add a second non-ENS facilitator path. -->
+  DECISION: FORK the open-source Blocky402 and insert the ENS gate via the official onBeforeSettle hook, rather than building a bespoke facilitator from @x402/hedera. Same package stack, same effort, but "host a LIVE x402-gated service via the Blocky402 facilitator" becomes literally true = unambiguous Hedera integration. Build (Task 2.2) confirms Blocky402's repo exposes the onBeforeSettle extension point (highly likely: it wraps @x402/core); if for any reason the fork cannot carry the hook, fall back to a self-hosted @x402/core+@x402/hedera facilitator (same protocol, Blocky402-equivalent) and state that equivalence in README. Either way the facilitator is self-hosted so the ENS read runs PRE-settlement. Do NOT add a second non-ENS facilitator path. -->
 
 
 ### Code
@@ -1354,10 +1356,34 @@ export async function relay(orgSubname: string, op: RelayOp): Promise<string> {
 ## 12. Web Dashboard (component 8)
 
 ### Purpose
-Two front doors: `/demo` (judge sandbox, server-orchestrated, scored, first) and `/app` (real console, Privy login, multi-tenant). Presentational polish is owned by the design phase (Skill-Ownership Map); these files are the functional spine.
+Two front doors: `/demo` (guided sandbox, server-orchestrated, first) and `/app` (real console, Privy login, multi-tenant). Presentational polish is owned by the design phase (Skill-Ownership Map); these files are the functional spine.
+
+> **[REDESIGN: current shipped frontend IA, 2026-09-13].** The frontend was fully redesigned to the **Signal Grid** system with an **owner-first multi-page IA**. This supersedes the "two front doors, sandbox-first" framing of this section for the SHIPPED IA; the API contracts, the frozen `/demo` beats (GateReason strings, AgentPolicy field order, `requireOwner`, VM-1/2/3), and INVARIANT #10 import isolation are UNCHANGED. The redesign was presentation + IA + positioning + logo only. Current file tree:
+>
+> ```
+> web/app/globals.css                 Signal Grid design system + font @import (IS the design system now)
+> web/app/layout.tsx                  root layout; next/font REMOVED (fonts load via @import), so the
+>                                     root-layout -> /app / Privy import edge stays isolated from / , /demo , /proof
+> web/components/SiteNav.tsx          shared Privy-free public nav (owner landing + side-door links)
+> web/components/HeroFleet.tsx        kinetic hero client island for the owner landing
+> web/app/page.tsx                    / owner landing (public, static): SiteNav + HeroFleet
+> web/app/app/layout.tsx              /app console layout; Privy provider + connect gate live here
+> web/app/app/page.tsx                /app console: connect gate -> provision org -> fleet dashboard
+> web/app/app/agent/[ensName]/        /app/agent/[ensName] full agent detail (identity, co-owned account,
+>                                     limits = per-payment cap + daily/weekly SOFT budgets + active window,
+>                                     allowlist, funding + over-fund DENY, test payment in/over limit,
+>                                     revoke danger-zone + reactivate, activity)
+> web/app/demo/**                     /demo judge sandbox restyled to Signal Grid, redesigned into a guided
+>                                     5-step walkthrough; BEHAVIOR FROZEN (real /api/demo beats, seeded agent, real txs)
+> web/app/proof/**                    /proof verification surface, restyled
+> web/public/logo.svg, favicon.*,     final Concept A "Tether" leash-clasp wordmark (nav + hero + icons)
+>   logo*.png, apple-icon.png
+> ```
+>
+> Console loading is hardened: Privy `!ready` falls through to the connect screen after 3.5s (avoids an infinite spinner when the origin is not yet allowlisted in the Privy dashboard). UI copy uses no em dashes. `brand.json` + `DESIGN_SYSTEM.md` are FINAL (design-forge). See `docs/REDESIGN-STATE-HANDOFF.md` + `docs/JUDGE-PATH.md`.
 
 ### Dependencies
-next, viem, @privy-io/react-auth; server routes import `scripts/ens/*`, `agent/pay`, `treasury/privy`, `db/*`.
+next, viem, @privy-io/react-auth; server routes import `scripts/ens/*`, `agent/pay`, `treasury/privy`, `db/*`. Fonts (Clash Display + Manrope + JetBrains Mono) load via `@import` in `web/app/globals.css`; `next/font` is removed from `web/app/layout.tsx` to keep `/ , /demo , /proof` isolated from the `/app` Privy import edge (INVARIANT #10).
 
 ### Code
 
@@ -1862,16 +1888,16 @@ submission/
 ```
 Generation: `screenshots/` (demo phase), `proof.md` (build post-hero-run via `verify-claims.ts` + captured hashes), `links.md`/`sponsor-tracks.md` (package).
 
-## N+3. Multi-Track Architecture (3 prizes, 3 distinct integration points)
-| Track | Architectural component serving it | Integration depth (distinct, not a wrapper) | Judge proof |
+## N+3. Multi-Integration Architecture (3 integrations, 3 distinct integration points)
+| Integration | Architectural component serving it | Integration depth (distinct, not a wrapper) | Proof |
 |---|---|---|---|
-| ENS ENSv2 $4,500 | `scripts/ens/*` + `facilitator/ens-read.ts` | 3-level hierarchy, EAC role grant/revoke, Permissioned Resolver text record READ as live settlement policy, reverse | mint→setText→read→revoke tx hashes; the record IS the policy |
-| Hedera x402 $6,000 | `facilitator/*` + `resource-server` + `agent/pay` | native gas-free exact scheme (feePayer), own HTS USDC, HCS audit trail, ≥1 real paid request e2e | HashScan settle tx + HCS topic entries |
-| Privy B2B $2,500 | `treasury/privy.ts` + `/app` login | P-256-owner org wallet + funding policy (cap+allowlist) + live leaked-key DENY + embedded-wallet login | `FUNDING_DENIED` on camera; policy id |
+| ENS (ENSv2) | `scripts/ens/*` + `facilitator/ens-read.ts` | 3-level hierarchy, EAC role grant/revoke, Permissioned Resolver text record READ as live settlement policy, reverse | mint→setText→read→revoke tx hashes; the record IS the policy |
+| Hedera (x402) | `facilitator/*` + `resource-server` + `agent/pay` | native gas-free exact scheme (feePayer), own HTS USDC, HCS audit trail, ≥1 real paid request e2e | HashScan settle tx + HCS topic entries |
+| Privy (B2B) | `treasury/privy.ts` + `/app` login | P-256-owner org wallet + funding policy (cap+allowlist) + live leaked-key DENY + embedded-wallet login | `FUNDING_DENIED` on camera; policy id |
 
 Primary depth = ENS (the load-bearing interlock). The three integration points are physically distinct directories (repo-layout discipline).
 
-> **REFRAME impact on the three tracks (`[SKILL]`, per REFRAME-SCOPE §4-F).** All three survive the reframe and Hedera deepens. ENS gains **registry-resolution** (external ERC-8004 identity resolved and written as on-chain-resolved text records). Hedera goes deeper via **native threshold keys** — the `/app` spending account is a `KeyList[agentPub, leashCoSignerPub]` threshold-2 account co-signed at settle. Privy **funds the co-signed spending account at its long-zero EVM address**; the leaked-key over-fund `FUNDING_DENIED` beat is preserved. The frozen `/demo` single-key path continues to serve all three tracks unchanged.
+> **REFRAME impact on the three integrations (`[SKILL]`, per REFRAME-SCOPE §4-F).** All three survive the reframe and Hedera deepens. ENS gains **registry-resolution** (external ERC-8004 identity resolved and written as on-chain-resolved text records). Hedera goes deeper via **native threshold keys**: the `/app` spending account is a `KeyList[agentPub, leashCoSignerPub]` threshold-2 account co-signed at settle. Privy **funds the co-signed spending account at its long-zero EVM address**; the leaked-key over-fund `FUNDING_DENIED` beat is preserved. The frozen `/demo` single-key path continues to serve all three integrations unchanged.
 
 ## N+4. Safety Architecture (tiered defenses)
 - **Layer 1 - Input validation:** `authorize.ts` rejects malformed policy (`MALFORMED_POLICY`), binding mismatch, off-token; header is treated as untrusted (only names the record). Prevents spoofed/garbage-policy spend.
@@ -1978,10 +2004,10 @@ Two+ independent layers, each tested in Testing Strategy.
 5. `resource-server/server.ts` + `agent/pay.ts` (WS-3, e2e paid request).
 6. `treasury/privy.ts` (WS-4; but WS-0 smoke #1 proves DENY FIRST).
 7. **Parallel group B:** `db/*` ∥ `relayer/relay.ts`.
-8. `web/*` - WS-5a `/demo` + `api/demo` FIRST (scored), then WS-5b `/app` + real routes.
+8. `web/*` - WS-5a `/demo` + `api/demo` FIRST, then WS-5b `/app` + real routes.
 9. `scripts/setup.ts` + `scripts/seed-demo.ts` + `scripts/verify-claims.ts`.
 
-P1 (the three-prize hero) is deliverable after steps 1-6 + step 8's WS-5a alone - the real console (WS-5b) is P2. This matches PRD priority (sandbox-first).
+P1 (the three-integration hero) is deliverable after steps 1-6 + step 8's WS-5a alone - the real console (WS-5b) is P2. This matches PRD priority (sandbox-first).
 
 ## N+9. Deployment Sequence
 | Step | Action | Command | Verify | depends-on |

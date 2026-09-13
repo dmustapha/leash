@@ -1,10 +1,7 @@
 # LEASH - Product Requirements Document
 
-**Hackathon:** ETHOnline 2026
-**Track:** Building from Scratch (Classic)
-**Deadline:** 2026-09-13 16:00 UTC (Sun, 12:00 PM EDT) - no late submissions
-**Prizes targeted (max 3):** ENS Best Use of ENSv2 $4,500 + Hedera AI & Agentic Payments (x402) $6,000 + Privy Best B2B Financial Product $2,500 = $13,000 addressable
 **Version:** V1
+**Integrations (3):** ENS (ENSv2) + Hedera (x402 agentic payments) + Privy (B2B server wallets)
 **Source:** warroom V2 winner (WINNER-BRIEF.md) + docs/LEASH-MASTER-BUILD-DOC.md (authoritative pre-forge scope)
 
 > The Thesis lives ONLY in `warroom/WINNER-BRIEF.md` `## Thesis`. This PRD references it; it never restates-with-modification.
@@ -19,6 +16,14 @@ Not another agent that pays an API. LEASH is the ENS name that can un-pay it: cu
 
 LEASH turns an organization's ENS name hierarchy into a live, revocable spend-permission graph for its fleet of paying AI agents. Cutting off any agent everywhere is one on-chain write.
 
+**LEASH is the control layer for your AI agent fleet: it keeps every AI agent that spends your money on a leash.** One console to bind, govern, and cut off every agent in your fleet: **Identity · Account · Limits · Funding · Kill-switch · Audit**. Spend-governance with one-write revoke stays the hero capability; the umbrella is the whole management surface, not spend control alone. Concretely, the managed surface is: bind an external identity (ERC-8004 / EVM, on-chain-resolved), a 2-of-2 co-owned Hedera spending account, policy (per-call cap, allowlist, rolling daily/weekly soft caps, time-windows), Privy funding, revoke/reactivate lifecycle, and an HCS audit feed.
+
+**Chain scope (today) and roadmap.** LEASH governs agent spending on Hedera today. Governance for other chains (Arc, Base, and other EVM networks) is in progress. Identity binding is already multi-chain (any EVM address / ERC-8004, on-chain-resolved). The Privy funding rail tops up the agent's Hedera account (chainId 296) today, and the Privy mechanism is EVM-general and portable to other chains later. Spend governance (in-cap allow / over-cap refuse / revoke) runs on Hedera only right now, because the co-signing facilitator LEASH runs is the x402/Hedera one; native governance on another chain needs a co-signer plus policy read deployed per chain (roadmap).
+
+> **[DESIGN/IA NOTE: current UI state, 2026-09-13].** The shipped app uses the **Signal Grid** visual system (electric-lime `#c6f24d` on near-black `#0a0a0b`; Clash Display + Manrope + JetBrains Mono; jade/coral verdicts; faint blueprint grid) and an **owner-first multi-page IA**: `/` owner landing → `/app` console (Privy CONNECT gate → provision org → fleet dashboard) → `/app/agent/[ensName]` agent detail → `/demo` restyled side-door → `/proof`. The native **"Tether"** logo (a leash-clasp wordmark, native to the name) is wired as `logo.svg`/favicon/nav/hero. `DESIGN_SYSTEM.md` + `brand.json` are the FINAL source of truth for the visual system. The primary journey is the OWNER; the guided sandbox `/demo` is now a SIDE-DOOR (its BEHAVIOR is unchanged and still frozen, INVARIANT #10, but it is redesigned into a guided 5-step walkthrough). The "sandbox-first", "two front doors", "warm-editorial-dark / amber", and "spend-control plane as the sole framing" language in the older sections below describes the earlier demo priority and the reframe headline, not the current front-door IA or visual system; the current framing is the **control layer for your AI agent fleet** (spend-governance + one-write revoke stays the HERO). UI copy uses **no em dashes**. See `docs/REDESIGN-STATE-HANDOFF.md` + `docs/JUDGE-PATH.md` + `docs/REDESIGN-BUILD-SCOPE.md`. Honesty locks, the three-integration claims, the warroom Thesis, and the frozen floor are unchanged.
+>
+> **[DEMO/TEST AGENT: SOLV-001].** There are TWO test paths. (1) The guided sandbox `/demo` (zero login, zero wallet, zero ETH; frozen behavior). (2) The **normal-user path** driven from `/app` against a REAL external agent, **SOLV-001** (`github.com/dmustapha/solv-001`, a Circle-wallet autonomous agent on Arc testnet, owner-controlled). SOLV-001 is bound and governed in the console to prove in-cap pay / over-cap refuse / revoke / over-fund DENY against live rails. Known reconciliation seam: SOLV-001 natively pays on **Arc (Circle)**, but LEASH governs a **Hedera** x402 spending account, so binding it binds its identity to a NEW LEASH-provisioned Hedera co-owned account and the governed payments run on LEASH's Hedera rail, not on Arc; reconcile this during wire/livetest. Full step-by-step in `docs/JUDGE-PATH.md`.
+>
 > **[USER] REFRAME (2026-09-12 — headline model; the create-your-own-agent product is roadmap "coming soon").** LEASH stops **minting** agents. It is the **spend-control plane for agents that already exist**. An agent's real self — logic, LLM, key, identity — lives **outside** LEASH (an EVM address / ERC-8004 registration it controls). LEASH **binds** that external identity to an **ENS name (the leash)** + a **2-of-2 co-signed Hedera spending account** (agent holds one key, LEASH the other) + a **policy** (per-call cap, allowlist, rolling daily/weekly caps, time-windows) + **Privy funding** + **one-write revoke**.
 >
 > **Honest framing (LOCKED — three DISTINCT properties, never conflate, never drift):**
@@ -32,19 +37,19 @@ Teams now deploy fleets of AI agents that spend money per call over x402. The on
 ### Solution
 Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text record `leash.policy` encodes its spend capability: per-call cap, allowed payees, its Hedera account, and the token. A self-hosted (forked) Hedera x402 facilitator reads that record via viem `eth_call` **before settling** each gas-free payment and refuses anything over-cap or off-allowlist. Privy holds the org treasury as a policy-gated server wallet and gates how agents get funded - an independent second rail on the funding flow, never a per-transaction co-signer. Revoking the ENS text record or the EAC role kills that agent's spend everywhere in one Sepolia write. **The name is the leash: cut it, the spending dies.**
 
-### Why This Wins
-| Judging Criterion | Weight | How We Excel |
-|---|:---:|---|
-| Technicality | 20% | Facilitator-reads-ENS-resolver-pre-settlement is genuine protocol composition across ENSv2 (EAC roles + Permissioned Resolvers + hierarchy) and native Hedera x402 (gas-free exact scheme). Not a wrapper. |
-| Originality | 20% | "Your ENS name IS your revocable spend policy" is a true didn't-know-you-could. Zero instances of the specific interlock (facilitator reads the resolver record as live settlement policy) found in prior art. |
-| Practicality | 20% | Every primitive is live TODAY: ENSv2 Sepolia beta, forkable Hedera facilitator, Privy policies. Real orgs running >1 paying agent are the user. No beta gate, no Graph-on-Hedera landmine. |
-| Usability | 20% | The negative-WOW (payment fails-closed after revoke) is made legible via an A/B split-screen: resolver record ↔ live 402 flipping pass→fail on camera. Zero-setup judge sandbox drives the whole flow with no login/wallet/ETH. |
-| WOW Factor | 20% | One on-chain write kills an agent's spending everywhere, witnessed live: the same $3 call that worked 90 seconds ago now fails closed. |
+### Why it holds up
+| Dimension | How LEASH delivers |
+|---|---|
+| Technicality | Facilitator-reads-ENS-resolver-pre-settlement is genuine protocol composition across ENSv2 (EAC roles + Permissioned Resolvers + hierarchy) and native Hedera x402 (gas-free exact scheme). Not a wrapper. |
+| Originality | "Your ENS name IS your revocable spend policy" is a true didn't-know-you-could. Zero instances of the specific interlock (facilitator reads the resolver record as live settlement policy) found in prior art. |
+| Practicality | Every primitive is live today: ENSv2 Sepolia beta, forkable Hedera facilitator, Privy policies. Real orgs running >1 paying agent are the user. No beta gate, no Graph-on-Hedera landmine. |
+| Usability | The negative-WOW (payment fails-closed after revoke) is made legible via an A/B split-screen: resolver record vs live 402 flipping pass to fail on camera. Zero-setup sandbox drives the whole flow with no login/wallet/ETH. |
+| Impact | One on-chain write kills an agent's spending everywhere, witnessed live: the same $3 call that worked 90 seconds ago now fails closed. |
 
-### Prize Alignment (satisfy each literal bullet)
-- **ENS ENSv2 $4,500:** ENSv2 on Sepolia central (hierarchy + EAC roles + Permissioned Resolver + reverse), no hard-coded values (runtime address load / pinned set), policy lives in the resolver, revoke = `revokeRoles`/clear-record. 3-level multi-tenant hierarchy (`leash.eth` → `<org>.leash.eth` → `data.<org>.leash.eth`) deepens ENS depth.
-- **Hedera x402 $6,000:** live x402-gated service, ≥1 real paid request e2e, gas-free native scheme via self-hosted facilitator, HCS audit trail, real value (own HTS USDC) settled on testnet, HashScan-verified. <!-- [CRITIQUE E-1] VERIFIED 2026-09-12: Blocky402 is open-source (MIT) + self-hostable (Docker/Node) on Hedera testnet, built on the same @x402/core + @x402/hedera stack this design uses; onBeforeVerify/onBeforeSettle are official x402 hooks. DECISION: FORK Blocky402 and add the ENS gate via onBeforeSettle so "via the Blocky402 facilitator" is literally true. Build (Task 2.2) confirms the fork exposes the hook; fallback = self-hosted @x402/core+@x402/hedera (Blocky402-equivalent, stated in README). No second non-ENS facilitator path. -->
-- **Privy B2B $2,500:** org/server wallets as the treasury, policy engine control (cap + allowlist on funding calldata), live leaked-key over-fund DENY, a real B2B funding flow. Deepened via Privy embedded-wallet login (email/Google) in the real multi-tenant console.
+### Integration depth (each surface, load-bearing)
+- **ENS (ENSv2):** ENSv2 on Sepolia central (hierarchy + EAC roles + Permissioned Resolver + reverse), no hard-coded values (runtime address load / pinned set), policy lives in the resolver, revoke = `revokeRoles`/clear-record. 3-level multi-tenant hierarchy (`leash.eth` → `<org>.leash.eth` → `data.<org>.leash.eth`) deepens ENS depth.
+- **Hedera (x402):** live x402-gated service, ≥1 real paid request e2e, gas-free native scheme via self-hosted facilitator, HCS audit trail, real value (own HTS USDC) settled on testnet, HashScan-verified. <!-- [CRITIQUE E-1] VERIFIED 2026-09-12: Blocky402 is open-source (MIT) + self-hostable (Docker/Node) on Hedera testnet, built on the same @x402/core + @x402/hedera stack this design uses; onBeforeVerify/onBeforeSettle are official x402 hooks. DECISION: FORK Blocky402 and add the ENS gate via onBeforeSettle so "via the Blocky402 facilitator" is literally true. Build (Task 2.2) confirms the fork exposes the hook; fallback = self-hosted @x402/core+@x402/hedera (Blocky402-equivalent, stated in README). No second non-ENS facilitator path. -->
+- **Privy (B2B):** org/server wallets as the treasury, policy engine control (cap + allowlist on funding calldata), live leaked-key over-fund DENY, a real B2B funding flow. Deepened via Privy embedded-wallet login (email/Google) in the real multi-tenant console.
 
 ---
 
@@ -78,9 +83,13 @@ Each agent is a child ENS name (`data.acme.leash.eth`) whose resolver text recor
                                                      |  GET /premium  network hedera:testnet     |
                                                      +-------------------------------------------+
 
-  Two front doors (Next.js on Vercel):
-   /demo  -> JUDGE SANDBOX (pre-seeded acme.leash.eth, server-side, no login/wallet/ETH) [SCORED, first]
-   /app   -> REAL CONSOLE (Privy login -> own org subname -> Postgres agents -> gas relayer) [second]
+  Owner-first multi-page IA (Next.js on Vercel; current shipped IA per the DESIGN/IA NOTE in §1):
+   /                    -> OWNER LANDING (public marketing, SiteNav + kinetic HeroFleet)
+   /app                 -> CONSOLE: Privy CONNECT gate -> provision org -> fleet dashboard [primary journey]
+   /app/agent/[ensName] -> AGENT DETAIL (identity, account, limits, allowlist, funding, revoke, activity)
+   /demo                -> GUIDED SANDBOX side-door (pre-seeded, server-side, no login/wallet/ETH; frozen behavior, guided 5-step)
+   /proof               -> VERIFICATION surface
+   (The "demo-first / two front doors" framing below is the earlier demo priority; the current front door is the owner console.)
 ```
 
 ### Component Table
@@ -116,12 +125,12 @@ The agent's identity/logic/LLM/key already exist outside LEASH. Registration BIN
 4. LEASH writes the ENS text records — the **on-chain-resolved** identity keys (`agent.erc8004` CAIP, `agent.address`) — and then writes `leash.policy` **LAST** (spend authority is the final write, so a partial register is inert / fail-closed).
 5. **Privy funds** the spending account at its **long-zero EVM address** (funding UNION behind `requireOwner`; in-cap ALLOW / over-fund DENY on the real token). Privy stays funding-only, never a per-transaction co-signer (INVARIANT #6).
 
-### Flow 1: Judge Sandbox hero flow (`/demo`, zero-setup, SCORED) - the demo path
-1. Judge opens `/demo`. Pre-seeded `acme.leash.eth` with 2 child agents renders, each showing its cap + allowlist read live from ENS Sepolia. No login, no wallet, no ETH.
-2. Judge (or auto-play) triggers **SPEND**: agent 1 pays a whitelisted API 3 USDC. Facilitator reads ENS + binding check → settles gas-free → HashScan receipt + HCS log line appear.
-3. Judge triggers **REFUSE**: same agent tries 50 USDC → facilitator aborts `over_cap`, shown beside the 3-USDC success (A/B split-screen: resolver record | live 402).
-4. Judge triggers **KILL**: org clears the record / `revokeRoles` (one real Sepolia tx). The agent's next 3-USDC call - identical to the one that worked - now fails closed. Split-screen resolver ↔ 402 flips pass→fail.
-5. Judge triggers **SECOND RAIL**: a leaked key tries to over-fund an agent from the treasury → Privy policy DENY. HCS audit trail scrolls.
+### Flow 1: Guided sandbox hero flow (`/demo`, zero-setup) - the demo path
+1. The visitor opens `/demo`. Pre-seeded `acme.leash.eth` with 2 child agents renders, each showing its cap + allowlist read live from ENS Sepolia. No login, no wallet, no ETH.
+2. The visitor (or auto-play) triggers **SPEND**: agent 1 pays a whitelisted API 3 USDC. Facilitator reads ENS + binding check → settles gas-free → HashScan receipt + HCS log line appear.
+3. The visitor triggers **REFUSE**: same agent tries 50 USDC → facilitator aborts `over_cap`, shown beside the 3-USDC success (A/B split-screen: resolver record | live 402).
+4. The visitor triggers **KILL**: org clears the record / `revokeRoles` (one real Sepolia tx). The agent's next 3-USDC call - identical to the one that worked - now fails closed. Split-screen resolver to 402 flips pass to fail.
+5. The visitor triggers **SECOND RAIL**: a leaked key tries to over-fund an agent from the treasury → Privy policy DENY. HCS audit trail scrolls.
 
 ### Flow 2: Real console onboarding (`/app`, bring-your-own-org, multi-tenant)
 1. User signs in with Privy email/Google (embedded wallet, no MetaMask). Every `/app` API route verifies the Privy auth token server-side and derives the tenant from it, never from client input (A1, INVARIANT #11).
@@ -179,7 +188,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Account model:** a NET-NEW `KeyList[agentPub, leashCoSignerPub]`, `threshold=2` Hedera account (`scripts/hedera/provision-spending-account.ts`; NO reuse of `ensureCanonicalAgent`, NO touch to `provision-canonical.ts`). `agentPub` is supplied by the agent; the agent holds `agentPriv` (SR-1 — never in LEASH). `LEASH_COSIGNER_KEY` holds the cosigner key and is **asserted DISTINCT from `HEDERA_OPERATOR_KEY`** (the fee-payer) at process start — throw if equal — so "LEASH's authority key ≠ its gas key" is literally true within the process.
 - **Agent-side x402 client (SR-1 / SR-2):** the x402 client runs **AGENT-SIDE** — an external process holding its own Hedera key, signing **1-of-2** on the KeyList account. The demo/VM-3 agent is such an external process; it does NOT sign with a LEASH-held key.
 - **Co-sign discipline:** verify-time accepts the agent's valid 1-of-2 signature (a custom `verifyPayerSignature` confirming a known KeyList member signed; the network enforces the full threshold at submit). LEASH applies its co-signature **ONLY at settle, AFTER the gate passes, at the single post-gate emit site** — and only if `authorize()` returns `{settle:true}`. Agent-alone ⇒ no settle (`MISSING_COSIGN`, a clean gate reason, never a caught Hedera `INVALID_SIGNATURE`); operator-alone can't move funds (F-031, depends ENTIRELY on SR-1).
-- **Funding:** Privy funds to the account's **long-zero EVM address** (a KeyList account has no key-derived EVM alias — REF-2). That long-zero EVM is also the `agentEvm` in ENS and the `reconcileFundingAllowlist` target. Long-zero HTS funding is live-verified at the S-GATE; if it fails, the Privy DENY beat falls back to the treasury source (still qualifies).
+- **Funding:** Privy funds to the account's **long-zero EVM address** (a KeyList account has no key-derived EVM alias — REF-2). That long-zero EVM is also the `agentEvm` in ENS and the `reconcileFundingAllowlist` target. Long-zero HTS funding is live-checked at the S-GATE; if it fails, the Privy DENY beat falls back to the treasury source (still exercises the funding rail).
 
 ### Agent client (legacy single-key path — FROZEN /demo floor; create-your-own roadmap)
 - **Purpose:** build + sign + pay.
@@ -192,11 +201,11 @@ ResourceServer -> Agent: paid data | 402 with reason
 - **Key data structures:** funding policy - ALLOW `eth_sendTransaction` where ERC-20 `transfer._to in [agentAddrs]` AND `transfer._value lte fundingCap`; default DENY.
 - **Constraints:** wallet MUST have a P-256 owner and be driven via the SDK (raw calls fail-OPEN). `fundingCap` pinned raw units, distinct from per-call `maxPerCall`. **Funding-allowlist reconcile (A3):** on agent register, the new agent EVM-facade address is added to the Privy funding-policy allowlist so an in-cap `Fund` ALLOWS (real transfer) while an over-fund still DENIES `FUNDING_DENIED`, both on the real token. The default action stays DENY; the allowlist grows one entry per registered agent.
 
-### Web dashboard (two paths)
-- **Purpose:** `/demo` sandbox (scored) + `/app` real console (multi-tenant).
+### Web dashboard (owner-first multi-page IA)
+- **Purpose:** owner-first control layer. `/` owner landing → `/app` console (Privy connect → provision org → fleet dashboard) → `/app/agent/[ensName]` agent detail → `/demo` restyled guided-sandbox side-door → `/proof`. The `/demo` sandbox behavior is frozen (INVARIANT #10); the console is the primary journey. Visual system = Signal Grid (`DESIGN_SYSTEM.md` + `brand.json`), Tether logo, no em dashes in UI copy.
 - **Interface:** server-side API routes for ENS ops, agent payment trigger, Privy treasury, sandbox orchestration. **Authz layer (A1, INVARIANT #11):** every `/app` console route (org, agents, revoke, pay, fund) runs `verifyAuthToken` server-side and derives `privyUserId` from the verified token, never from client-supplied query/body. A request with no valid token, or naming another tenant's id, is rejected 401/403 with no mutation. New console controls (B1 allowlist edit, B2 un-revoke) are ordinary authz-guarded routes.
 - **Key data structures:** see §Database.
-- **Constraints:** judge-sandbox path must never depend on the real-console path (§13.6). The `/demo` sandbox is server-orchestrated and is NOT behind the auth-token layer (no login by design); the authz layer applies to `/app` console routes only.
+- **Constraints:** the sandbox path must never depend on the real-console path (§13.6). The `/demo` sandbox is server-orchestrated and is NOT behind the auth-token layer (no login by design); the authz layer applies to `/app` console routes only.
 
 ### Database (Postgres/Neon)
 - **Purpose:** app/index layer, per-user views, activity feeds, metadata not on-chain.
@@ -205,7 +214,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 
 ### Relayer
 - **Purpose:** gasless onboarding - deployer key sponsors a user's ENS ops.
-- **Constraint:** SCOPED to that user's own org subname (not an open relay). Judge mode needs no relayer (server-side, pre-funded).
+- **Constraint:** SCOPED to that user's own org subname (not an open relay). The sandbox mode needs no relayer (server-side, pre-funded).
 
 ---
 
@@ -275,7 +284,7 @@ ResourceServer -> Agent: paid data | 402 with reason
 ### Flow → Scene map (Metric 2 alignment)
 | User flow (§3) | Demo scenes |
 |---|---|
-| Flow 1: Judge Sandbox hero flow | Scenes 1, 3-5 (SPEND/REFUSE/KILL beats + world) |
+| Flow 1: Guided sandbox hero flow | Scenes 1, 3-5 (SPEND/REFUSE/KILL beats + world) |
 | Flow 2: Real console onboarding | Scene 2 (live `/app` register mint+setText, E1) + Scene 6 (login + subname provision + user co-holds role, E2/C1) |
 | Flow 3: Revocation | Scene 5 (KILL) |
 
@@ -305,15 +314,15 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 
 | # | Risk | Severity | Likelihood | Impact | Mitigation | Decision Tree |
 |---|------|----------|-----------|--------|------------|:---:|
-| R-1 | Enforcement is facilitator-trusted, not chain-trustless; pitched wrong = Q&A kill | CRITICAL | MED | Prize + credibility loss | Honest dual-rail framing everywhere; on-chain cap-mirror = roadmap only | PLAN Phase 2 + demo-rehearsal |
-| R-2 | ENSv2 alpha provisioning on Sepolia (commit-reveal + role bitmap) eats the day (G1) | CRITICAL | HIGH | No ENS prize, blocks all | Test provision script FIRST (WS-1 before all); pinned 2026-06-29 addrs; runtime loader | PLAN Phase 1 |
-| R-3 | Privy policy fails OPEN (owner-less wallet does not enforce) | CRITICAL | HIGH (if missed) | Privy prize demo silently fails | P-256-owner wallet via @privy-io/server-auth; WS-0 smoke test #1 proves DENY before broadcast | PLAN Phase 0 |
+| R-1 | Enforcement is facilitator-trusted (Trustlessness = FALSE); pitched wrong = credibility loss | CRITICAL | MED | Credibility loss | Honest dual-rail framing everywhere; on-chain cap-mirror = roadmap only | PLAN Phase 2 + demo-rehearsal |
+| R-2 | ENSv2 alpha provisioning on Sepolia (commit-reveal + role bitmap) eats the day (G1) | CRITICAL | HIGH | No ENS integration, blocks all | Test provision script FIRST (WS-1 before all); pinned 2026-06-29 addrs; runtime loader | PLAN Phase 1 |
+| R-3 | Privy policy fails OPEN (owner-less wallet does not enforce) | CRITICAL | HIGH (if missed) | Privy funding demo silently fails | P-256-owner wallet via @privy-io/server-auth; WS-0 smoke test #1 proves DENY before broadcast | PLAN Phase 0 |
 | R-4 | Raw-unit / hex-vs-decimal cap mismatch silently mis-evaluates | CRITICAL | MED | Cap check wrong = broken headline | BigInt raw-unit comparison INVARIANT; unit tests for boundary values | PLAN Phase 2 |
-| R-5 | Real-user path endangers the scored judge sandbox | CRITICAL | MED | Loses the minimum-eligible bar | Judge-sandbox-first sequencing (§13.6); tripwire cutoff; sandbox never imports real-path code | PLAN Phase 5 |
+| R-5 | Real-user path endangers the guided sandbox | CRITICAL | MED | Loses the minimum-viable bar | Sandbox-first sequencing (§13.6); tripwire cutoff; sandbox never imports real-path code | PLAN Phase 5 |
 | R-6 | Fabricated/cached demo state on the revoke path | CRITICAL | LOW | Dishonest demo, invariant violation | No cache on demo revoke path; every beat a real tx; RPC-fail = error not allow | PLAN Phase 5 + demo |
-| R-7 | Native Hedera gas-free settle (feePayer mechanism) not working e2e | HIGH | MED | No Hedera prize | Mint own HTS USDC; associate payer+receiver; feePayer sig by facilitator; WS-2/WS-3 e2e test | PLAN Phase 2-3 |
+| R-7 | Native Hedera gas-free settle (feePayer mechanism) not working e2e | HIGH | MED | No Hedera integration | Mint own HTS USDC; associate payer+receiver; feePayer sig by facilitator; WS-2/WS-3 e2e test | PLAN Phase 2-3 |
 | R-8 | Agent↔ENS binding spoofing (attacker names someone else's record) | HIGH | MED | Bypasses the gate | `X-Leash-Agent` + record self-attests hederaAccount; facilitator asserts hederaAccount===payer | PLAN Phase 2 |
-| R-9 | Feasibility: ~12-14h build on a hard deadline, near-zero buffer | HIGH | HIGH | Incomplete submission | Judge-sandbox-first; minimum-eligible tripwire (ENS+Hedera two-prize, Privy cut-first) with hour cutoff | PLAN Phase Overview |
+| R-9 | Feasibility: ~12-14h build on a hard deadline, near-zero buffer | HIGH | HIGH | Incomplete submission | Sandbox-first; minimum-viable tripwire (ENS+Hedera two-integration, Privy cut-first) with hour cutoff | PLAN Phase Overview |
 | R-10 | Negative-WOW illegible in <3min video | HIGH | MED | Weak Usability/WOW score | A/B split-screen resolver ↔ 402; edit on camera flips pass/fail | PLAN Phase 5 + demo-rehearsal |
 | R-11 | Endpoint price ($0.10) vs narrated 3/5/50 USDC mismatch | MED | MED | Confusing/dishonest demo | Set demo price so narrated amounts are literal cap charges | §6 note + demo |
 | R-12 | Truncated MockUSDC/MockDAI addrs defeat self-containment | MED | MED | Setup blocks | Load from deployment JSON at runtime OR mint own; registration token only for 2LD | PLAN Phase 1 |
@@ -323,9 +332,9 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 | R-16 | Neon free-tier / connection limits under demo load | LOW | LOW | DB hiccup | Pooled connection string (verified); DB off the enforcement path | PLAN Phase 5 |
 | R-17 | Console authz / IDOR: a request with no token or naming another tenant reads or mutates cross-tenant data | HIGH | MED (if unguarded) | Cross-tenant leak / rogue mutation; B2B credibility loss | `verifyAuthToken` on every `/app` route; tenant derived from the verified token, never client input; foreign-id → 401/403 no mutation (INVARIANT #11) | WS7 A1; FEATURE-OBSERVABLES F-016 |
 | R-18 | Render cold-start / spin-down: facilitator restarts mid-demo and loses in-memory replay state | MED | MED | In-memory `seen` set cleared → a replay could slip; cold-start stall in the video | Durable Neon-backed replay store (INVARIANT #14) so `REPLAY` survives restart; deploy keep-warm ping or `plan:starter` (DS-5) | WS7 A5; PULSE DS-5; FEATURE-OBSERVABLES F-008 |
-| R-19 | Rate-limit / balance drain: rapid repeat `/api/demo` or console calls drain the fee-payer / agent balance | MED | MED | Judge sandbox runs dry mid-judging | Per-IP/session token-bucket rate limit returns `429` before balances drain (A4) | WS7 A4; FEATURE-OBSERVABLES F-019 |
-| R-20 [USER REFRAME] | Rolling daily/weekly cap is a **SOFT budget** (mirror node is a LAGGING index, read via `consensus_timestamp`), not a settle-live hard cap | HIGH | MED | Overspend up to worst-case ≈ **C × maxPerCall** under C concurrency | Disclose as soft budget (never "trustless/exact/settle-authoritative"); `maxPerCall` (live ENS) is the hard per-call bound, `fundingCap` (Privy) the hard aggregate; fail-CLOSED on mirror error (`RPC_ERROR`, never default-0); malformed cap ⇒ `MALFORMED_POLICY`; serialize per-agent settle if the tighter bound is wanted | REFRAME D3; INVARIANTS #3; LIMITATIONS |
-| R-21 [USER REFRAME] | Cosigner shares the facilitator's process trust-domain (`LEASH_COSIGNER_KEY` in the same process, separate-trust-domain cosigner service = roadmap) | MED | MED | 2-of-2 is facilitator-trusted, not chain-trustless | Assert `LEASH_COSIGNER_KEY ≠ HEDERA_OPERATOR_KEY` at startup; disclose in LIMITATIONS; never claim "trustless"; separate cosigner service is roadmap | REFRAME §1; INVARIANTS #6 |
+| R-19 | Rate-limit / balance drain: rapid repeat `/api/demo` or console calls drain the fee-payer / agent balance | MED | MED | Sandbox runs dry mid-session | Per-IP/session token-bucket rate limit returns `429` before balances drain (A4) | WS7 A4; FEATURE-OBSERVABLES F-019 |
+| R-20 [USER REFRAME] | Rolling daily/weekly cap is a **SOFT budget** (mirror node is a LAGGING index, read via `consensus_timestamp`), not a settle-live hard cap | HIGH | MED | Overspend up to worst-case ≈ **C × maxPerCall** under C concurrency | Disclose as soft budget (never exact/settle-authoritative, Trustlessness = FALSE); `maxPerCall` (live ENS) is the hard per-call bound, `fundingCap` (Privy) the hard aggregate; fail-CLOSED on mirror error (`RPC_ERROR`, never default-0); malformed cap ⇒ `MALFORMED_POLICY`; serialize per-agent settle if the tighter bound is wanted | REFRAME D3; INVARIANTS #3; LIMITATIONS |
+| R-21 [USER REFRAME] | Cosigner shares the facilitator's process trust-domain (`LEASH_COSIGNER_KEY` in the same process, separate-trust-domain cosigner service = roadmap) | MED | MED | 2-of-2 is facilitator-trusted (Trustlessness = FALSE) | Assert `LEASH_COSIGNER_KEY ≠ HEDERA_OPERATOR_KEY` at startup; disclose in LIMITATIONS; Trustlessness = FALSE (never claim otherwise); separate cosigner service is roadmap | REFRAME §1; INVARIANTS #6 |
 | R-22 [USER REFRAME] | No proof-of-control on the external identity — `ownerOf` is resolved, not verified | MED | MED | Identity binding is advisory only; a wrong `agentPub` is self-defeating (holder can't produce the 1-of-2 sig) | Label "on-chain-resolved" not "verified"; keep identity ADVISORY off the enforcement path (INVARIANT #13, CI module-boundary guard); signed proof-of-control = roadmap | REFRAME R1/R3; INVARIANTS #13; CLAIMS |
 | R-23 [USER REFRAME] | Long-zero EVM funding of the KeyList account may fail live (a KeyList account has no key-derived EVM alias) | MED | LOW | Privy funding beat can't target the spending account | Live-verify long-zero HTS funding at the S-GATE; treasury-source fallback for the Privy DENY beat (still qualifies); `provision-canonical.ts`/`ensureCanonicalAgent` NO-TOUCH | REFRAME S1/S-GATE/R2; LIMITATIONS |
 
@@ -339,20 +348,20 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 
 ---
 
-## 7.5 Judge Experience
+## 7.5 First-run experience
 
 - **First-visit state (`/demo`):** `acme.leash.eth` + 2 child agents render immediately with live caps/allowlists read from ENS, a recent-spend feed, and a one-line explainer. No empty states, no login wall, no "connect wallet to continue".
 - **Seed script:** `scripts/seed-demo.ts` (see §6 table) - creates org + 2 agents + funded treasury + associated USDC + HCS topic; idempotent.
-- **10-second test:** hero line "Your ENS name is your revocable spend policy" + the split-screen resolver↔402 visual makes the concept legible in 10s.
+- **10-second test:** hero line "Your ENS name is your revocable spend policy" + the split-screen resolver to 402 visual makes the concept legible in 10s.
 - **30-second test:** the SPEND beat (gas-free settle + HashScan receipt) shows the core value.
-- **60-second test:** the KILL beat - judge clicks revoke, watches the next identical call fail closed - is the try-it moment.
+- **60-second test:** the KILL beat - the visitor clicks revoke, watches the next identical call fail closed - is the try-it moment.
 - **Landing/console split:** `/` landing → `/demo` (sandbox) + `/app` (real). Plain language on the surface; jargon behind `<details>`.
-- **Demo-Insurance Invariant Check:** LEASH's claim is verifiable revocation. Fabricated state is FORBIDDEN outright (TASTE U7 / thesis INVARIANT). Seed state is real pre-produced txs, earned not fabricated. No precache/fallback on the revoke path.
-- **Spend-feed monitoring surface (B3):** `/app` shows a LIVE per-agent + org-level spend feed indexed from HCS (name, decision, amount, reason, ts), with an agent drill-down (policy + recent ALLOW/DENY); a compact audit scroll appears in `/demo` for Scene 6. This is the "control plane the pitch implies" made visible: judges see real decisions land, not just a single settle.
-- **User co-holds their agents (C1):** in `/app`, the signed-in user's Privy embedded-wallet address holds the kill-switch role on-chain for their own agents alongside the relayer (delegated operator). The off-switch is genuinely the user's, not operator-only (INVARIANT #12) - a stronger B2B story for a Privy/ENS judge.
-- **Keys-off-host demo path (custody product):** the treasury holds signing keys and the agent signs via Privy custody. The cold-judge path on the DEPLOYED `/demo` URL uses SERVER-SIDE pre-seeded keys held by the facilitator/treasury services (Render env, not the funds root), scoped + rate-limited, driving the full hero flow with NO local keys and NO judge wallet. The funds/root key never goes on the Vercel host (R-14). `keysOffHostDemoPath` = `/demo` server-orchestrated hero flow.
+- **Demo-Insurance Invariant Check:** LEASH's claim is real revocation, recomputable from committed evidence. Fabricated state is FORBIDDEN outright (TASTE U7 / thesis INVARIANT). Seed state is real pre-produced txs, earned not fabricated. No precache/fallback on the revoke path.
+- **Spend-feed monitoring surface (B3):** `/app` shows a LIVE per-agent + org-level spend feed indexed from HCS (name, decision, amount, reason, ts), with an agent drill-down (policy + recent ALLOW/DENY); a compact audit scroll appears in `/demo` for Scene 6. This is the "control plane the pitch implies" made visible: visitors see real decisions land, not just a single settle.
+- **User co-holds their agents (C1):** in `/app`, the signed-in user's Privy embedded-wallet address holds the kill-switch role on-chain for their own agents alongside the relayer (delegated operator). The off-switch is genuinely the user's, not operator-only (INVARIANT #12) - a stronger B2B story.
+- **Keys-off-host demo path (custody product):** the treasury holds signing keys and the agent signs via Privy custody. The cold-start path on the DEPLOYED `/demo` URL uses SERVER-SIDE pre-seeded keys held by the facilitator/treasury services (Render env, not the funds root), scoped + rate-limited, driving the full hero flow with NO local keys and NO visitor wallet. The funds/root key never goes on the Vercel host (R-14). `keysOffHostDemoPath` = `/demo` server-orchestrated hero flow.
 
-## 7.6 Judge Proof Artifacts
+## 7.6 Proof artifacts
 - **Proof surface:** a `/proof` section (or README "On-Chain Verification") listing: ENS parent/org/agent names + Sepolia explorer links, the `leash.policy` record contents, the agent-identity text records (`agent.description`/`agent.type`/`avatar`/optional ERC-8004 pointer) + the agent's reverse name (D1, advisory), sample Hedera settle tx (HashScan), HCS topic id + sample ALLOW/DENY entries, Privy DENY evidence, contract/registry addresses.
 - **Proof generation (build phase):** run the hero flow once, capture Sepolia tx hashes (register/setText/revoke), Hedera settle tx + HCS sequence numbers, Privy DENY response → store in `submission/proof.md`.
 - **Explorer patterns:** Sepolia `https://sepolia.etherscan.io/tx/{hash}` and ENS name pages; Hedera `https://hashscan.io/testnet/transaction/{id}` and `/topic/{id}`.
@@ -360,7 +369,7 @@ Build implements `scripts/seed-demo.ts` from this table. It must be idempotent a
 ---
 
 ## 8. Day-by-Day Build Plan
-Hard deadline 2026-09-13 16:00 UTC. ~30h from forge. Focused build ~12-14h. Judge-sandbox-first.
+Hard deadline 2026-09-13 16:00 UTC. ~30h from forge. Focused build ~12-14h. Sandbox-first.
 
 | Block | Objective | Deliverable |
 |:---:|------------------|-----------  |
@@ -369,14 +378,14 @@ Hard deadline 2026-09-13 16:00 UTC. ~30h from forge. Focused build ~12-14h. Judg
 | B2 (4-6h) | WS-2 facilitator + ENS gate + HCS | ALLOW/DENY unit tests pass; HCS entries |
 | B3 (6-7.5h) | WS-3 resource server + agent client | real paid request settles gas-free e2e |
 | B4 (7.5-9h) | WS-4 Privy treasury + leaked-key DENY | policy-gated funding + DENY on camera |
-| B5 (9-13h) | WS-5a JUDGE SANDBOX (scored, first) then WS-5b real console | full hero flow drivable from `/demo`; `/app` login+multi-tenant |
-| B6 (13-15h) | deploy + WS-6 demo + submission | live URLs, 2-4min video, README, 3 prize selections, submit |
+| B5 (9-13h) | WS-5a GUIDED SANDBOX (first) then WS-5b real console | full hero flow drivable from `/demo`; `/app` login+multi-tenant |
+| B6 (13-15h) | deploy + WS-6 demo + submission | live URLs, 2-4min video, README, 3 integrations, submit |
 
 ### Buffer + Tripwire
 Honest total: the WS blocks sum to ~15h focused work with near-zero slack against a HARD 2026-09-13 16:00 UTC no-late-submission deadline (R-9). The "~12-14h" figure elsewhere is the optimistic core; plan against 15h. **Wall-clock tripwires (deterministic, not relative hours):**
 - **T-4h before deadline (12:00 UTC Sep 13):** submission lockdown begins - whatever is live gets recorded + submitted. Reserve this window for video + form + buffer.
-- **Real-console cutoff (~T-6h):** if the real multi-tenant path (`/app`) is not done, ship the flawless judge sandbox + a real "sign in" that demonstrably works and cut the rest.
-- **ENS provisioning cutoff (WS-1, if it blows its 3h budget):** fall back to ENS+Hedera two-prize and cut Privy first.
+- **Real-console cutoff (~T-6h):** if the real multi-tenant path (`/app`) is not done, ship the flawless guided sandbox + a real "sign in" that demonstrably works and cut the rest.
+- **ENS provisioning cutoff (WS-1, if it blows its 3h budget):** fall back to ENS+Hedera two-integration and cut Privy first.
 Never let the real path endanger the sandbox.
 
 ---
@@ -430,7 +439,7 @@ See `.env.example` + `.input-manifest.json` (Phase 4). All required creds SET+VE
 | 2 | C | Real on-chain txs on demo path, no cache | §3 Flow 1; §6; R-6; seed = real state |
 | 3 | C | ENS load-bearing via hierarchy + one-write revoke | §1, §2 diagram (3-level), §3 Flow 3; R-2 |
 | 4 | C | Privy passive on funding rail, never per-tx co-signer | §1, §4 Treasury, §2 diagram; R-1 |
-| 5 | C | Judge sandbox flawless, real path never endangers it | §3 Flow 1, §7.5, §8 tripwire; R-5 |
+| 5 | C | Guided sandbox flawless, real path never endangers it | §3 Flow 1, §7.5, §8 tripwire; R-5 |
 | 6 | C | Privy owner+auth-sig (raw calls fail-open) | §4 Treasury; R-3; WS-0 smoke #1 |
 | 7 | C | Raw-unit BigInt cap comparison | §4 Facilitator; R-4 |
 | 8 | I | ENSv2 provisioning day-eater, test first | §8 B1; R-2; PLAN WS-1 first |

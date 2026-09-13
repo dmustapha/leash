@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEASH — Mission control for the agents that spend your money</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--base:#0b0b0d;--surface-1:#141417;--surface-2:#1c1c21;--line:#2a2a31;--ink:#f4f1ea;--ink-dim:#a8a29a;--ink-faint:#6b665e;--amber:#f2a63b;--amber-soft:#3a2a12;--allow:#4fae7a;--allow-soft:#12261d;--deny:#d16060;--deny-soft:#2a1416;--radius-sm:.375rem;--radius-md:.625rem;--radius-lg:1rem;--radius-full:999px;--shadow-1:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.35);--shadow-2:0 2px 6px rgba(0,0,0,.55),0 16px 40px rgba(0,0,0,.45);--shadow-amber:0 0 0 1px rgba(242,166,59,.35),0 8px 30px rgba(242,166,59,.12);--text-display:clamp(2rem,1.2rem+3.4vw,3.4rem);--text-h2:clamp(1.3rem,1rem+1.2vw,1.75rem);}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:300;
+  background:
+    radial-gradient(1100px 640px at 78% -8%,rgba(242,166,59,.09),transparent 60%),
+    radial-gradient(800px 500px at 8% 4%,rgba(242,166,59,.04),transparent 55%),
+    var(--base);
+  color:var(--ink);
+  min-height:100dvh;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.serif{font-family:'DM Serif Display',serif;font-weight:400}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1140px;margin:0 auto;padding:0 clamp(1.1rem,3vw,2.25rem)}
+
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:none;box-shadow:0 0 0 2px var(--base),0 0 0 4px var(--amber);border-radius:var(--radius-sm)}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  backdrop-filter:blur(14px);
+  background:linear-gradient(180deg,rgba(11,11,13,.92),rgba(11,11,13,.62));
+  border-bottom:1px solid var(--line);
+}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:500;letter-spacing:.02em}
+.brand .knot{
+  width:26px;height:26px;border-radius:var(--radius-full);
+  background:radial-gradient(circle at 35% 30%,var(--amber),#b8791f);
+  box-shadow:var(--shadow-amber);flex:none;position:relative;
+}
+.brand .knot::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:12px;background:linear-gradient(var(--amber),transparent);transform:translateX(-50%)}
+.brand b{font-family:'IBM Plex Sans';font-weight:600;font-size:1.05rem}
+.brand span{color:var(--ink-faint);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
+.topnav{display:flex;align-items:center;gap:1.4rem}
+.topnav a{color:var(--ink-dim);font-size:.9rem;transition:color .15s}
+@media(hover:hover){.topnav a:hover{color:var(--ink)}}
+
+.btn{
+  font-family:inherit;font-size:.9rem;font-weight:500;cursor:pointer;
+  border-radius:var(--radius-full);border:1px solid transparent;
+  padding:.62rem 1.15rem;transition:transform .16s ease,box-shadow .16s ease,background .16s;
+  display:inline-flex;align-items:center;gap:.5rem;
+}
+.btn-primary{background:linear-gradient(180deg,#f6b451,var(--amber));color:#231604;box-shadow:var(--shadow-amber);font-weight:600}
+.btn-ghost{background:var(--surface-1);border-color:var(--line);color:var(--ink)}
+.btn-quiet{background:transparent;color:var(--ink-dim);border-color:var(--line)}
+@media(hover:hover){
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(242,166,59,.5),0 12px 34px rgba(242,166,59,.22)}
+  .btn-ghost:hover{transform:translateY(-2px);box-shadow:var(--shadow-1)}
+  .btn-quiet:hover{transform:translateY(-2px);border-color:var(--amber);color:var(--ink)}
+}
+.btn:active{transform:translateY(0)}
+
+/* ---------- landing ---------- */
+.hero{padding:clamp(3.5rem,7vw,6rem) 0 clamp(2.5rem,5vw,4rem)}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);
+  border:1px solid var(--amber-soft);background:rgba(242,166,59,.06);
+  padding:.4rem .8rem;border-radius:var(--radius-full);margin-bottom:1.6rem;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.hero h1{font-family:'DM Serif Display',serif;font-size:var(--text-display);line-height:1.04;letter-spacing:-.01em;max-width:16ch}
+.hero h1 em{font-style:italic;color:var(--amber)}
+.hero .lede{color:var(--ink-dim);font-size:clamp(1rem,.9rem+.5vw,1.22rem);max-width:52ch;margin-top:1.4rem;font-weight:300}
+.hero-cta{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-top:2.2rem}
+.judgelink{color:var(--ink-faint);font-size:.85rem;display:inline-flex;align-items:center;gap:.4rem;transition:color .15s}
+.judgelink .tri{color:var(--amber)}
+@media(hover:hover){.judgelink:hover{color:var(--ink-dim)}}
+
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(1.5rem,4vw,3rem);align-items:center}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr}}
+
+/* tether illustration */
+.tether-art{
+  background:linear-gradient(180deg,var(--surface-1),#0f0f12);
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-2);padding:1.6rem 1.6rem 1.4rem;position:relative;overflow:hidden;
+}
+.tether-art::before{content:"";position:absolute;inset:0;border-radius:var(--radius-lg);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);pointer-events:none}
+.tether-art .org{
+  display:inline-flex;align-items:center;gap:.55rem;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius-full);padding:.4rem .85rem;font-size:.82rem;
+}
+.tether-art .org .knot{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--amber),#b8791f);flex:none}
+.leash-svg{width:100%;height:220px;margin-top:.4rem}
+.tether-art .chips{display:flex;justify-content:space-around;margin-top:.2rem}
+.mini-agent{text-align:center;font-size:.72rem;color:var(--ink-dim)}
+.mini-agent .box{
+  width:64px;height:44px;border-radius:var(--radius-md);border:1px solid var(--line);
+  background:var(--surface-2);margin:0 auto .45rem;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-1);font-size:1.1rem;color:var(--amber);
+}
+.mini-agent.cut .box{border-color:var(--deny-soft);color:var(--deny);opacity:.65}
+.mini-agent.cut{color:var(--ink-faint)}
+
+/* trust strip */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(20,20,23,.5),transparent)}
+.trust .row{display:flex;flex-wrap:wrap;gap:clamp(1.4rem,4vw,3.2rem);padding:1.6rem 0;align-items:flex-start}
+.trust-item{flex:1;min-width:210px}
+.trust-item h4{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.15rem;margin-bottom:.35rem}
+.trust-item p{color:var(--ink-dim);font-size:.9rem}
+.trust-item .k{color:var(--amber)}
+
+/* ---------- console ---------- */
+.console{padding:clamp(2.6rem,6vw,4.2rem) 0 5rem}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem}
+.section-head h2{font-family:'DM Serif Display',serif;font-weight:400;font-size:var(--text-h2)}
+.section-head .sub{color:var(--ink-dim);font-size:.9rem;max-width:44ch}
+
+.org-header{
+  margin-top:1.4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+  background:linear-gradient(180deg,var(--surface-1),#101013);
+  border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);
+  padding:1.15rem 1.4rem;position:relative;
+}
+.org-header::before{content:"";position:absolute;inset:0;border-radius:var(--radius-lg);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);pointer-events:none}
+.org-id{display:flex;align-items:center;gap:.85rem}
+.org-id .knot{width:40px;height:40px;border-radius:var(--radius-full);background:radial-gradient(circle at 35% 30%,var(--amber),#a86e1c);box-shadow:var(--shadow-amber);flex:none}
+.org-id .name{font-family:'DM Serif Display',serif;font-size:1.3rem}
+.org-id .ens{font-size:.74rem;color:var(--ink-faint)}
+.summary{display:flex;gap:1.5rem;flex-wrap:wrap}
+.summary .stat{display:flex;flex-direction:column}
+.summary .stat b{font-size:1.15rem;font-weight:600}
+.summary .stat span{font-size:.72rem;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase}
+.summary .stat.spent b{color:var(--amber)}
+
+/* board layout */
+.board-layout{display:grid;grid-template-columns:1fr 320px;gap:1.4rem;margin-top:1.4rem;align-items:start}
+@media(max-width:960px){.board-layout{grid-template-columns:1fr}}
+
+/* the leash rail */
+.rail-title{display:flex;align-items:center;gap:.6rem;color:var(--ink-dim);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.1rem}
+.rail-title .line{flex:1;height:1px;background:var(--line)}
+
+.fleet{display:grid;gap:1.6rem}
+
+.agent{
+  position:relative;padding-top:34px;
+}
+/* the leash tether */
+.leash{
+  position:absolute;left:38px;top:0;width:3px;height:38px;
+  background:linear-gradient(180deg,rgba(242,166,59,.15),var(--amber));
+  border-radius:2px;
+  box-shadow:0 0 10px rgba(242,166,59,.4);
+  transition:all .35s ease;
+}
+.leash::before{content:"";position:absolute;left:50%;top:-4px;width:9px;height:9px;border-radius:50%;background:var(--amber);transform:translateX(-50%);box-shadow:0 0 8px var(--amber)}
+.leash-tag{
+  position:absolute;left:54px;top:2px;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--amber);font-weight:500;transition:color .3s;
+}
+
+.card{
+  background:linear-gradient(180deg,var(--surface-1),#101013);
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-2);padding:1.3rem 1.4rem;position:relative;overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .3s;
+}
+.card::before{content:"";position:absolute;inset:0;border-radius:var(--radius-lg);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);pointer-events:none}
+@media(hover:hover){.card:hover{transform:translateY(-3px);box-shadow:0 0 0 1px rgba(242,166,59,.18),0 20px 46px rgba(0,0,0,.5)}}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.agent-name{display:flex;align-items:center;gap:.7rem}
+.agent-name .av{
+  width:38px;height:38px;border-radius:var(--radius-md);flex:none;
+  background:var(--surface-2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:1.1rem;box-shadow:var(--shadow-1);
+}
+.agent-name h3{font-size:1.1rem;font-weight:500}
+.agent-name .role{font-size:.78rem;color:var(--ink-faint)}
+
+.badges{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.9rem}
+.badge{
+  display:inline-flex;align-items:center;gap:.35rem;font-size:.74rem;
+  padding:.28rem .6rem;border-radius:var(--radius-full);border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink-dim);
+}
+.badge .d{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.badge.ident{border-color:var(--amber-soft);color:var(--ink)}
+
+.status{
+  display:inline-flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:500;
+  padding:.34rem .7rem;border-radius:var(--radius-full);
+}
+.status .d{width:7px;height:7px;border-radius:50%}
+.status.active{background:var(--allow-soft);color:var(--allow);border:1px solid rgba(79,174,122,.3)}
+.status.active .d{background:var(--allow);box-shadow:0 0 8px var(--allow)}
+.status.revoked{background:var(--deny-soft);color:var(--deny);border:1px solid rgba(209,96,96,.3)}
+.status.revoked .d{background:var(--deny)}
+
+.limits{margin-top:1.1rem;display:grid;gap:.6rem}
+.limit{display:flex;align-items:center;gap:.7rem;font-size:.9rem}
+.limit .lbl{color:var(--ink-dim);min-width:120px;font-size:.82rem}
+.limit .val{color:var(--ink)}
+.limit .val em{font-style:normal;color:var(--amber)}
+
+.fund{margin-top:1.1rem}
+.fund .track{height:8px;border-radius:var(--radius-full);background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.fund .fill{height:100%;background:linear-gradient(90deg,#f6b451,var(--amber));border-radius:var(--radius-full);box-shadow:0 0 12px rgba(242,166,59,.4)}
+.fund .cap{display:flex;justify-content:space-between;font-size:.78rem;color:var(--ink-dim);margin-top:.4rem}
+
+.card-actions{margin-top:1.3rem;display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.cut-btn{
+  font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
+  padding:.6rem 1.05rem;border-radius:var(--radius-full);
+  background:var(--deny-soft);color:var(--deny);border:1px solid rgba(209,96,96,.4);
+  transition:transform .16s,box-shadow .16s,background .16s;display:inline-flex;align-items:center;gap:.45rem;
+}
+@media(hover:hover){.cut-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(209,96,96,.18);background:#361619}}
+.reactivate-btn{
+  font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
+  padding:.6rem 1.05rem;border-radius:var(--radius-full);
+  background:var(--surface-2);color:var(--amber);border:1px solid var(--amber-soft);
+  transition:transform .16s,box-shadow .16s;display:inline-flex;align-items:center;gap:.45rem;
+}
+@media(hover:hover){.reactivate-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-amber)}}
+
+/* details fold */
+details{margin-top:1rem;border-top:1px solid var(--line);padding-top:.7rem}
+details summary{cursor:pointer;font-size:.8rem;color:var(--ink-faint);list-style:none;display:inline-flex;align-items:center;gap:.4rem;transition:color .15s}
+details summary::-webkit-details-marker{display:none}
+details summary .chev{transition:transform .2s;color:var(--amber)}
+details[open] summary .chev{transform:rotate(90deg)}
+@media(hover:hover){details summary:hover{color:var(--ink-dim)}}
+.onchain{margin-top:.7rem;font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--ink-dim);display:grid;gap:.35rem}
+.onchain .r{display:flex;justify-content:space-between;gap:1rem}
+.onchain .r span{color:var(--ink-faint)}
+.onchain .r b{color:var(--ink);font-weight:400;word-break:break-all;text-align:right}
+
+/* revoked card state */
+.agent.is-cut .leash{
+  background:linear-gradient(180deg,rgba(242,166,59,.15) 0 40%,transparent 40% 55%,var(--deny) 55%);
+  box-shadow:none;
+}
+.agent.is-cut .leash::before{background:var(--ink-faint);box-shadow:none}
+.agent.is-cut .leash-tag{color:var(--deny)}
+.agent.is-cut .card{border-color:rgba(209,96,96,.28)}
+.agent.is-cut .agent-name .av{color:var(--ink-faint);opacity:.7}
+.agent.is-cut .card{opacity:.96}
+
+/* severed fray marks */
+.frays{position:absolute;left:32px;top:15px;width:15px;height:14px;display:none;pointer-events:none}
+.agent.is-cut .frays{display:block}
+.frays i{position:absolute;width:5px;height:1.5px;background:var(--deny);border-radius:2px;box-shadow:0 0 4px var(--deny)}
+.frays i:nth-child(1){top:0;left:0;transform:rotate(-32deg)}
+.frays i:nth-child(2){top:5px;left:6px;transform:rotate(18deg)}
+.frays i:nth-child(3){top:10px;left:1px;transform:rotate(-12deg)}
+
+/* next payment banner */
+.blocked-note{
+  margin-top:1rem;display:none;align-items:center;gap:.55rem;
+  background:var(--deny-soft);border:1px solid rgba(209,96,96,.35);border-radius:var(--radius-md);
+  padding:.65rem .85rem;font-size:.84rem;color:var(--deny);
+}
+.agent.is-cut .blocked-note{display:flex;animation:pop .3s ease}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.blocked-note .x{font-weight:600}
+
+/* ---------- side column ---------- */
+.side{display:grid;gap:1.4rem;position:sticky;top:84px}
+@media(max-width:960px){.side{position:static}}
+
+.panel{
+  background:linear-gradient(180deg,var(--surface-1),#101013);
+  border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);
+  padding:1.2rem 1.25rem;position:relative;overflow:hidden;
+}
+.panel::before{content:"";position:absolute;inset:0;border-radius:var(--radius-lg);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);pointer-events:none}
+.panel h3{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.15rem;margin-bottom:.2rem}
+.panel .hint{color:var(--ink-faint);font-size:.8rem;margin-bottom:1rem}
+
+/* connect form */
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:.78rem;color:var(--ink-dim);margin-bottom:.35rem}
+.field input,.field select{
+  width:100%;font-family:inherit;font-size:.88rem;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);
+  padding:.6rem .75rem;transition:border-color .15s,box-shadow .15s;
+}
+.field input::placeholder{color:var(--ink-faint)}
+.field input:focus,.field select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(242,166,59,.12)}
+.field .row2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.connect-note{font-size:.74rem;color:var(--ink-faint);margin-top:.6rem;line-height:1.5}
+
+/* activity feed */
+.feed{display:grid;gap:.1rem}
+.feed .ev{
+  display:flex;gap:.7rem;padding:.7rem .1rem;border-bottom:1px solid var(--line);
+}
+.feed .ev:last-child{border-bottom:none}
+.feed .ev .mark{width:8px;height:8px;border-radius:50%;margin-top:.45rem;flex:none}
+.feed .ev.paid .mark{background:var(--allow);box-shadow:0 0 8px var(--allow)}
+.feed .ev.deny .mark{background:var(--deny);box-shadow:0 0 8px var(--deny)}
+.feed .ev.cut .mark{background:var(--deny);box-shadow:0 0 8px var(--deny)}
+.feed .ev .txt{font-size:.85rem;color:var(--ink)}
+.feed .ev .txt .tag{font-weight:500}
+.feed .ev.paid .txt .tag{color:var(--allow)}
+.feed .ev.deny .txt .tag,.feed .ev.cut .txt .tag{color:var(--deny)}
+.feed .ev .when{font-size:.72rem;color:var(--ink-faint);margin-top:.15rem}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:2.2rem 0;color:var(--ink-faint);font-size:.82rem}
+footer .row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+footer .honest{max-width:60ch;line-height:1.6}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="wrap row">
+    <div class="brand">
+      <span class="knot" aria-hidden="true"></span>
+      <b>LEASH</b>
+      <span>control layer</span>
+    </div>
+    <nav class="topnav" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#console">Console</a>
+      <a class="btn btn-primary" href="#console">Open your console</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ LANDING ============ -->
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Mission control for agent spend</span>
+      <h1 class="serif">Your agents spend real money. Keep them on a <em>leash</em>.</h1>
+      <p class="lede">One console to bind, govern, and cut off every AI agent in your fleet. Connect an agent your company already runs, give it a co-owned account with clear spending limits, and cut the leash the moment you need to — its next payment is blocked everywhere, instantly.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#console">Open your console →</a>
+        <a class="judgelink" href="#console"><span class="tri" aria-hidden="true">▶</span> For judges: watch the 60-second live demo — no login</a>
+      </div>
+    </div>
+
+    <div class="tether-art" aria-hidden="true">
+      <div class="org"><span class="knot"></span> acme · your fleet</div>
+      <svg class="leash-svg" viewBox="0 0 300 220" fill="none">
+        <!-- org anchor -->
+        <circle cx="150" cy="18" r="7" fill="#f2a63b"/>
+        <!-- taut leash left -->
+        <path d="M150 22 C110 60,70 90,55 150" stroke="#f2a63b" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+        <!-- taut leash middle -->
+        <path d="M150 25 C150 80,150 110,150 150" stroke="#f2a63b" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+        <!-- severed leash right (upper) -->
+        <path d="M150 22 C190 55,225 78,238 108" stroke="#f2a63b" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+        <!-- severed leash right (lower, garnet, frayed) -->
+        <path d="M245 130 C248 140,246 148,245 150" stroke="#d16060" stroke-width="3" stroke-linecap="round"/>
+        <path d="M240 122 l6 5 M252 122 l-6 6" stroke="#d16060" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div class="chips">
+        <div class="mini-agent"><div class="box">◆</div>data agent</div>
+        <div class="mini-agent"><div class="box">◇</div>payments</div>
+        <div class="mini-agent cut"><div class="box">✕</div>leash cut</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRUST STRIP ============ -->
+<section class="trust" id="how">
+  <div class="wrap row">
+    <div class="trust-item">
+      <h4>Co-owned account</h4>
+      <p>Every payment needs two approvals — the agent, and LEASH. The facilitator LEASH runs enforces the limits you set, so nothing goes out that you didn't allow.</p>
+    </div>
+    <div class="trust-item">
+      <h4>Limits in plain words</h4>
+      <p><span class="k">Up to $5</span> a payment. <span class="k">Up to $50</span> a day as a soft budget. Can pay one place only. Active during set hours.</p>
+    </div>
+    <div class="trust-item">
+      <h4>Cut the leash</h4>
+      <p>One click ends an agent's authority. Its next payment is blocked everywhere — instantly, and you can reactivate later if you change your mind.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONSOLE ============ -->
+<section class="console" id="console">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="serif">Your fleet</h2>
+      <p class="sub">Each agent hangs on an amber leash from your org. Taut means in policy. Cut the leash and it goes off everywhere.</p>
+    </div>
+
+    <!-- org header -->
+    <div class="org-header">
+      <div class="org-id">
+        <span class="knot" aria-hidden="true"></span>
+        <div>
+          <div class="name">acme · your fleet</div>
+          <div class="ens mono">acme.leash.eth</div>
+        </div>
+      </div>
+      <div class="summary" role="group" aria-label="Fleet summary">
+        <div class="stat"><b>3</b><span>agents</span></div>
+        <div class="stat"><b id="activeCount">2</b><span>active</span></div>
+        <div class="stat"><b id="revokedCount">1</b><span>revoked</span></div>
+        <div class="stat spent"><b>$412</b><span>spent today</span></div>
+      </div>
+    </div>
+
+    <div class="board-layout">
+      <!-- LEFT: the leash board -->
+      <div>
+        <div class="rail-title"><span>The leash board</span><span class="line" aria-hidden="true"></span></div>
+
+        <div class="fleet">
+
+          <!-- AGENT 1: data agent -->
+          <article class="agent" id="agent-data">
+            <div class="leash" aria-hidden="true"></div>
+            <div class="frays" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="leash-tag" data-tag>on the leash</div>
+            <div class="card">
+              <div class="card-top">
+                <div class="agent-name">
+                  <span class="av" aria-hidden="true">◆</span>
+                  <div>
+                    <h3>data agent</h3>
+                    <div class="role">enrichment &amp; research runner</div>
+                  </div>
+                </div>
+                <span class="status active" data-status role="status">
+                  <span class="d" aria-hidden="true"></span><span data-status-text>Active</span>
+                </span>
+              </div>
+
+              <div class="badges">
+                <span class="badge ident"><span class="d" aria-hidden="true"></span>Identity · on-chain-resolved</span>
+                <span class="badge">Co-owned account</span>
+                <span class="badge">Active 09:00–17:00 UTC</span>
+              </div>
+
+              <div class="limits">
+                <div class="limit"><span class="lbl">Per payment</span><span class="val">Up to <em>$5</em></span></div>
+                <div class="limit"><span class="lbl">Daily soft budget</span><span class="val">Up to <em>$50</em> a day</span></div>
+                <div class="limit"><span class="lbl">Can pay</span><span class="val">api.acme.dev only</span></div>
+              </div>
+
+              <div class="fund">
+                <div class="track"><div class="fill" style="width:40%"></div></div>
+                <div class="cap"><span>Funded $40 of $100</span><span>funding is an independent rail</span></div>
+              </div>
+
+              <div class="blocked-note" data-blocked><span class="x" aria-hidden="true">✕</span> Next payment: <b>Blocked — off everywhere</b></div>
+
+              <div class="card-actions">
+                <button class="cut-btn" data-cut aria-pressed="false">Cut the leash · off everywhere</button>
+                <button class="reactivate-btn" data-react hidden>Reactivate</button>
+              </div>
+
+              <details>
+                <summary><span class="chev" aria-hidden="true">›</span> View on-chain</summary>
+                <div class="onchain">
+                  <div class="r"><span>Identity</span><b>data.acme.leash.eth</b></div>
+                  <div class="r"><span>Co-owned account</span><b>0x7a3F…c19D</b></div>
+                  <div class="r"><span>Last approval tx</span><b>0x2e91…8af4</b></div>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <!-- AGENT 2: payments agent -->
+          <article class="agent" id="agent-pay">
+            <div class="leash" aria-hidden="true"></div>
+            <div class="frays" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="leash-tag" data-tag>on the leash</div>
+            <div class="card">
+              <div class="card-top">
+                <div class="agent-name">
+                  <span class="av" aria-hidden="true">◇</span>
+                  <div>
+                    <h3>payments agent</h3>
+                    <div class="role">vendor settlement runner</div>
+                  </div>
+                </div>
+                <span class="status active" data-status role="status">
+                  <span class="d" aria-hidden="true"></span><span data-status-text>Active</span>
+                </span>
+              </div>
+
+              <div class="badges">
+                <span class="badge ident"><span class="d" aria-hidden="true"></span>Identity · on-chain-resolved</span>
+                <span class="badge">Co-owned account</span>
+                <span class="badge">Active 24 h</span>
+              </div>
+
+              <div class="limits">
+                <div class="limit"><span class="lbl">Per payment</span><span class="val">Up to <em>$25</em></span></div>
+                <div class="limit"><span class="lbl">Weekly soft budget</span><span class="val">Up to <em>$200</em> a week</span></div>
+                <div class="limit"><span class="lbl">Can pay</span><span class="val">billing.stripe.com, api.acme.dev</span></div>
+              </div>
+
+              <div class="fund">
+                <div class="track"><div class="fill" style="width:85%"></div></div>
+                <div class="cap"><span>Funded $170 of $200</span><span>funding is an independent rail</span></div>
+              </div>
+
+              <div class="blocked-note" data-blocked><span class="x" aria-hidden="true">✕</span> Next payment: <b>Blocked — off everywhere</b></div>
+
+              <div class="card-actions">
+                <button class="cut-btn" data-cut aria-pressed="false">Cut the leash · off everywhere</button>
+                <button class="reactivate-btn" data-react hidden>Reactivate</button>
+              </div>
+
+              <details>
+                <summary><span class="chev" aria-hidden="true">›</span> View on-chain</summary>
+                <div class="onchain">
+                  <div class="r"><span>Identity</span><b>payments.acme.leash.eth</b></div>
+                  <div class="r"><span>Co-owned account</span><b>0x51Bc…9F02</b></div>
+                  <div class="r"><span>Last approval tx</span><b>0x9d40…1c77</b></div>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <!-- AGENT 3: already revoked -->
+          <article class="agent is-cut" id="agent-scraper">
+            <div class="leash" aria-hidden="true"></div>
+            <div class="frays" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="leash-tag" data-tag>leash cut</div>
+            <div class="card">
+              <div class="card-top">
+                <div class="agent-name">
+                  <span class="av" aria-hidden="true">✕</span>
+                  <div>
+                    <h3>scraper agent</h3>
+                    <div class="role">market-data collector</div>
+                  </div>
+                </div>
+                <span class="status revoked" data-status role="status">
+                  <span class="d" aria-hidden="true"></span><span data-status-text>Revoked</span>
+                </span>
+              </div>
+
+              <div class="badges">
+                <span class="badge ident"><span class="d" aria-hidden="true"></span>Identity · on-chain-resolved</span>
+                <span class="badge">Co-owned account</span>
+              </div>
+
+              <div class="limits">
+                <div class="limit"><span class="lbl">Per payment</span><span class="val">Up to <em>$2</em></span></div>
+                <div class="limit"><span class="lbl">Daily soft budget</span><span class="val">Up to <em>$20</em> a day</span></div>
+                <div class="limit"><span class="lbl">Can pay</span><span class="val">data.provider.io only</span></div>
+              </div>
+
+              <div class="blocked-note" data-blocked><span class="x" aria-hidden="true">✕</span> Next payment: <b>Blocked — off everywhere</b></div>
+
+              <div class="card-actions">
+                <button class="cut-btn" data-cut aria-pressed="true" hidden>Cut the leash · off everywhere</button>
+                <button class="reactivate-btn" data-react>Reactivate</button>
+              </div>
+
+              <details>
+                <summary><span class="chev" aria-hidden="true">›</span> View on-chain</summary>
+                <div class="onchain">
+                  <div class="r"><span>Identity</span><b>scraper.acme.leash.eth</b></div>
+                  <div class="r"><span>Co-owned account</span><b>0xE07a…44B1</b></div>
+                  <div class="r"><span>Leash-cut tx</span><b>0xf3c8…02de</b></div>
+                </div>
+              </details>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: connect + activity -->
+      <aside class="side">
+        <div class="panel">
+          <h3>Connect an agent</h3>
+          <p class="hint">Bring an agent your company already runs. It keeps its own identity and key — LEASH just gives it a leash.</p>
+          <form onsubmit="return false">
+            <div class="field">
+              <label for="ag-name">Which agent</label>
+              <input id="ag-name" type="text" placeholder="e.g. billing agent">
+            </div>
+            <div class="field">
+              <label for="ag-cap">What it can spend</label>
+              <div class="row2">
+                <input id="ag-cap" type="text" placeholder="$5 / payment">
+                <input id="ag-day" type="text" placeholder="$50 / day">
+              </div>
+            </div>
+            <div class="field">
+              <label for="ag-pay">Who it can pay</label>
+              <input id="ag-pay" type="text" placeholder="api.acme.dev">
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center" type="submit">Put it on the leash</button>
+          </form>
+          <p class="connect-note">You'll co-own a spending account with this agent. Every payment needs both approvals, and you can cut the leash any time.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Live activity</h3>
+          <p class="hint">What your fleet is doing right now.</p>
+          <div class="feed" id="feed" aria-live="polite">
+            <div class="ev paid">
+              <span class="mark" aria-hidden="true"></span>
+              <div><div class="txt"><span class="tag">data agent</span> paid $3 to api.acme.dev</div><div class="when">2m ago</div></div>
+            </div>
+            <div class="ev deny">
+              <span class="mark" aria-hidden="true"></span>
+              <div><div class="txt"><span class="tag">payments agent</span> blocked — over daily limit</div><div class="when">5m ago</div></div>
+            </div>
+            <div class="ev paid">
+              <span class="mark" aria-hidden="true"></span>
+              <div><div class="txt"><span class="tag">data agent</span> paid $5 to api.acme.dev</div><div class="when">18m ago</div></div>
+            </div>
+            <div class="ev cut">
+              <span class="mark" aria-hidden="true"></span>
+              <div><div class="txt"><span class="tag">scraper agent</span> — leash cut, off everywhere</div><div class="when">1h ago</div></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <p class="honest">LEASH is the control layer for your fleet of agents. The facilitator LEASH runs enforces the limits you set on a co-owned account; identities are on-chain-resolved and funding is an independent rail. Daily and weekly budgets are soft budgets you set.</p>
+    <div class="brand"><span class="knot" aria-hidden="true"></span><b>LEASH</b></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const agents = document.querySelectorAll('.agent');
+
+  function refreshCounts(){
+    let active=0, revoked=0;
+    agents.forEach(a=>a.classList.contains('is-cut')?revoked++:active++);
+    document.getElementById('activeCount').textContent = active;
+    document.getElementById('revokedCount').textContent = revoked;
+  }
+
+  function setState(agent, cut){
+    const status = agent.querySelector('[data-status]');
+    const statusText = agent.querySelector('[data-status-text]');
+    const tag = agent.querySelector('[data-tag]');
+    const cutBtn = agent.querySelector('[data-cut]');
+    const reactBtn = agent.querySelector('[data-react]');
+
+    if(cut){
+      agent.classList.add('is-cut');
+      status.classList.remove('active'); status.classList.add('revoked');
+      statusText.textContent = 'Revoked';
+      tag.textContent = 'leash cut';
+      cutBtn.hidden = true; cutBtn.setAttribute('aria-pressed','true');
+      reactBtn.hidden = false;
+      addEvent(agent, 'cut');
+    } else {
+      agent.classList.remove('is-cut');
+      status.classList.remove('revoked'); status.classList.add('active');
+      statusText.textContent = 'Active';
+      tag.textContent = 'on the leash';
+      cutBtn.hidden = false; cutBtn.setAttribute('aria-pressed','false');
+      reactBtn.hidden = true;
+      addEvent(agent, 'react');
+    }
+    refreshCounts();
+  }
+
+  function addEvent(agent, kind){
+    const name = agent.querySelector('h3').textContent;
+    const feed = document.getElementById('feed');
+    const ev = document.createElement('div');
+    if(kind==='cut'){
+      ev.className = 'ev cut';
+      ev.innerHTML = '<span class="mark" aria-hidden="true"></span><div><div class="txt"><span class="tag">'+name+'</span> — leash cut, off everywhere</div><div class="when">just now</div></div>';
+    } else {
+      ev.className = 'ev paid';
+      ev.innerHTML = '<span class="mark" aria-hidden="true"></span><div><div class="txt"><span class="tag">'+name+'</span> — back on the leash, active again</div><div class="when">just now</div></div>';
+    }
+    feed.insertBefore(ev, feed.firstChild);
+  }
+
+  agents.forEach(agent=>{
+    const cutBtn = agent.querySelector('[data-cut]');
+    const reactBtn = agent.querySelector('[data-react]');
+    if(cutBtn) cutBtn.addEventListener('click', ()=>setState(agent, true));
+    if(reactBtn) reactBtn.addEventListener('click', ()=>setState(agent, false));
+  });
+
+  refreshCounts();
+})();
+</script>
+</body>
+</html>

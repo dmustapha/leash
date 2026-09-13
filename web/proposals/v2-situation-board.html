@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEASH — Situation Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--base:#0b0b0d;--surface-1:#141417;--surface-2:#1c1c21;--line:#2a2a31;--ink:#f4f1ea;--ink-dim:#a8a29a;--ink-faint:#6b665e;--amber:#f2a63b;--amber-soft:#3a2a12;--allow:#4fae7a;--allow-soft:#12261d;--deny:#d16060;--deny-soft:#2a1416;--radius-sm:.375rem;--radius-md:.625rem;--radius-lg:1rem;--radius-full:999px;--shadow-1:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.35);--shadow-2:0 2px 6px rgba(0,0,0,.55),0 16px 40px rgba(0,0,0,.45);--shadow-amber:0 0 0 1px rgba(242,166,59,.35),0 8px 30px rgba(242,166,59,.12);--text-display:clamp(2rem,1.2rem+3.4vw,3.4rem);--text-h2:clamp(1.3rem,1rem+1.2vw,1.75rem);}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--base);
+  color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.serif{font-family:'DM Serif Display',serif;font-weight:400}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* subtle warm-dark atmosphere behind everything */
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(242,166,59,.05), transparent 55%),
+    radial-gradient(90% 60% at 90% 110%, rgba(79,174,122,.03), transparent 60%);
+  pointer-events:none;
+}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2.5rem)}
+
+a{color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px var(--base),0 0 0 4px var(--amber);
+  border-radius:var(--radius-sm);
+}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(11,11,13,.72);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:600;letter-spacing:.02em}
+.brand .dot{width:9px;height:9px;border-radius:var(--radius-full);background:var(--amber);box-shadow:0 0 12px rgba(242,166,59,.7)}
+.brand .tag{font-size:.7rem;color:var(--ink-faint);font-weight:400;letter-spacing:.14em;text-transform:uppercase}
+.topnav{display:flex;gap:1.5rem;align-items:center;font-size:.85rem}
+.topnav a{color:var(--ink-dim);text-decoration:none;transition:color .15s}
+@media(hover:hover){.topnav a:hover{color:var(--ink)}}
+
+/* ---------- landing ---------- */
+.landing{padding:clamp(3.5rem,9vw,6.5rem) 0 clamp(2.5rem,6vw,4rem)}
+.landing .eyebrow{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--amber);
+  padding:.35rem .75rem;
+  border:1px solid var(--amber-soft);
+  border-radius:var(--radius-full);
+  background:linear-gradient(var(--surface-1),var(--surface-1)) padding-box;
+  margin-bottom:1.6rem;
+}
+.eyebrow .pulse{width:6px;height:6px;border-radius:var(--radius-full);background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.landing-grid{display:grid;grid-template-columns:1fr;gap:clamp(2rem,5vw,3.5rem);align-items:center}
+@media(min-width:900px){.landing-grid{grid-template-columns:1.05fr .95fr}}
+
+h1.hero{
+  font-family:'DM Serif Display',serif;
+  font-size:var(--text-display);
+  line-height:1.05;
+  letter-spacing:-.01em;
+  margin-bottom:1.1rem;
+}
+h1.hero em{font-style:italic;color:var(--amber)}
+.hero-sub{color:var(--ink-dim);font-size:clamp(1rem,.9rem+.4vw,1.18rem);max-width:34ch;font-weight:300;margin-bottom:2rem}
+
+.cta-row{display:flex;flex-wrap:wrap;gap:1rem;align-items:center}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:.55rem;
+  background:var(--amber);color:#1a1206;font-weight:600;
+  padding:.85rem 1.5rem;border-radius:var(--radius-md);
+  box-shadow:var(--shadow-amber);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+@media(hover:hover){.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(242,166,59,.5),0 12px 40px rgba(242,166,59,.22)}}
+.btn-primary:active{transform:translateY(0)}
+.judge-link{
+  display:inline-flex;flex-direction:column;
+  font-size:.82rem;color:var(--ink-dim);text-decoration:none;
+  border-left:1px solid var(--line);padding-left:1rem;line-height:1.3;
+  transition:color .15s;
+}
+.judge-link strong{color:var(--ink);font-weight:500}
+.judge-link .small{color:var(--ink-faint);font-size:.72rem}
+@media(hover:hover){.judge-link:hover{color:var(--ink)}.judge-link:hover strong{color:var(--amber)}}
+
+/* landing hero widget — fleet at a glance preview */
+.glance{
+  background:linear-gradient(180deg,var(--surface-2),var(--surface-1));
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:clamp(1.4rem,3vw,2rem);
+  box-shadow:var(--shadow-2);
+  position:relative;
+  overflow:hidden;
+}
+.glance::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);pointer-events:none}
+.glance-label{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:1rem;display:flex;justify-content:space-between}
+.glance-verdict{display:flex;align-items:center;gap:.7rem;margin-bottom:1.4rem}
+.glance-verdict .big{font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,1rem+2vw,2.2rem);line-height:1.1}
+.verdict-chip{
+  display:inline-flex;align-items:center;gap:.45rem;
+  font-size:.78rem;font-weight:500;
+  padding:.3rem .7rem;border-radius:var(--radius-full);
+}
+.verdict-ok{color:var(--allow);background:var(--allow-soft);box-shadow:inset 0 0 0 1px rgba(79,174,122,.25)}
+.verdict-warn{color:var(--deny);background:var(--deny-soft);box-shadow:inset 0 0 0 1px rgba(209,96,96,.25)}
+.vdot{width:7px;height:7px;border-radius:var(--radius-full);background:currentColor}
+.glance-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.gtile{background:var(--base);border:1px solid var(--line);border-radius:var(--radius-md);padding:.8rem .7rem}
+.gtile .n{font-size:1.5rem;font-weight:600;line-height:1}
+.gtile .l{font-size:.68rem;color:var(--ink-faint);margin-top:.35rem;letter-spacing:.02em}
+
+/* ---------- section divider ---------- */
+.console-intro{
+  border-top:1px solid var(--line);
+  padding:clamp(2.5rem,6vw,4rem) 0 1.5rem;
+  text-align:center;
+}
+.console-intro .k{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:.7rem}
+.console-intro h2{font-family:'DM Serif Display',serif;font-size:var(--text-h2)}
+.console-intro p{color:var(--ink-dim);max-width:46ch;margin:.7rem auto 0;font-weight:300;font-size:.95rem}
+
+/* ---------- console ---------- */
+.console{padding-bottom:5rem}
+.org-head{
+  display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.75rem;
+  padding:1.4rem 0 1.6rem;
+}
+.org-name{font-family:'DM Serif Display',serif;font-size:clamp(1.4rem,1rem+1.5vw,2rem)}
+.org-name span{color:var(--ink-dim);font-family:'IBM Plex Sans';font-weight:300;font-size:.7em}
+.org-ens{font-size:.78rem;color:var(--ink-faint);font-family:'IBM Plex Mono'}
+
+/* fleet-status hero */
+.fleet-hero{
+  background:radial-gradient(120% 130% at 15% 0%,var(--surface-2),var(--surface-1));
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:clamp(1.6rem,4vw,2.6rem);
+  box-shadow:var(--shadow-2);
+  position:relative;overflow:hidden;
+  transition:box-shadow .4s ease;
+}
+.fleet-hero::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);pointer-events:none}
+.fleet-hero.alert{box-shadow:0 2px 6px rgba(0,0,0,.55),0 16px 40px rgba(0,0,0,.45),0 0 0 1px rgba(209,96,96,.2)}
+.fleet-verdict{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.8rem}
+.fleet-verdict .verdict-text{font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,1.1rem+2.5vw,2.6rem);line-height:1.05}
+.fleet-summary{font-size:.9rem;color:var(--ink-dim);margin-top:-.9rem;margin-bottom:1.8rem;font-weight:300}
+.fleet-summary strong{color:var(--ink);font-weight:500}
+
+.stat-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem}
+@media(min-width:640px){.stat-tiles{grid-template-columns:repeat(4,1fr)}}
+.stat{
+  background:var(--base);border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:1.1rem 1rem;
+}
+.stat .num{font-size:clamp(1.6rem,1.2rem+1vw,2.1rem);font-weight:600;line-height:1;letter-spacing:-.01em}
+.stat .num.ok{color:var(--allow)}
+.stat .num.deny{color:var(--deny)}
+.stat .cap{font-size:.72rem;color:var(--ink-faint);margin-top:.5rem;letter-spacing:.02em}
+
+/* layout: agents + activity */
+.board{display:grid;grid-template-columns:1fr;gap:1.5rem;margin-top:2.2rem}
+@media(min-width:900px){.board{grid-template-columns:1.6fr 1fr}}
+
+.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.panel-title h3{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
+.panel-title .hint{font-size:.72rem;color:var(--ink-faint)}
+
+/* connect an agent */
+.connect{
+  border:1px dashed var(--line);
+  border-radius:var(--radius-md);
+  padding:1rem 1.1rem;margin-bottom:1.1rem;
+  background:var(--surface-1);
+  transition:border-color .2s,box-shadow .2s;
+}
+@media(hover:hover){.connect:hover{border-color:var(--amber-soft);box-shadow:var(--shadow-1)}}
+.connect-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.connect-head .lbl{font-size:.9rem;font-weight:500}
+.connect-head .sub{font-size:.75rem;color:var(--ink-faint);font-weight:300}
+.connect-form{display:none;margin-top:1rem;gap:.7rem;flex-wrap:wrap}
+.connect.open .connect-form{display:flex}
+.connect input{
+  flex:1 1 180px;min-width:0;
+  background:var(--base);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:.6rem .8rem;color:var(--ink);font-size:.85rem;
+}
+.connect input::placeholder{color:var(--ink-faint)}
+.btn-ghost{
+  border:1px solid var(--line);border-radius:var(--radius-sm);
+  padding:.55rem 1rem;font-size:.82rem;color:var(--ink-dim);font-weight:500;
+  transition:transform .15s,border-color .15s,color .15s,box-shadow .15s;
+}
+@media(hover:hover){.btn-ghost:hover{color:var(--ink);border-color:var(--ink-faint);transform:translateY(-1px);box-shadow:var(--shadow-1)}}
+.btn-amber-sm{
+  background:var(--amber);color:#1a1206;font-weight:600;
+  border-radius:var(--radius-sm);padding:.55rem 1.1rem;font-size:.82rem;
+  transition:transform .15s,box-shadow .15s;
+}
+@media(hover:hover){.btn-amber-sm:hover{transform:translateY(-1px);box-shadow:var(--shadow-amber)}}
+
+/* agent list row */
+.agent-row{
+  width:100%;text-align:left;
+  background:var(--surface-1);border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:1.1rem 1.2rem;margin-bottom:.8rem;
+  display:grid;grid-template-columns:1fr auto;gap:.6rem 1rem;align-items:center;
+  transition:transform .15s ease,box-shadow .15s ease,border-color .15s;
+}
+@media(hover:hover){.agent-row:hover{transform:translateY(-2px);box-shadow:var(--shadow-2);border-color:var(--ink-faint)}}
+.agent-row.revoked{opacity:.72}
+.agent-id{display:flex;align-items:center;gap:.65rem}
+.agent-id .name{font-weight:500;font-size:1rem}
+.agent-limits{font-size:.78rem;color:var(--ink-dim);grid-column:1/-1;font-weight:300;margin-top:-.15rem}
+.badges{display:flex;flex-wrap:wrap;gap:.4rem;grid-column:1/-1;margin-top:.2rem}
+.badge{
+  font-size:.68rem;padding:.22rem .55rem;border-radius:var(--radius-full);
+  border:1px solid var(--line);color:var(--ink-dim);
+  display:inline-flex;align-items:center;gap:.35rem;
+}
+.badge .b-dot{width:5px;height:5px;border-radius:var(--radius-full);background:var(--ink-faint)}
+.status-pill{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.72rem;font-weight:500;padding:.28rem .65rem;border-radius:var(--radius-full);
+  white-space:nowrap;
+}
+.status-active{color:var(--allow);background:var(--allow-soft);box-shadow:inset 0 0 0 1px rgba(79,174,122,.25)}
+.status-revoked{color:var(--deny);background:var(--deny-soft);box-shadow:inset 0 0 0 1px rgba(209,96,96,.25)}
+.chev{color:var(--ink-faint);font-size:.85rem;justify-self:end}
+
+/* activity feed */
+.feed{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--radius-md);padding:.5rem .3rem;box-shadow:var(--shadow-1)}
+.feed-row{display:flex;gap:.75rem;padding:.75rem .9rem;align-items:flex-start;border-bottom:1px solid var(--line)}
+.feed-row:last-child{border-bottom:none}
+.feed-marker{width:7px;height:7px;border-radius:var(--radius-full);margin-top:.45rem;flex:none}
+.m-ok{background:var(--allow);box-shadow:0 0 8px rgba(79,174,122,.5)}
+.m-deny{background:var(--deny);box-shadow:0 0 8px rgba(209,96,96,.5)}
+.feed-txt{font-size:.82rem;line-height:1.4}
+.feed-txt .agent{font-weight:500}
+.feed-txt.deny .agent{color:var(--deny)}
+.feed-txt.ok .agent{color:var(--allow)}
+.feed-time{font-size:.68rem;color:var(--ink-faint);margin-top:.15rem}
+.feed-row.new{animation:slidein .5s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* details fold */
+details.chain{margin-top:.8rem;grid-column:1/-1}
+details.chain summary{
+  list-style:none;font-size:.72rem;color:var(--ink-faint);
+  cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;
+  transition:color .15s;
+}
+details.chain summary::-webkit-details-marker{display:none}
+@media(hover:hover){details.chain summary:hover{color:var(--ink-dim)}}
+details.chain[open] summary{color:var(--ink-dim)}
+.chain-body{
+  margin-top:.7rem;background:var(--base);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:.8rem .9rem;
+  font-family:'IBM Plex Mono';font-size:.72rem;color:var(--ink-dim);line-height:1.7;
+}
+.chain-body span{color:var(--ink-faint)}
+
+/* ---------- drill-in overlay ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(6,6,8,.66);backdrop-filter:blur(4px);
+  opacity:0;visibility:hidden;transition:opacity .25s;
+}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:61;
+  width:min(480px,100vw);
+  background:linear-gradient(180deg,var(--surface-2),var(--surface-1));
+  border-left:1px solid var(--line);
+  box-shadow:var(--shadow-2);
+  transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.drawer.open{transform:none}
+.drawer-head{
+  position:sticky;top:0;z-index:2;
+  background:var(--surface-2);
+  padding:1.4rem clamp(1.2rem,4vw,1.8rem) 1.1rem;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+}
+.drawer-head .d-name{font-family:'DM Serif Display',serif;font-size:1.6rem;line-height:1.1}
+.drawer-head .d-ens{font-size:.72rem;color:var(--ink-faint);font-family:'IBM Plex Mono';margin-top:.35rem}
+.x-btn{
+  width:36px;height:36px;flex:none;border-radius:var(--radius-full);
+  border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-dim);
+  font-size:1.1rem;transition:transform .15s,border-color .15s,color .15s;
+}
+@media(hover:hover){.x-btn:hover{color:var(--ink);border-color:var(--ink-faint);transform:rotate(90deg)}}
+.drawer-body{padding:clamp(1.2rem,4vw,1.8rem);display:flex;flex-direction:column;gap:1.4rem}
+
+.d-block h4{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.7rem;font-weight:500}
+.limit-list{display:flex;flex-direction:column;gap:.55rem}
+.limit-item{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;font-size:.88rem;padding:.6rem .8rem;background:var(--base);border:1px solid var(--line);border-radius:var(--radius-sm)}
+.limit-item .k{color:var(--ink-dim);font-weight:300}
+.limit-item .v{font-weight:500;text-align:right}
+
+.funding-bar{height:10px;border-radius:var(--radius-full);background:var(--base);border:1px solid var(--line);overflow:hidden;margin:.6rem 0 .4rem}
+.funding-fill{height:100%;background:linear-gradient(90deg,var(--amber),#e08d1e);border-radius:var(--radius-full)}
+.funding-meta{display:flex;justify-content:space-between;font-size:.78rem;color:var(--ink-dim)}
+.funding-note{font-size:.72rem;color:var(--ink-faint);margin-top:.5rem;font-weight:300}
+
+.d-feed .feed{background:var(--base)}
+
+.d-action{margin-top:.4rem}
+.btn-revoke{
+  width:100%;
+  background:var(--deny-soft);color:var(--deny);
+  border:1px solid rgba(209,96,96,.35);
+  border-radius:var(--radius-md);padding:.9rem;font-weight:600;font-size:.92rem;
+  display:flex;align-items:center;justify-content:center;gap:.55rem;
+  transition:transform .15s,box-shadow .15s,background .15s;
+}
+@media(hover:hover){.btn-revoke:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(209,96,96,.4),0 10px 30px rgba(209,96,96,.14);background:rgba(209,96,96,.14)}}
+.btn-revoke:active{transform:translateY(0)}
+.btn-reactivate{
+  width:100%;background:var(--allow-soft);color:var(--allow);
+  border:1px solid rgba(79,174,122,.35);
+  border-radius:var(--radius-md);padding:.9rem;font-weight:600;font-size:.92rem;
+  display:flex;align-items:center;justify-content:center;gap:.55rem;
+  transition:transform .15s,box-shadow .15s,background .15s;
+}
+@media(hover:hover){.btn-reactivate:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(79,174,122,.4),0 10px 30px rgba(79,174,122,.14);background:rgba(79,174,122,.14)}}
+.revoke-caption{font-size:.75rem;color:var(--ink-faint);text-align:center;margin-top:.6rem;font-weight:300}
+
+/* blocked next-payment banner (signature moment) */
+.blocked-banner{
+  display:none;
+  margin-top:1rem;padding:.9rem 1rem;
+  background:var(--deny-soft);border:1px solid rgba(209,96,96,.4);
+  border-radius:var(--radius-md);
+  font-size:.85rem;color:var(--deny);
+  align-items:center;gap:.6rem;
+}
+.blocked-banner.show{display:flex;animation:slidein .45s ease}
+.blocked-banner .bb-strong{font-weight:600}
+
+.foot{border-top:1px solid var(--line);padding:2.2rem 0 3rem;color:var(--ink-faint);font-size:.78rem;font-weight:300}
+.foot .wrap{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:space-between;align-items:center}
+.foot a{color:var(--ink-dim);text-decoration:none}
+@media(hover:hover){.foot a:hover{color:var(--ink)}}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>LEASH <span class="tag">Situation Board</span></div>
+    <nav class="topnav" aria-label="Primary">
+      <a href="#console">Console</a>
+      <a href="#" aria-label="Watch the 60-second demo for judges">For judges</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ LANDING ============ -->
+<section class="landing">
+  <div class="wrap">
+    <div class="landing-grid">
+      <div>
+        <span class="eyebrow"><span class="pulse"></span>Mission control for your agents</span>
+        <h1 class="hero">One console to <em>bind, govern,</em> and cut off every agent that spends your money.</h1>
+        <p class="hero-sub">Your agents run on their own. LEASH gives you the leash: identity, a co-owned account, spending limits, and a one-click kill-switch. Revoke an agent and its next payment is blocked everywhere, instantly.</p>
+        <div class="cta-row">
+          <a class="btn-primary" href="#console">Open your console →</a>
+          <a class="judge-link" href="#console">
+            <strong>For judges: watch the 60-second live demo</strong>
+            <span class="small">No login. Jump straight to the fleet.</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- hero widget: fleet at a glance -->
+      <aside class="glance" aria-label="Fleet at a glance preview">
+        <div class="glance-label"><span>acme · fleet at a glance</span><span class="mono">live</span></div>
+        <div class="glance-verdict">
+          <span class="glance-verdict big serif">Everything's<br>in policy</span>
+          <span class="verdict-chip verdict-ok"><span class="vdot"></span>All in policy</span>
+        </div>
+        <div class="glance-tiles">
+          <div class="gtile"><div class="n">2</div><div class="l">agents active</div></div>
+          <div class="gtile"><div class="n">$412</div><div class="l">spent today</div></div>
+          <div class="gtile"><div class="n">0</div><div class="l">blocked today</div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONSOLE INTRO ============ -->
+<div class="console-intro" id="console">
+  <div class="wrap">
+    <div class="k">The console</div>
+    <h2 class="serif">Know the state of your fleet in one glance.</h2>
+    <p>The facilitator LEASH runs enforces the limits you set. Start with the verdict, then drill into any agent to see its limits, funding, and account — or cut it off.</p>
+  </div>
+</div>
+
+<!-- ============ CONSOLE ============ -->
+<main class="console">
+  <div class="wrap">
+
+    <div class="org-head">
+      <div>
+        <div class="org-name">acme <span>· your fleet</span></div>
+        <div class="org-ens">acme.leash.eth</div>
+      </div>
+    </div>
+
+    <!-- FLEET STATUS HERO -->
+    <section class="fleet-hero" id="fleetHero" aria-live="polite">
+      <div class="fleet-verdict">
+        <span class="verdict-text serif" id="verdictText">Everything's in policy</span>
+        <span class="verdict-chip verdict-ok" id="verdictChip"><span class="vdot"></span>All clear</span>
+      </div>
+      <p class="fleet-summary" id="fleetSummary"><strong id="sAgents">3 agents</strong> · <strong id="sActive">2 active</strong> · <strong id="sRevoked">1 revoked</strong> · <strong>$412 spent today</strong> · all in policy</p>
+      <div class="stat-tiles">
+        <div class="stat"><div class="num ok" id="tActive">2</div><div class="cap">agents active</div></div>
+        <div class="stat"><div class="num">$412</div><div class="cap">spent today</div></div>
+        <div class="stat"><div class="num deny" id="tBlocked">0</div><div class="cap">payments blocked today</div></div>
+        <div class="stat"><div class="num" id="tRevoked">1</div><div class="cap">agents revoked</div></div>
+      </div>
+    </section>
+
+    <!-- BOARD -->
+    <div class="board">
+
+      <!-- agents list -->
+      <section aria-label="Agents in your fleet">
+        <div class="panel-title">
+          <h3>Your agents</h3>
+          <span class="hint">Click an agent to drill in</span>
+        </div>
+
+        <!-- connect an agent -->
+        <div class="connect" id="connectBox">
+          <div class="connect-head">
+            <div>
+              <div class="lbl">Connect an agent</div>
+              <div class="sub">Bring an agent you already run under the leash.</div>
+            </div>
+            <button class="btn-ghost" id="connectToggle" aria-expanded="false" aria-controls="connectForm">Connect</button>
+          </div>
+          <form class="connect-form" id="connectForm" onsubmit="return false">
+            <input type="text" placeholder="Agent name (e.g. billing agent)" aria-label="Agent name" />
+            <input type="text" placeholder="Its wallet address" aria-label="Agent wallet address" />
+            <button class="btn-amber-sm" type="submit">Connect agent</button>
+          </form>
+        </div>
+
+        <div id="agentList"></div>
+      </section>
+
+      <!-- activity feed -->
+      <section aria-label="Live activity">
+        <div class="panel-title">
+          <h3>Live activity</h3>
+          <span class="hint">Plain English</span>
+        </div>
+        <div class="feed" id="feed" role="status" aria-live="polite"></div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- ============ DRILL-IN DRAWER ============ -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dName" tabindex="-1">
+  <div class="drawer-head">
+    <div>
+      <div class="d-name serif" id="dName"></div>
+      <div class="d-ens mono" id="dEns"></div>
+      <div style="margin-top:.7rem"><span class="status-pill" id="dStatus"></span></div>
+    </div>
+    <button class="x-btn" id="drawerClose" aria-label="Close panel">×</button>
+  </div>
+  <div class="drawer-body">
+
+    <div class="d-block">
+      <h4>Spending limits</h4>
+      <div class="limit-list" id="dLimits"></div>
+    </div>
+
+    <div class="d-block">
+      <h4>Funding</h4>
+      <div class="funding-bar"><div class="funding-fill" id="dFundFill"></div></div>
+      <div class="funding-meta"><span id="dFundText"></span><span class="mono" id="dFundPct"></span></div>
+      <p class="funding-note">Funding is an independent rail — over-funding above the account ceiling is denied.</p>
+    </div>
+
+    <div class="d-block">
+      <h4>Account</h4>
+      <div class="limit-list">
+        <div class="limit-item"><span class="k">Type</span><span class="v">Co-owned account</span></div>
+        <div class="limit-item"><span class="k">To approve a payment</span><span class="v">the agent and LEASH must both approve</span></div>
+      </div>
+      <details class="chain" style="margin-top:.9rem">
+        <summary>View on-chain</summary>
+        <div class="chain-body" id="dChain"></div>
+      </details>
+    </div>
+
+    <div class="d-block d-feed">
+      <h4>Recent activity</h4>
+      <div class="feed" id="dFeed"></div>
+    </div>
+
+    <div class="d-block d-action">
+      <div id="dActionSlot"></div>
+      <div class="blocked-banner" id="blockedBanner">
+        <span class="vdot" style="background:var(--deny);box-shadow:0 0 8px var(--deny)"></span>
+        <span>Next payment attempt: <span class="bb-strong">Blocked — revoked.</span> Cut off everywhere.</span>
+      </div>
+      <p class="revoke-caption" id="revokeCaption"></p>
+    </div>
+
+  </div>
+</aside>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>LEASH · the control layer for the agents that spend your money.</span>
+    <span><a href="#console">Console</a> &nbsp;·&nbsp; <a href="#">For judges</a></span>
+  </div>
+</footer>
+
+<script>
+// ---------- data ----------
+const agents = [
+  {
+    id:"data",
+    name:"data agent",
+    ens:"data.acme.leash.eth",
+    status:"active",
+    summary:"Up to $5/payment · up to $50/day · pays api.acme.dev only",
+    limits:[
+      {k:"Per payment",v:"Up to $5"},
+      {k:"Per day (soft budget)",v:"Up to $50"},
+      {k:"Per week",v:"Up to $200"},
+      {k:"Can pay",v:"api.acme.dev only"},
+      {k:"Active hours",v:"09:00–17:00 UTC"},
+    ],
+    funded:40, ceiling:100,
+    chain:"identity  <span>on-chain-resolved · data.acme.leash.eth</span>\naccount   <span>co-owned · 2-of-2 approval</span>\naddress   0x7a3f…c19d\nlast tx   0x9be2…41af  <span>· $3 → api.acme.dev</span>",
+    feed:[
+      {t:"ok",txt:'<span class="agent">data agent</span> paid $3 to api.acme.dev',time:"2m ago"},
+      {t:"ok",txt:'<span class="agent">data agent</span> paid $2 to api.acme.dev',time:"31m ago"},
+      {t:"ok",txt:'<span class="agent">data agent</span> paid $4 to api.acme.dev',time:"1h ago"},
+    ],
+  },
+  {
+    id:"payments",
+    name:"payments agent",
+    ens:"payments.acme.leash.eth",
+    status:"active",
+    summary:"Up to $20/payment · up to $200/day · pays payouts.acme.dev, api.acme.dev",
+    limits:[
+      {k:"Per payment",v:"Up to $20"},
+      {k:"Per day (soft budget)",v:"Up to $200"},
+      {k:"Per week",v:"Up to $800"},
+      {k:"Can pay",v:"payouts.acme.dev, api.acme.dev"},
+      {k:"Active hours",v:"00:00–23:59 UTC"},
+    ],
+    funded:180, ceiling:500,
+    chain:"identity  <span>on-chain-resolved · payments.acme.leash.eth</span>\naccount   <span>co-owned · 2-of-2 approval</span>\naddress   0x2c81…af04\nlast tx   0x4dd0…77b1  <span>· $18 → payouts.acme.dev</span>",
+    feed:[
+      {t:"ok",txt:'<span class="agent">payments agent</span> paid $18 to payouts.acme.dev',time:"8m ago"},
+      {t:"deny",txt:'<span class="agent">payments agent</span> blocked — over daily limit',time:"5m ago"},
+      {t:"ok",txt:'<span class="agent">payments agent</span> paid $12 to payouts.acme.dev',time:"44m ago"},
+    ],
+  },
+  {
+    id:"research",
+    name:"research agent",
+    ens:"research.acme.leash.eth",
+    status:"revoked",
+    summary:"Revoked — cut off everywhere",
+    limits:[
+      {k:"Per payment",v:"Up to $10"},
+      {k:"Per day (soft budget)",v:"Up to $80"},
+      {k:"Per week",v:"Up to $300"},
+      {k:"Can pay",v:"search.acme.dev only"},
+      {k:"Active hours",v:"09:00–17:00 UTC"},
+    ],
+    funded:0, ceiling:100,
+    chain:"identity  <span>on-chain-resolved · research.acme.leash.eth</span>\naccount   <span>co-owned · 2-of-2 approval</span>\nstatus    <span>revoked · LEASH approval withdrawn</span>\naddress   0x5f10…9e22",
+    feed:[
+      {t:"deny",txt:'<span class="agent">research agent</span> revoked — cut off everywhere',time:"just now"},
+      {t:"ok",txt:'<span class="agent">research agent</span> paid $6 to search.acme.dev',time:"2h ago"},
+    ],
+  },
+];
+
+// top-level feed
+const globalFeed = [
+  {t:"ok",txt:'<span class="agent">data agent</span> paid $3 to api.acme.dev',time:"2m ago"},
+  {t:"deny",txt:'<span class="agent">payments agent</span> blocked — over daily limit',time:"5m ago"},
+  {t:"ok",txt:'<span class="agent">payments agent</span> paid $18 to payouts.acme.dev',time:"8m ago"},
+  {t:"deny",txt:'<span class="agent">research agent</span> revoked — cut off everywhere',time:"just now"},
+  {t:"ok",txt:'<span class="agent">data agent</span> paid $2 to api.acme.dev',time:"31m ago"},
+];
+
+// ---------- render helpers ----------
+const $=(s,r=document)=>r.querySelector(s);
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+
+function statusPill(status){
+  if(status==="active") return '<span class="status-pill status-active"><span class="vdot"></span>Active</span>';
+  return '<span class="status-pill status-revoked"><span class="vdot"></span>Revoked</span>';
+}
+
+function feedRows(list){
+  return list.map(f=>`
+    <div class="feed-row">
+      <span class="feed-marker ${f.t==='ok'?'m-ok':'m-deny'}"></span>
+      <div>
+        <div class="feed-txt ${f.t}">${f.txt}</div>
+        <div class="feed-time">${f.time}</div>
+      </div>
+    </div>`).join("");
+}
+
+function renderAgents(){
+  const c=$("#agentList"); c.innerHTML="";
+  agents.forEach(a=>{
+    const row=el("button",`agent-row ${a.status==='revoked'?'revoked':''}`);
+    row.setAttribute("aria-label",`Open ${a.name} details`);
+    row.innerHTML=`
+      <div class="agent-id"><span class="name">${a.name}</span></div>
+      <div>${statusPill(a.status)}</div>
+      <div class="agent-limits">${a.summary}</div>
+      <div class="badges">
+        <span class="badge"><span class="b-dot"></span>Identity · on-chain-resolved</span>
+        <span class="badge"><span class="b-dot"></span>Co-owned account</span>
+        ${a.status==='active'?`<span class="badge"><span class="b-dot"></span>Funded $${a.funded} of $${a.ceiling}</span>`:''}
+      </div>`;
+    row.addEventListener("click",()=>openDrawer(a.id));
+    c.appendChild(row);
+  });
+}
+
+function renderGlobalFeed(){ $("#feed").innerHTML=feedRows(globalFeed); }
+
+function renderFleet(){
+  const active=agents.filter(a=>a.status==='active').length;
+  const revoked=agents.filter(a=>a.status==='revoked').length;
+  const total=agents.length;
+  $("#sAgents").textContent=`${total} agents`;
+  $("#sActive").textContent=`${active} active`;
+  $("#sRevoked").textContent=`${revoked} revoked`;
+  $("#tActive").textContent=active;
+  $("#tRevoked").textContent=revoked;
+
+  const vText=$("#verdictText"), vChip=$("#verdictChip"), hero=$("#fleetHero"), sum=$("#fleetSummary");
+  if(revoked>0){
+    vText.textContent = revoked===1 ? "1 agent revoked" : `${revoked} agents revoked`;
+    vChip.className="verdict-chip verdict-warn";
+    vChip.innerHTML='<span class="vdot"></span>'+(revoked===1?'1 cut off':`${revoked} cut off`);
+    hero.classList.add("alert");
+    sum.innerHTML=`<strong>${total} agents</strong> · <strong>${active} active</strong> · <strong>${revoked} revoked</strong> · <strong>$412 spent today</strong> · active agents in policy`;
+  }else{
+    vText.textContent="Everything's in policy";
+    vChip.className="verdict-chip verdict-ok";
+    vChip.innerHTML='<span class="vdot"></span>All clear';
+    hero.classList.remove("alert");
+    sum.innerHTML=`<strong>${total} agents</strong> · <strong>${active} active</strong> · <strong>0 revoked</strong> · <strong>$412 spent today</strong> · all in policy`;
+  }
+}
+
+// ---------- drawer ----------
+let currentId=null, lastFocus=null;
+
+function renderDrawer(a){
+  $("#dName").textContent=a.name;
+  $("#dEns").textContent=a.ens;
+  const ds=$("#dStatus");
+  ds.className = "status-pill "+(a.status==="active"?"status-active":"status-revoked");
+  ds.innerHTML = '<span class="vdot"></span>'+(a.status==="active"?"Active":"Revoked");
+
+  $("#dLimits").innerHTML=a.limits.map(l=>`<div class="limit-item"><span class="k">${l.k}</span><span class="v">${l.v}</span></div>`).join("");
+
+  const pct = a.ceiling? Math.round(a.funded/a.ceiling*100):0;
+  $("#dFundFill").style.width=pct+"%";
+  $("#dFundText").textContent=`Funded $${a.funded} of $${a.ceiling}`;
+  $("#dFundPct").textContent=pct+"%";
+
+  $("#dChain").innerHTML=a.chain;
+  $("#dFeed").innerHTML=feedRows(a.feed);
+
+  const slot=$("#dActionSlot");
+  const banner=$("#blockedBanner"), cap=$("#revokeCaption");
+  banner.classList.remove("show");
+  if(a.status==='active'){
+    slot.innerHTML=`<button class="btn-revoke" id="revokeBtn"><span class="vdot" style="background:currentColor"></span>Revoke · cut off everywhere</button>`;
+    cap.textContent="Withdraws LEASH's approval. The next payment is blocked everywhere, instantly.";
+    $("#revokeBtn").addEventListener("click",()=>doRevoke(a));
+  }else{
+    slot.innerHTML=`<button class="btn-reactivate" id="reactBtn"><span class="vdot" style="background:currentColor"></span>Reactivate</button>`;
+    cap.textContent="Restores LEASH's approval under the same limits.";
+    banner.classList.add("show");
+    $("#reactBtn").addEventListener("click",()=>doReactivate(a));
+  }
+}
+
+function openDrawer(id){
+  const a=agents.find(x=>x.id===id); if(!a)return;
+  currentId=id;
+  renderDrawer(a);
+  lastFocus=document.activeElement;
+  $("#scrim").classList.add("open");
+  $("#drawer").classList.add("open");
+  document.body.style.overflow="hidden";
+  setTimeout(()=>$("#drawerClose").focus(),50);
+}
+function closeDrawer(){
+  $("#scrim").classList.remove("open");
+  $("#drawer").classList.remove("open");
+  document.body.style.overflow="";
+  currentId=null;
+  if(lastFocus)lastFocus.focus();
+}
+
+// ---------- signature moment ----------
+function doRevoke(a){
+  a.status="revoked"; a.summary="Revoked — cut off everywhere"; a.funded=0;
+  a.feed.unshift({t:"deny",txt:`<span class="agent">${a.name}</span> revoked — cut off everywhere`,time:"just now"});
+  globalFeed.unshift({t:"deny",txt:`<span class="agent">${a.name}</span> revoked — cut off everywhere`,time:"just now"});
+  renderDrawer(a);
+  renderAgents(); renderFleet();
+  const gf=$("#feed"); renderGlobalFeed();
+  if(!window.matchMedia("(prefers-reduced-motion:reduce)").matches){
+    const first=gf.querySelector(".feed-row"); if(first)first.classList.add("new");
+  }
+}
+function doReactivate(a){
+  a.status="active";
+  if(a.id==="research"){a.summary="Up to $10/payment · up to $80/day · pays search.acme.dev only";}
+  a.feed.unshift({t:"ok",txt:`<span class="agent">${a.name}</span> reactivated — approval restored`,time:"just now"});
+  globalFeed.unshift({t:"ok",txt:`<span class="agent">${a.name}</span> reactivated — approval restored`,time:"just now"});
+  renderDrawer(a);
+  renderAgents(); renderFleet(); renderGlobalFeed();
+}
+
+// ---------- wiring ----------
+$("#drawerClose").addEventListener("click",closeDrawer);
+$("#scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&currentId)closeDrawer(); });
+
+// focus trap
+$("#drawer").addEventListener("keydown",e=>{
+  if(e.key!=="Tab")return;
+  const f=$("#drawer").querySelectorAll('button,a,input,summary,[tabindex]:not([tabindex="-1"])');
+  if(!f.length)return;
+  const first=f[0],last=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+
+// connect toggle
+const cb=$("#connectBox"),ct=$("#connectToggle");
+ct.addEventListener("click",()=>{
+  const open=cb.classList.toggle("open");
+  ct.setAttribute("aria-expanded",open);
+  ct.textContent=open?"Cancel":"Connect";
+});
+
+// init
+renderAgents(); renderGlobalFeed(); renderFleet();
+</script>
+</body>
+</html>

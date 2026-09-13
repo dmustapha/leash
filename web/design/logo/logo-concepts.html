@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEASH — Logo Concepts</title>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --base:#0a0a0b; --lime:#c6f24d; --hi:#d6ff6a; --ink:#f4f4ef;
+    --clash:'Clash Display','Helvetica Neue',Arial,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--base);color:var(--ink);font-family:var(--clash);-webkit-font-smoothing:antialiased;padding:56px 24px 96px}
+  .wrap{max-width:920px;margin:0 auto}
+  header.top{margin-bottom:64px}
+  header.top h1{font-size:14px;letter-spacing:.4em;font-weight:600;color:var(--lime);font-family:var(--mono);text-transform:uppercase}
+  header.top p{margin-top:12px;color:#9a9a94;font-family:var(--mono);font-size:13px;letter-spacing:.02em}
+
+  .concept{border-top:1px solid #1c1c1e;padding:56px 0}
+  .concept:first-of-type{border-top:none;padding-top:0}
+  .badge{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--base);background:var(--lime);padding:5px 12px;border-radius:999px;font-weight:500}
+  .rationale{margin-top:16px;color:#c8c8c2;font-family:var(--mono);font-size:13.5px;line-height:1.6;max-width:640px}
+
+  .hero{margin:36px 0;background:linear-gradient(180deg,#0d0d0f,#0a0a0b);border:1px solid #17171a;border-radius:16px;padding:48px 40px;display:flex;justify-content:center}
+  .hero svg{width:100%;max-width:520px;height:auto}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:20px}
+  @media(min-width:720px){.grid{grid-template-columns:1.4fr 1fr}}
+
+  /* nav mockup */
+  .nav{background:#0e0e10;border:1px solid #1a1a1d;border-radius:12px;padding:0 20px;height:64px;display:flex;align-items:center;gap:24px}
+  .nav .brand{display:flex;align-items:center;gap:10px}
+  .nav .brand svg.mark{width:28px;height:28px}
+  .nav .brand svg.word{height:20px;width:auto}
+  .nav .links{margin-left:auto;display:flex;gap:22px;align-items:center}
+  .nav .links a{color:#8f8f89;text-decoration:none;font-family:var(--mono);font-size:12.5px;letter-spacing:.02em}
+  .nav .links a.active{color:var(--ink)}
+  .nav .cta{background:var(--lime);color:var(--base);font-family:var(--mono);font-size:12px;font-weight:500;padding:7px 14px;border-radius:8px;letter-spacing:.03em}
+
+  /* favicon rows */
+  .fav{background:#0e0e10;border:1px solid #1a1a1d;border-radius:12px;padding:20px}
+  .fav .label{font-family:var(--mono);font-size:11px;color:#6d6d68;letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+  .fav .row{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .chip span{font-family:var(--mono);font-size:10px;color:#6d6d68}
+  .on-dark{background:var(--base);border-radius:8px;padding:6px}
+  .on-light{background:var(--ink);border-radius:8px;padding:6px}
+  .s32{width:32px;height:32px;display:block}
+  .s16{width:16px;height:16px;display:block}
+
+  .sectlabel{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5c5c58;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>LEASH · Logo Concepts</h1>
+    <p>Mission control for the agents that spend your money. // lime #c6f24d on near-black #0a0a0b</p>
+  </header>
+
+  <!-- ============ CONCEPT A ============ -->
+  <section class="concept">
+    <span class="badge">A · TETHER</span>
+    <p class="rationale">A single fine lime leash-line: a clasp/loop before the L, threading the baseline of the word, ending in a hook after the H. The wordmark literally sits on a leash. The favicon is the clasp — the thing that holds.</p>
+
+    <div class="hero">
+      <!-- inline copy of leash-a-tether.svg -->
+      <svg viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" aria-label="LEASH tether">
+        <g fill="#f4f4ef" font-family="var(--clash)" font-weight="700">
+          <text x="44" y="52" font-size="46" letter-spacing="1">LEASH</text>
+        </g>
+        <g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="20" cy="60" r="9"/>
+          <path d="M27 55 l6 -4" stroke="#d6ff6a"/>
+          <path d="M29 60 C 60 66, 120 66, 210 62 C 240 60, 250 58, 258 56"/>
+          <path d="M258 56 c 8 -2 12 4 8 10 c -3 4 -9 3 -10 -2"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="sectlabel">Nav header</div>
+        <div class="nav">
+          <div class="brand">
+            <svg class="mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="7" fill="#0a0a0b"/>
+              <g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round">
+                <circle cx="12" cy="16" r="7"/><path d="M17.5 11 l4 -3" stroke="#d6ff6a"/><path d="M19 16 h9"/>
+              </g>
+            </svg>
+            <svg class="word" viewBox="0 40 210 24" xmlns="http://www.w3.org/2000/svg">
+              <text x="0" y="58" font-size="30" font-family="var(--clash)" font-weight="700" fill="#f4f4ef" letter-spacing="1">LEASH</text>
+              <path d="M2 60 h150" stroke="#c6f24d" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".9"/>
+            </svg>
+          </div>
+          <div class="links">
+            <a class="active">Agents</a><a>Policies</a><a>Activity</a>
+            <span class="cta">Revoke all</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fav">
+        <div class="label">Favicon · mark-a</div>
+        <div class="row">
+          <div class="chip"><div class="on-dark"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="16" r="7"/><path d="M17.5 11 l4 -3" stroke="#d6ff6a"/><path d="M19 16 h9"/></g></svg></div><span>32 dark</span></div>
+          <div class="chip"><div class="on-dark"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="16" r="7"/><path d="M17.5 11 l4 -3" stroke="#d6ff6a"/><path d="M19 16 h9"/></g></svg></div><span>16 dark</span></div>
+          <div class="chip"><div class="on-light"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="16" r="7"/><path d="M17.5 11 l4 -3" stroke="#d6ff6a"/><path d="M19 16 h9"/></g></svg></div><span>32 light</span></div>
+          <div class="chip"><div class="on-light"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="16" r="7"/><path d="M17.5 11 l4 -3" stroke="#d6ff6a"/><path d="M19 16 h9"/></g></svg></div><span>16 light</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT B ============ -->
+  <section class="concept">
+    <span class="badge">B · CUT</span>
+    <p class="rationale">The revoke thesis, made literal. A lime tether runs under the word and is visibly severed — a clean gap with frayed tips and a spark at the break. The leash you can cut = one write revokes everywhere. The favicon is the severed link mid-spark.</p>
+
+    <div class="hero">
+      <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" aria-label="LEASH cut">
+        <g fill="#f4f4ef" font-family="var(--clash)" font-weight="700"><text x="10" y="48" font-size="46" letter-spacing="1">LEASH</text></g>
+        <g stroke="#c6f24d" stroke-width="4" stroke-linecap="round" fill="none">
+          <path d="M12 70 h120"/><path d="M132 70 l6 -4 M132 70 l6 4" stroke-width="2.5"/>
+          <path d="M168 70 h120"/><path d="M168 70 l-6 -4 M168 70 l-6 4" stroke-width="2.5"/>
+        </g>
+        <g stroke="#d6ff6a" stroke-width="2.5" stroke-linecap="round"><path d="M150 70 v-11 M150 70 v11 M150 70 l-9 -6 M150 70 l9 -6 M150 70 l-9 6 M150 70 l9 6"/></g>
+        <circle cx="150" cy="70" r="2.5" fill="#d6ff6a"/>
+      </svg>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="sectlabel">Nav header</div>
+        <div class="nav">
+          <div class="brand">
+            <svg class="mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none"><path d="M4 16 h8"/><path d="M20 16 h8"/></g><g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round"><path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/></g><circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/></svg>
+            <svg class="word" viewBox="0 30 210 30" xmlns="http://www.w3.org/2000/svg">
+              <text x="0" y="46" font-size="30" font-family="var(--clash)" font-weight="700" fill="#f4f4ef" letter-spacing="1">LEASH</text>
+              <g stroke="#c6f24d" stroke-width="2.5" stroke-linecap="round" fill="none"><path d="M2 56 h70"/><path d="M92 56 h60"/></g>
+              <circle cx="82" cy="56" r="2" fill="#d6ff6a"/>
+            </svg>
+          </div>
+          <div class="links"><a class="active">Agents</a><a>Policies</a><a>Activity</a><span class="cta">Revoke all</span></div>
+        </div>
+      </div>
+
+      <div class="fav">
+        <div class="label">Favicon · mark-b</div>
+        <div class="row">
+          <div class="chip"><div class="on-dark"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none"><path d="M4 16 h8"/><path d="M20 16 h8"/></g><g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round"><path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/></g><circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/></svg></div><span>32 dark</span></div>
+          <div class="chip"><div class="on-dark"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none"><path d="M4 16 h8"/><path d="M20 16 h8"/></g><g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round"><path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/></g><circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/></svg></div><span>16 dark</span></div>
+          <div class="chip"><div class="on-light"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none"><path d="M4 16 h8"/><path d="M20 16 h8"/></g><g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round"><path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/></g><circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/></svg></div><span>32 light</span></div>
+          <div class="chip"><div class="on-light"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none"><path d="M4 16 h8"/><path d="M20 16 h8"/></g><g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round"><path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/></g><circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/></svg></div><span>16 light</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT C ============ -->
+  <section class="concept">
+    <span class="badge">C · CLASP-L</span>
+    <p class="rationale">A monogram-forward combination mark. The initial L is drawn as a lime carabiner clasp — the clip that holds the leash — with a spring gate and hinge dot; EASH sits in ink. Ownable, favicon-ready, and unmistakably a clasp.</p>
+
+    <div class="hero">
+      <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" aria-label="LEASH clasp">
+        <g fill="none" stroke="#c6f24d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16 C 10 16, 8 24, 8 34 L 8 62 C 8 74, 16 80, 28 80 L 50 80"/>
+          <path d="M22 16 C 34 16, 40 22, 40 34" stroke-width="4"/>
+        </g>
+        <circle cx="40" cy="34" r="3.5" fill="#d6ff6a"/>
+        <g fill="#f4f4ef" font-family="var(--clash)" font-weight="700"><text x="60" y="70" font-size="52" letter-spacing="1">EASH</text></g>
+      </svg>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="sectlabel">Nav header</div>
+        <div class="nav">
+          <div class="brand">
+            <svg class="mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 C 8 6, 7 9, 7 13 L 7 22 C 7 26, 9 28, 13 28 L 22 28"/><path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/></g><circle cx="20" cy="13" r="2" fill="#d6ff6a"/></svg>
+            <svg class="word" viewBox="0 34 200 40" xmlns="http://www.w3.org/2000/svg">
+              <g fill="none" stroke="#c6f24d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 40 C 6 40, 5 45, 5 51 L 5 66 C 5 72, 9 74, 15 74 L 26 74"/><path d="M13 40 C 20 40, 23 43, 23 51" stroke-width="3"/></g>
+              <circle cx="23" cy="51" r="2.4" fill="#d6ff6a"/>
+              <text x="30" y="70" font-size="34" font-family="var(--clash)" font-weight="700" fill="#f4f4ef" letter-spacing="1">EASH</text>
+            </svg>
+          </div>
+          <div class="links"><a class="active">Agents</a><a>Policies</a><a>Activity</a><span class="cta">Revoke all</span></div>
+        </div>
+      </div>
+
+      <div class="fav">
+        <div class="label">Favicon · mark-c</div>
+        <div class="row">
+          <div class="chip"><div class="on-dark"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 C 8 6, 7 9, 7 13 L 7 22 C 7 26, 9 28, 13 28 L 22 28"/><path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/></g><circle cx="20" cy="13" r="2" fill="#d6ff6a"/></svg></div><span>32 dark</span></div>
+          <div class="chip"><div class="on-dark"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 C 8 6, 7 9, 7 13 L 7 22 C 7 26, 9 28, 13 28 L 22 28"/><path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/></g><circle cx="20" cy="13" r="2" fill="#d6ff6a"/></svg></div><span>16 dark</span></div>
+          <div class="chip"><div class="on-light"><svg class="s32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 C 8 6, 7 9, 7 13 L 7 22 C 7 26, 9 28, 13 28 L 22 28"/><path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/></g><circle cx="20" cy="13" r="2" fill="#d6ff6a"/></svg></div><span>32 light</span></div>
+          <div class="chip"><div class="on-light"><svg class="s16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="7" fill="#0a0a0b"/><g fill="none" stroke="#c6f24d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 C 8 6, 7 9, 7 13 L 7 22 C 7 26, 9 28, 13 28 L 22 28"/><path d="M13 6 C 18 6, 20 8, 20 13" stroke-width="2.4"/></g><circle cx="20" cy="13" r="2" fill="#d6ff6a"/></svg></div><span>16 light</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

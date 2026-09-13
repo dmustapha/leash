@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="LEASH cut">
+  <title>LEASH mark — severed link with spark</title>
+  <rect width="32" height="32" rx="7" fill="#0a0a0b"/>
+  <g stroke="#c6f24d" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- left tether end -->
+    <path d="M4 16 h8"/>
+    <!-- right tether end -->
+    <path d="M20 16 h8"/>
+  </g>
+  <!-- spark at the cut -->
+  <g stroke="#d6ff6a" stroke-width="2.2" stroke-linecap="round">
+    <path d="M16 16 v-7 M16 16 v7 M16 16 l-6 -4 M16 16 l6 -4 M16 16 l-6 4 M16 16 l6 4"/>
+  </g>
+  <circle cx="16" cy="16" r="2.2" fill="#d6ff6a"/>
+</svg>

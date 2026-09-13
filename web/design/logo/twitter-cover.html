@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--base:#0a0a0b;--ink:#f4f4ef;--dim:#a2a29c;--accent:#c6f24d}
+  *{margin:0;box-sizing:border-box}
+  html,body{width:1500px;height:500px;overflow:hidden}
+  .cover{width:1500px;height:500px;position:relative;background:
+    linear-gradient(rgba(198,242,77,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(198,242,77,.04) 1px,transparent 1px),
+    radial-gradient(900px 520px at 100% -10%,rgba(198,242,77,.14),transparent 60%),
+    #0a0a0b;
+    background-size:52px 52px,52px 52px,100% 100%,100% 100%;
+    display:flex;flex-direction:column;justify-content:center;padding:0 96px;font-family:'Manrope',sans-serif}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin-bottom:26px}
+  .mark{display:flex;align-items:center;gap:26px}
+  /* the tether wordmark, inline */
+  .word{font-family:'Clash Display',sans-serif;font-weight:700;font-size:150px;letter-spacing:-.01em;color:var(--ink);line-height:.9}
+  .clasp{flex:0 0 auto}
+  .tag{font-size:30px;color:var(--dim);margin-top:34px;max-width:1000px}
+  .chips{position:absolute;right:96px;bottom:56px;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--dim)}
+  .chip{border:1px solid #2a2a2e;border-radius:999px;padding:8px 16px;background:#141416}
+  .chip b{color:var(--accent);font-weight:500}
+</style></head>
+<body>
+  <div class="cover">
+    <div class="eyebrow">ENS &nbsp;·&nbsp; Hedera x402 &nbsp;·&nbsp; Privy</div>
+    <div class="mark">
+      <svg class="clasp" width="128" height="128" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="7.5" cy="12" r="4.4" stroke="#c6f24d" stroke-width="2.1"/>
+        <circle cx="7.5" cy="12" r="1.5" fill="#c6f24d"/>
+        <path d="M11.6 12 H21.5" stroke="#c6f24d" stroke-width="2.1" stroke-linecap="round"/>
+        <path d="M18.6 8.6 L21.8 12 L18.6 15.4" stroke="#c6f24d" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="word">LEASH</div>
+    </div>
+    <div class="tag">Keep your agents on a leash. Mission control for the AI agents that spend your money: bind, govern, and cut off any agent with one on-chain write.</div>
+    <div class="chips">
+      <span class="chip"><b>1 write</b> cut off everywhere</span>
+      <span class="chip"><b>2-of-2</b> co-owned account</span>
+      <span class="chip"><b>gas-free</b> agent pays $0</span>
+    </div>
+  </div>
+</body></html>

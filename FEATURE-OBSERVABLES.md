@@ -2,6 +2,8 @@
 
 One verifiable observable per P0/P1 feature: proves the feature WORKS, not just that it exists. Sentinel-fail strings are the "fabricated/fallback" markers stress_test greps for.
 
+> **NOTE (2026-09-13, UI redesign).** The frontend was fully redesigned (Signal Grid visual system + native "Tether" logo) and re-organized into an owner-first multi-page IA. NONE of the observables below changed: behavior, acceptance criteria, test commands, sentinel-fail strings, and the frozen floor (`/api/demo` beats, GateReason strings, AgentPolicy field order, `requireOwner`, VM-1/2/3) are all UNCHANGED. Only the SURFACE names each observable references were updated to the new IA. Surface map: **landing** = `/` (public marketing, sponsor role badges live on the landing "levers"); **connect** = `/app` Privy connect gate; **fleet console** = `/app` (provision org, then the fleet dashboard); **agent detail** = `/app/agent/[ensName]` (identity, co-owned account, limits, allowlist, funding, test payment, revoke/reactivate, activity); **demo sandbox** = `/demo` (frozen judge walkthrough, now a guided plain-language 5-step flow, demoted to a side-door); **proof** = `/proof`. Where an observable named `/app`, read it against this map.
+
 | feature_id | feature | observable | test_command | sentinel_fail | verified_by |
 |---|---|---|---|---|---|
 | F-001 | Agent pays within ENS-encoded cap, gas-free | a real Hedera settle tx exists on HashScan AND the agent account paid 0 gas (facilitator is fee-payer) | run `agent/pay.ts` in-cap (3 USDC) then `curl mirrornode .../transactions/{id}` → `charged_tx_fee` paid by operator, transfers show USDC moved | settle tx absent OR agent charged the fee | PLAN Task 3.1 (DP-3) |

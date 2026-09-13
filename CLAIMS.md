@@ -4,6 +4,8 @@ Human-readable render of every headline claim LEASH makes in its README, demo, a
 
 The machine mirror of this ledger is `docs/pipeline/claims.json`. The recompute verifier is `scripts/verify-claims.ts` (run `npm run verify:claims`), which re-derives live values into `evidence/claims-recomputed.json` and refuses to read back a stored success.
 
+> **NOTE (2026-09-13, UI redesign).** The frontend redesign (Signal Grid visual system + "Tether" logo + owner-first multi-page IA) changed NO claim in this ledger. Every claim C-1..C-15, its source of truth, its recompute path, and its status are UNCHANGED (behavior is frozen). The redesign was presentation, information architecture, positioning, and logo only. Where a claim surfaces a value in the UI, the surface is now: landing `/`, fleet console `/app`, agent detail `/app/agent/[ensName]`, demo sandbox `/demo`, proof `/proof` (e.g. C-6 co-hold and C-7 identity records are read via `/api/policy` and surfaced in the console + agent detail + `/proof`).
+
 ## Status legend
 - `PROVEN` — recomputed live and matches; evidence pointer resolvable.
 - `PENDING` — asserted by a later build phase; not yet recomputable.

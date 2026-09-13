@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEASH — Daylight Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   DAYLIGHT LEDGER — light institutional fintech for LEASH
+   Shadow philosophy: light comes from above. Elevation via
+   layered, soft, low-opacity warm-grey shadows (ambient +
+   direct), never a bare 1px box. Surfaces separate by shadow
+   ladder + subtle background deltas, not hard lines.
+   ============================================================ */
+:root{
+  --ivory:#f6f2ea; --surface:#ffffff; --surface-2:#efe9dd; --surface-3:#faf7f1;
+  --line:#e2d9ca; --line-soft:#ebe3d5;
+  --ink:#1b1712; --dim:#5f574c; --faint:#8a8073;
+  --teal:#0f6b5f; --teal-hi:#148a7a; --teal-soft:#dff0ec;
+  --allow:#147a52; --allow-soft:#e2f2e9;
+  --deny:#b23b3b; --deny-soft:#f6e3e1;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:26px; --r-pill:999px;
+  /* shadow ladder — warm grey, light-from-above */
+  --e1:0 1px 2px rgba(60,48,30,.05), 0 1px 1px rgba(60,48,30,.04);
+  --e2:0 2px 4px rgba(60,48,30,.05), 0 4px 10px rgba(60,48,30,.06);
+  --e3:0 4px 8px rgba(60,48,30,.06), 0 12px 26px rgba(60,48,30,.09);
+  --e4:0 10px 20px rgba(60,48,30,.08), 0 28px 60px rgba(60,48,30,.13);
+  --ring:0 0 0 3px rgba(15,107,95,.28);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,system-ui,sans-serif;
+  color:var(--ink); background:var(--ivory);
+  min-height:100dvh; -webkit-font-smoothing:antialiased;
+  line-height:1.55; font-size:16px;
+  /* whisper of warm paper: grain + corner vignette, never flat */
+  background-image:
+    radial-gradient(120% 90% at 50% -10%, #fffdf8 0%, rgba(255,253,248,0) 46%),
+    radial-gradient(140% 120% at 100% 100%, rgba(226,217,202,.5) 0%, rgba(226,217,202,0) 40%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:1.08;letter-spacing:-.01em;color:var(--ink)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-ligatures:none}
+:focus-visible{outline:none;box-shadow:var(--ring);border-radius:var(--r-sm)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.hair{height:1px;background:var(--line);border:0;margin:0}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);font-weight:500}
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:12px}
+.section-label::before{content:"";width:26px;height:1px;background:var(--line)}
+
+/* ---------- top nav ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,242,234,.82);backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line-soft)}
+.nav-in{max-width:1180px;margin:0 auto;padding:12px 28px;display:flex;align-items:center;gap:26px}
+.brand{display:flex;align-items:center;gap:10px;font-family:Fraunces;font-weight:600;font-size:20px;letter-spacing:.02em}
+.brand .mark{color:var(--teal)}
+.tabs{display:flex;gap:4px;margin-left:auto;background:var(--surface-2);padding:4px;border-radius:var(--r-pill);box-shadow:inset 0 1px 2px rgba(60,48,30,.06)}
+.tab{padding:7px 16px;border-radius:var(--r-pill);font-size:13.5px;font-weight:500;color:var(--dim);transition:color .18s,background .18s,box-shadow .2s var(--ease)}
+.tab[aria-current="true"]{background:var(--surface);color:var(--teal);box-shadow:var(--e1)}
+@media(hover:hover){.tab:hover{color:var(--ink)}.tab[aria-current="true"]:hover{color:var(--teal)}}
+.nav-cta{padding:8px 15px;border-radius:var(--r-pill);background:var(--teal);color:#fff;font-size:13px;font-weight:600;box-shadow:var(--e2);transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
+@media(hover:hover){.nav-cta:hover{transform:translateY(-1px);box-shadow:var(--e3)}}
+
+/* ---------- pages ---------- */
+.page{display:none;animation:pageIn .5s var(--ease) both}
+.page.active{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:var(--r-pill);font-size:14px;font-weight:600;transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .18s;white-space:nowrap}
+.btn-primary{background:var(--teal);color:#fff;box-shadow:var(--e2)}
+@media(hover:hover){.btn-primary:hover{transform:translateY(-2px);box-shadow:var(--e3);background:var(--teal-hi)}}
+.btn-ghost{background:var(--surface);color:var(--ink);box-shadow:var(--e1);border:1px solid var(--line)}
+@media(hover:hover){.btn-ghost:hover{transform:translateY(-2px);box-shadow:var(--e2)}}
+.btn-sm{padding:8px 14px;font-size:13px}
+.btn-danger{background:var(--deny);color:#fff;box-shadow:var(--e2)}
+@media(hover:hover){.btn-danger:hover{transform:translateY(-2px);box-shadow:var(--e3);filter:brightness(1.05)}}
+.btn-quiet{background:var(--surface-2);color:var(--dim);font-weight:500}
+@media(hover:hover){.btn-quiet:hover{background:var(--line-soft);color:var(--ink)}}
+.link-sub{font-size:13.5px;color:var(--dim);border-bottom:1px solid var(--line);padding-bottom:1px;transition:color .18s,border-color .18s}
+@media(hover:hover){.link-sub:hover{color:var(--teal);border-color:var(--teal)}}
+
+/* ---------- badges ---------- */
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:var(--r-pill);letter-spacing:.01em}
+.b-onchain{background:var(--teal-soft);color:var(--teal)}
+.b-active{background:var(--allow-soft);color:var(--allow)}
+.b-revoked{background:var(--deny-soft);color:var(--deny)}
+.b-coowned{background:var(--surface-2);color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.dot-a{background:var(--allow)}.dot-r{background:var(--deny)}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e2);border:1px solid var(--line-soft)}
+.card-3{box-shadow:var(--e3)}
+
+/* ======================= LANDING ======================= */
+.hero{padding:88px 0 68px;position:relative;overflow:hidden}
+.hero-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 55% at 78% 20%,rgba(15,107,95,.09),transparent 70%)}
+.hero .wrap{position:relative}
+.hero h1{font-size:clamp(2.7rem,6.4vw,5rem);font-weight:600;max-width:16ch;margin:22px 0 0;line-height:1.02}
+.hero h1 .accent{color:var(--teal);font-style:italic;font-weight:500}
+.hero .sub{font-size:clamp(1.02rem,1.7vw,1.22rem);color:var(--dim);max-width:56ch;margin-top:26px;line-height:1.6}
+.hero-cta{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:38px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:58px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e3);border:1px solid var(--line-soft);overflow:hidden}
+.stat{padding:26px 30px;position:relative}
+.stat+.stat{border-left:1px solid var(--line-soft)}
+.stat .k{font-family:Fraunces;font-size:clamp(1.5rem,2.6vw,2rem);font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.stat .k em{color:var(--teal);font-style:normal}
+.stat .v{font-size:13px;color:var(--faint);margin-top:6px}
+
+.sec{padding:74px 0}
+.sec h2{font-size:clamp(1.8rem,3.6vw,2.7rem);font-weight:600;margin-top:18px;max-width:20ch}
+.sec .lead{color:var(--dim);font-size:1.05rem;max-width:60ch;margin-top:16px;line-height:1.62}
+
+/* problem */
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+.prob{background:var(--surface);border-radius:var(--r-md);padding:26px;box-shadow:var(--e2);border:1px solid var(--line-soft);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+@media(hover:hover){.prob:hover{transform:translateY(-4px);box-shadow:var(--e3)}}
+.prob .n{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--deny);letter-spacing:.1em}
+.prob h4{font-size:1.12rem;margin:12px 0 8px}
+.prob p{font-size:14px;color:var(--dim)}
+
+/* how it works */
+.beats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:44px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e3);border:1px solid var(--line-soft);overflow:hidden}
+.beat{padding:30px 24px;position:relative}
+.beat+.beat{border-left:1px solid var(--line-soft)}
+.beat .step{width:34px;height:34px;border-radius:50%;background:var(--teal-soft);color:var(--teal);font-family:Fraunces;font-weight:600;font-size:16px;display:grid;place-items:center;box-shadow:var(--e1)}
+.beat h4{font-size:1.15rem;margin:16px 0 8px}
+.beat p{font-size:13.5px;color:var(--dim)}
+.beat .arr{position:absolute;right:-9px;top:44px;color:var(--line);font-size:18px;z-index:2}
+
+/* money shot A/B */
+.moneyshot{background:linear-gradient(180deg,var(--surface-3),var(--surface));border-radius:var(--r-xl);box-shadow:var(--e4);border:1px solid var(--line-soft);padding:clamp(28px,4vw,52px);margin-top:44px;position:relative;overflow:hidden}
+.ms-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:30px}
+.ms-head h3{font-size:1.5rem}
+.ab{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch}
+.ab-side{padding:8px 4px}
+.ab-card{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--e2);border:1px solid var(--line-soft);padding:24px;min-height:180px;display:flex;flex-direction:column;justify-content:center;transition:box-shadow .4s var(--ease),transform .4s var(--ease)}
+.ab-card .lbl{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.ab-result{font-family:Fraunces;font-size:1.55rem;font-weight:600;display:flex;align-items:center;gap:12px}
+.ab-result .icn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:16px;flex:none}
+.ab-allow .icn{background:var(--allow-soft);color:var(--allow)}
+.ab-allow .ab-result{color:var(--allow)}
+.ab-deny .icn{background:var(--deny-soft);color:var(--deny)}
+.ab-deny .ab-result{color:var(--deny)}
+.ab-meta{font-size:13px;color:var(--dim);margin-top:12px}
+.ab-mid{display:grid;place-items:center;padding:0 22px}
+.ab-arrow{display:flex;flex-direction:column;align-items:center;gap:10px}
+.ab-write{background:var(--ink);color:var(--ivory);font-size:12px;font-weight:600;padding:9px 15px;border-radius:var(--r-pill);white-space:nowrap;box-shadow:var(--e2)}
+.ab-arrow svg{color:var(--faint)}
+.ab-card.flash{animation:flash .6s var(--ease)}
+@keyframes flash{0%{box-shadow:var(--e2)}40%{box-shadow:0 0 0 3px rgba(178,59,59,.35),var(--e3);transform:scale(1.015)}100%{box-shadow:var(--e2)}}
+
+/* levers — varied layout, kill emphasized */
+.levers{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(auto,1fr);gap:16px;margin-top:44px}
+.lever{background:var(--surface);border-radius:var(--r-md);padding:24px;box-shadow:var(--e2);border:1px solid var(--line-soft);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+@media(hover:hover){.lever:hover{transform:translateY(-4px);box-shadow:var(--e3)}}
+.lever .li{color:var(--teal);margin-bottom:14px;display:block}
+.lever h4{font-size:1.08rem;margin-bottom:7px}
+.lever p{font-size:13.5px;color:var(--dim)}
+.lever.wide{grid-column:span 3}.lever.med{grid-column:span 3}
+.lever.kill{grid-column:span 6;background:linear-gradient(110deg,var(--ink),#2a231a);color:var(--ivory);box-shadow:var(--e4)}
+.lever.kill h4{color:#fff}.lever.kill p{color:rgba(246,242,234,.78);max-width:52ch}
+.lever.kill .li{color:var(--teal-hi)}
+.lever.kill .kbadge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border-radius:var(--r-pill);padding:6px 13px;font-size:12px;font-weight:600;margin-top:14px;color:#fff}
+.lever.third{grid-column:span 2}
+
+/* honest model fold */
+.honest{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e3);border:1px solid var(--line-soft);margin-top:36px;overflow:hidden}
+details.honest-d{border:0}
+details.honest-d summary{list-style:none;cursor:pointer;padding:26px 30px;display:flex;align-items:center;gap:16px;font-family:Fraunces;font-size:1.25rem;font-weight:600}
+details.honest-d summary::-webkit-details-marker{display:none}
+.honest-d summary .chev{margin-left:auto;transition:transform .3s var(--ease);color:var(--faint)}
+.honest-d[open] summary .chev{transform:rotate(180deg)}
+.honest-d summary .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--surface-2);color:var(--dim);padding:4px 10px;border-radius:var(--r-pill);font-weight:500}
+.honest-body{padding:0 30px 30px}
+.honest-list{display:grid;grid-template-columns:1fr 1fr;gap:14px 34px}
+.honest-item{display:flex;gap:12px;font-size:14px;color:var(--dim);padding-top:16px;border-top:1px solid var(--line-soft)}
+.honest-item b{color:var(--ink);font-weight:600}
+.honest-item .m{color:var(--teal);flex:none;font-weight:700}
+.truthbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.truthbar span{font-size:12px;font-weight:600;padding:5px 12px;border-radius:var(--r-pill)}
+.tb-true{background:var(--allow-soft);color:var(--allow)}
+.tb-false{background:var(--deny-soft);color:var(--deny)}
+
+/* proof strip */
+.proof-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.pcard{background:var(--surface);border-radius:var(--r-md);padding:24px;box-shadow:var(--e2);border:1px solid var(--line-soft)}
+.pcard .h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pcard .h .p{font-family:Fraunces;font-weight:600;font-size:1.05rem}
+.pcard .row{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:7px 0;border-top:1px solid var(--line-soft)}
+.pcard .row:first-of-type{border-top:0}
+.pcard .row .kk{color:var(--faint)}
+.pcard .row .vv{color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:11.5px}
+
+/* CTA/footer */
+.cta-band{background:linear-gradient(120deg,var(--ink),#2c251b);border-radius:var(--r-xl);padding:clamp(40px,6vw,72px);text-align:center;box-shadow:var(--e4);position:relative;overflow:hidden;margin-top:20px}
+.cta-band::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 50% 0%,rgba(20,138,122,.22),transparent 70%);pointer-events:none}
+.cta-band h2{color:#fff;font-size:clamp(1.9rem,4vw,3rem);max-width:18ch;margin:0 auto}
+.cta-band .sub{color:rgba(246,242,234,.72);margin:18px auto 0;max-width:48ch;position:relative}
+.cta-band .btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:32px;position:relative}
+.cta-band .btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.16)}
+.footer{padding:44px 0 60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;color:var(--faint);font-size:13px}
+.footer .brand{font-size:17px}
+
+/* ======================= CONSOLE ======================= */
+.app-head{padding:34px 0 20px}
+.app-head h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+.statusbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:var(--surface);border-radius:var(--r-pill);padding:8px 8px 8px 18px;box-shadow:var(--e2);border:1px solid var(--line-soft);margin-top:18px;font-size:13px}
+.statusbar .sb{display:flex;align-items:center;gap:7px;color:var(--dim)}
+.statusbar .sb b{color:var(--ink)}
+.statusbar .sep{width:1px;height:16px;background:var(--line)}
+.statusbar .push{margin-left:auto;display:flex;gap:8px}
+
+.grid-2{display:grid;grid-template-columns:1.35fr 1fr;gap:22px;margin-top:22px;align-items:start}
+.grid-main{display:grid;gap:22px}
+
+.panel{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e2);border:1px solid var(--line-soft);overflow:hidden}
+.panel-h{padding:18px 22px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line-soft)}
+.panel-h h3{font-size:1.12rem}
+.panel-h .sub{font-size:12.5px;color:var(--faint);margin-left:auto}
+.panel-b{padding:22px}
+
+/* org header */
+.orghead{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.orghead .av{width:48px;height:48px;border-radius:14px;background:var(--teal-soft);display:grid;place-items:center;color:var(--teal);box-shadow:var(--e1)}
+.orghead .nm{font-family:Fraunces;font-weight:600;font-size:1.3rem}
+.orghead .mono{font-size:12px;color:var(--faint)}
+.miniStats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:18px;border-radius:var(--r-md);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.miniStat{padding:16px 18px;background:var(--surface-3)}
+.miniStat+.miniStat{border-left:1px solid var(--line-soft)}
+.miniStat .k{font-family:Fraunces;font-size:1.5rem;font-weight:600}
+.miniStat .k.a{color:var(--allow)}.miniStat .k.r{color:var(--deny)}
+.miniStat .v{font-size:11.5px;color:var(--faint);margin-top:2px}
+
+/* agent list */
+.agent-row{display:flex;align-items:center;gap:16px;padding:16px 22px;border-top:1px solid var(--line-soft);transition:background .18s}
+.agent-row:first-child{border-top:0}
+@media(hover:hover){.agent-row:hover{background:var(--surface-3)}}
+.agent-row .id{min-width:0;flex:1}
+.agent-row .nm{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.agent-row .sub{font-size:12px;color:var(--faint);margin-top:3px}
+.agent-row .caps{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.chip{background:var(--surface-2);border-radius:var(--r-pill);padding:3px 10px;font-size:11.5px;color:var(--dim);font-weight:500}
+.fundbar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:8px;width:130px}
+.fundbar i{display:block;height:100%;background:var(--teal);border-radius:99px}
+.agent-row.dim{opacity:.72}
+
+/* activity feed */
+.feed{display:flex;flex-direction:column}
+.feed .ev{display:flex;gap:12px;padding:13px 22px;border-top:1px solid var(--line-soft);font-size:13.5px;align-items:flex-start}
+.feed .ev:first-child{border-top:0}
+.feed .ic{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;margin-top:1px}
+.ic-a{background:var(--allow-soft);color:var(--allow)}
+.ic-d{background:var(--deny-soft);color:var(--deny)}
+.feed .tx{flex:1;min-width:0}
+.feed .tx b{font-weight:600}
+.feed .t{font-size:11.5px;color:var(--faint);white-space:nowrap}
+
+/* forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:12.5px;font-weight:600;color:var(--dim);display:flex;gap:6px;align-items:center}
+.fg .req{color:var(--deny);font-size:11px}
+.inp{background:var(--surface-3);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:14px;font-family:inherit;color:var(--ink);transition:border-color .18s,box-shadow .18s,background .18s}
+.inp.mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+.inp:focus{border-color:var(--teal);background:#fff;box-shadow:var(--ring)}
+.inp::placeholder{color:var(--faint)}
+.fg .hint{font-size:11.5px;color:var(--faint)}
+details.adv{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px}
+details.adv summary{list-style:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--teal);display:flex;align-items:center;gap:8px}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary .chev{transition:transform .25s}
+details.adv[open] summary .chev{transform:rotate(180deg)}
+details.adv .adv-body{margin-top:16px}
+
+/* login / provision cards */
+.stack{display:grid;gap:22px}
+.mini-card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e2);border:1px solid var(--line-soft);padding:24px}
+.mini-card .step-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+.mini-card h3{font-size:1.2rem;margin:8px 0 6px}
+.mini-card p{font-size:13.5px;color:var(--dim);margin-bottom:16px}
+.oauth{display:flex;gap:12px;flex-wrap:wrap}
+.oauth button{display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:var(--r-sm);background:var(--surface-3);border:1px solid var(--line);font-size:14px;font-weight:500;transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .18s}
+@media(hover:hover){.oauth button:hover{transform:translateY(-2px);box-shadow:var(--e2);border-color:var(--teal)}}
+.note{font-size:12px;color:var(--faint);margin-top:14px;display:flex;gap:8px;align-items:flex-start}
+.note svg{flex:none;margin-top:2px;color:var(--teal)}
+.provision-row{display:flex;gap:12px;align-items:center}
+.provision-row .inp{flex:1}
+.provision-row .suffix{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--faint)}
+
+/* agent detail */
+.detail-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;justify-content:space-between}
+.identity-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.id-block{background:var(--surface-3);border-radius:var(--r-md);padding:16px;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.id-block .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-family:'IBM Plex Mono',monospace}
+.id-block .v{font-size:14px;font-weight:600;margin-top:6px;word-break:break-all}
+.id-block .v.mono{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--teal)}
+.limits-tbl{display:grid;gap:0;border-radius:var(--r-md);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.limit-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface-3);border-top:1px solid var(--line-soft)}
+.limit-row:first-child{border-top:0}
+.limit-row .ll{font-size:13px;color:var(--dim);min-width:150px;font-weight:500}
+.limit-row .lv{font-weight:600;font-size:14px}
+.limit-row .edit{margin-left:auto}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.action-box{background:var(--surface-3);border-radius:var(--r-md);padding:18px;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.action-box h4{font-size:1rem;margin-bottom:6px}
+.action-box p{font-size:12.5px;color:var(--dim);margin-bottom:14px}
+.result-line{font-size:13.5px;font-weight:600;margin-top:14px;padding:11px 14px;border-radius:var(--r-sm);display:none;align-items:center;gap:10px}
+.result-line.show{display:flex;animation:pop .35s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.res-allow{background:var(--allow-soft);color:var(--allow)}
+.res-deny{background:var(--deny-soft);color:var(--deny)}
+.danger-zone{background:var(--deny-soft);border-radius:var(--r-md);padding:20px;box-shadow:inset 0 0 0 1px rgba(178,59,59,.2)}
+.danger-zone h4{color:var(--deny);font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.danger-zone p{font-size:13px;color:#8a3535;margin:8px 0 16px;max-width:60ch}
+.dz-status{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--allow);margin-top:14px;display:none}
+.dz-status.revoked{color:var(--deny)}
+.dz-status.show{display:block;animation:pop .4s var(--ease)}
+
+/* View on-chain fold */
+details.viewchain{margin-top:14px}
+details.viewchain summary{list-style:none;cursor:pointer;font-size:12px;color:var(--teal);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
+details.viewchain summary::-webkit-details-marker{display:none}
+.chain-body{background:var(--surface-2);border-radius:var(--r-sm);padding:14px;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--dim);line-height:1.9;word-break:break-all}
+.chain-body .kk{color:var(--faint)}
+.chain-body .vv{color:var(--teal)}
+
+/* ======================= SANDBOX ======================= */
+.sb-intro{padding:34px 0 6px}
+.sb-intro h2{font-size:clamp(1.7rem,3.2vw,2.4rem)}
+.sb-intro .zero{display:inline-flex;align-items:center;gap:8px;background:var(--allow-soft);color:var(--allow);font-size:12px;font-weight:600;padding:5px 13px;border-radius:var(--r-pill);margin-bottom:14px}
+.sb-grid{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:24px;align-items:start}
+.beats-panel{display:grid;gap:12px}
+.beat-btn{width:100%;text-align:left;background:var(--surface);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--e2);border:1px solid var(--line-soft);transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .18s}
+@media(hover:hover){.beat-btn:hover{transform:translateY(-2px);box-shadow:var(--e3);border-color:var(--teal)}}
+.beat-btn .bn{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:.1em}
+.beat-btn .bt{font-weight:600;font-size:14.5px;margin:6px 0 4px}
+.beat-btn .bd{font-size:12px;color:var(--faint)}
+.beat-btn.danger{border-color:rgba(178,59,59,.25)}
+.beat-btn.danger .bn{color:var(--deny)}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line-soft)}
+.split-side{padding:24px;background:var(--surface)}
+.split-side.left{background:var(--surface-3);border-right:1px solid var(--line-soft)}
+.split-h{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.policy-rec{display:grid;gap:10px;transition:opacity .5s var(--ease)}
+.policy-rec.empty{opacity:.35}
+.prow{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:10px 0;border-top:1px solid var(--line-soft)}
+.prow:first-child{border-top:0}
+.prow .pk{color:var(--dim)}
+.prow .pv{font-weight:600;font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-align:right}
+.rec-empty-msg{display:none;font-family:Fraunces;font-size:1.2rem;color:var(--deny);align-items:center;gap:10px;padding:20px 0}
+.policy-rec.empty ~ .rec-empty-msg{display:flex}
+.big-result{min-height:150px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;transition:all .4s var(--ease)}
+.big-result .r{font-family:Fraunces;font-size:1.7rem;font-weight:600;display:flex;align-items:center;gap:14px}
+.big-result .r .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:18px}
+.big-result.allow .r{color:var(--allow)} .big-result.allow .ic{background:var(--allow-soft);color:var(--allow)}
+.big-result.deny .r{color:var(--deny)} .big-result.deny .ic{background:var(--deny-soft);color:var(--deny)}
+.big-result .meta{font-size:13px;color:var(--dim);margin-top:14px;max-width:40ch}
+.big-result.flash{animation:flash .6s var(--ease)}
+
+.audit{margin-top:22px}
+.audit .panel-b{max-height:230px;overflow-y:auto}
+.audit-row{display:flex;align-items:center;gap:12px;font-size:12.5px;padding:9px 0;border-top:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace}
+.audit-row:first-child{border-top:0}
+.audit-tag{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);letter-spacing:.06em}
+.at-allow{background:var(--allow-soft);color:var(--allow)}
+.at-deny{background:var(--deny-soft);color:var(--deny)}
+.audit-row .a-tx{color:var(--dim);flex:1}
+.audit-row .a-t{color:var(--faint)}
+
+/* ======================= PROOF ======================= */
+.proof-hero{padding:36px 0 10px}
+.proof-hero h2{font-size:clamp(1.7rem,3.2vw,2.4rem)}
+.proof-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:26px}
+.pf{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--e2);border:1px solid var(--line-soft);overflow:hidden;transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+@media(hover:hover){.pf:hover{transform:translateY(-4px);box-shadow:var(--e3)}}
+.pf-h{padding:20px 22px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:12px}
+.pf-h .ico{width:38px;height:38px;border-radius:11px;background:var(--teal-soft);color:var(--teal);display:grid;place-items:center;box-shadow:var(--e1)}
+.pf-h .prize{font-family:Fraunces;font-weight:600;font-size:1.15rem}
+.pf-h .net{font-size:11.5px;color:var(--faint);margin-top:2px}
+.pf-b{padding:8px 22px 20px}
+.pf-row{padding:13px 0;border-top:1px solid var(--line-soft)}
+.pf-row:first-child{border-top:0}
+.pf-row .l{font-size:12px;color:var(--faint);margin-bottom:5px}
+.pf-row .v{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--teal);word-break:break-all;display:flex;align-items:center;gap:8px}
+.pf-row .v .ext{color:var(--faint);flex:none}
+.honest-banner{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--e2);border:1px solid var(--line-soft);padding:20px 24px;margin-top:26px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.honest-banner .m{color:var(--teal);flex:none}
+.honest-banner p{font-size:13.5px;color:var(--dim)}
+.honest-banner b{color:var(--ink)}
+.proof-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;font-size:12px;color:var(--faint)}
+.proof-legend span{display:inline-flex;align-items:center;gap:7px}
+
+/* ---------- responsive ---------- */
+@media(max-width:900px){
+  .stats-row,.problem-grid,.beats,.proof-strip,.proof-cards,.honest-list,.identity-grid,.miniStats{grid-template-columns:1fr}
+  .stat+.stat,.beat+.beat,.miniStat+.miniStat{border-left:0;border-top:1px solid var(--line-soft)}
+  .grid-2,.sb-grid{grid-template-columns:1fr}
+  .levers{grid-template-columns:1fr}.lever.wide,.lever.med,.lever.kill,.lever.third{grid-column:span 1}
+  .ab{grid-template-columns:1fr}.ab-mid{padding:18px 0}.ab-arrow{flex-direction:row}
+  .form-grid,.action-grid{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}.split-side.left{border-right:0;border-bottom:1px solid var(--line-soft)}
+  .beat .arr{display:none}
+  .tabs{overflow-x:auto}
+}
+@media(max-width:560px){
+  .wrap{padding:0 18px}.nav-in{padding:12px 18px;gap:14px flex-wrap:wrap}
+  .nav-cta{display:none}
+  .hero{padding:56px 0 44px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+/* load-in stagger */
+.stagger>*{opacity:0;transform:translateY(14px);animation:rise .6s var(--ease) forwards}
+.stagger>*:nth-child(1){animation-delay:.04s}
+.stagger>*:nth-child(2){animation-delay:.12s}
+.stagger>*:nth-child(3){animation-delay:.2s}
+.stagger>*:nth-child(4){animation-delay:.28s}
+.stagger>*:nth-child(5){animation-delay:.36s}
+@keyframes rise{to{opacity:1;transform:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#" onclick="go('landing');return false" aria-label="LEASH home">
+      <svg class="mark" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="7" r="4.2" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 11.2c-.2 3.5-1.6 5-1.6 7.3a1.6 1.6 0 1 0 3.2 0c0-2.3-1.4-3.8-1.6-7.3z" fill="currentColor"/>
+      </svg>
+      LEASH
+    </a>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" aria-current="true" data-tab="landing" onclick="go('landing')">Landing</button>
+      <button class="tab" role="tab" aria-current="false" data-tab="console" onclick="go('console')">Console</button>
+      <button class="tab" role="tab" aria-current="false" data-tab="sandbox" onclick="go('sandbox')">Sandbox</button>
+      <button class="tab" role="tab" aria-current="false" data-tab="proof" onclick="go('proof')">Proof</button>
+    </div>
+    <button class="nav-cta" onclick="go('console')">Open your console →</button>
+  </div>
+</nav>
+
+<!-- ===================== LANDING ===================== -->
+<main id="landing" class="page active" role="tabpanel" aria-label="Landing">
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="wrap stagger">
+      <div class="eyebrow">ENS · Hedera x402 · Privy</div>
+      <h1>Mission control for the agents that <span class="accent">spend your money.</span></h1>
+      <p class="sub">Bind every agent you already run to an on-chain identity, a co-owned spending account, and the limits you set. Change or cut off any agent everywhere in one on-chain write — its very next payment fails closed.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="go('console')">Open your console →</button>
+        <a class="link-sub" href="#" onclick="go('sandbox');return false">For judges — try the live demo (no login) →</a>
+      </div>
+      <div class="stats-row" role="list">
+        <div class="stat" role="listitem"><div class="k"><em>1 write</em> · cut off everywhere</div><div class="v">Revoke on-chain — the next payment is blocked everywhere, instantly</div></div>
+        <div class="stat" role="listitem"><div class="k"><em>2-of-2</em> · co-owned account</div><div class="v">The agent and LEASH must both approve — neither spends alone</div></div>
+        <div class="stat" role="listitem"><div class="k"><em>gas-free</em> · agent pays $0</div><div class="v">Hedera x402 sponsors gas; every decision is logged on consensus</div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- problem -->
+  <section class="sec wrap">
+    <div class="section-label">The problem</div>
+    <h2>A raw key has no cap and no off-switch.</h2>
+    <p class="lead">Companies now run fleets of autonomous agents that pay for things — APIs, compute, vendors. The moment one holds a key, the money is exposed.</p>
+    <div class="problem-grid">
+      <div class="prob"><div class="n">01</div><h4>No ceiling</h4><p>A leaked key drains everything it can reach. There is no per-payment cap and no daily budget standing between the agent and your balance.</p></div>
+      <div class="prob"><div class="n">02</div><h4>No off-switch</h4><p>Cutting a compromised agent today means touching every service by hand — rotating keys, revoking scopes, hoping you caught them all.</p></div>
+      <div class="prob"><div class="n">03</div><h4>No record</h4><p>When an agent spends, there's rarely an independent, tamper-evident log of what it paid, to whom, and whether the payment was allowed.</p></div>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- how it works -->
+  <section class="sec wrap">
+    <div class="section-label">How it works</div>
+    <h2>Bind → Declare → Enforce → Revoke.</h2>
+    <div class="beats">
+      <div class="beat"><div class="step">1</div><h4>Bind</h4><p>Link an agent you already run to an on-chain-resolved identity and a co-owned 2-of-2 account.</p><span class="arr">→</span></div>
+      <div class="beat"><div class="step">2</div><h4>Declare</h4><p>Set a hard per-payment cap, soft daily/weekly budgets, an active-hours window, and who it can pay. Policy lives in the agent's ENS record.</p><span class="arr">→</span></div>
+      <div class="beat"><div class="step">3</div><h4>Enforce</h4><p>The facilitator LEASH runs checks every payment against the policy you set. In cap → paid, gas-free. Over cap → refused.</p><span class="arr">→</span></div>
+      <div class="beat"><div class="step">4</div><h4>Revoke</h4><p>One on-chain write clears the record. The agent's next payment fails closed everywhere. Reversible.</p></div>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- money shot -->
+  <section class="sec wrap">
+    <div class="section-label">The one-write kill</div>
+    <h2>One on-chain write. Cut off everywhere.</h2>
+    <p class="lead">The same agent, the same $3 payment — before and after a single revocation. This is the whole product in one motion.</p>
+    <div class="moneyshot">
+      <div class="ms-head">
+        <h3>data.acme.leash.eth · pays api.acme.dev</h3>
+        <button class="btn btn-danger btn-sm" onclick="revokeMoneyshot()" id="ms-btn">Revoke this agent (1 on-chain write)</button>
+      </div>
+      <div class="ab">
+        <div class="ab-side">
+          <div class="ab-card ab-allow" id="ms-before">
+            <div class="lbl">Before — active</div>
+            <div class="ab-result"><span class="icn">✓</span> Paid $3</div>
+            <div class="ab-meta">to api.acme.dev · within the $5 cap · gas-free · logged on Hedera Consensus Service</div>
+          </div>
+        </div>
+        <div class="ab-mid">
+          <div class="ab-arrow">
+            <div class="ab-write" id="ms-write">clearRecord — 1 on-chain write</div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="ab-side">
+          <div class="ab-card ab-deny" id="ms-after" style="opacity:.45">
+            <div class="lbl">After — revoked</div>
+            <div class="ab-result"><span class="icn">✕</span> Blocked — revoked</div>
+            <div class="ab-meta">same $3 payment · record gone · cut off everywhere · next payment fails closed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- levers -->
+  <section class="sec wrap">
+    <div class="section-label">What you control</div>
+    <h2>Six levers over every agent.</h2>
+    <div class="levers">
+      <div class="lever wide">
+        <span class="li"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.4 8 8 10 4.6-2 8-5 8-10V6l-8-4z" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <h4>Identity</h4>
+        <p>Bind the agent's external on-chain-resolved ERC-8004 / EVM identity. <span class="badge b-onchain">on-chain-resolved</span></p>
+      </div>
+      <div class="lever med">
+        <span class="li"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="12" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="12" r="2" stroke="currentColor" stroke-width="1.8"/></svg></span>
+        <h4>Co-owned account</h4>
+        <p>A 2-of-2 Hedera account — the agent and LEASH must both approve. Neither spends alone.</p>
+      </div>
+      <div class="lever third">
+        <span class="li"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8h9a3 3 0 0 1 0 6H5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <h4>Limits</h4>
+        <p>A hard per-payment cap, optional soft daily/weekly budgets, and an active-hours window.</p>
+      </div>
+      <div class="lever third">
+        <span class="li"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/></svg></span>
+        <h4>Funding</h4>
+        <p>Privy is the independent funding rail. An over-fund is denied before it goes out.</p>
+      </div>
+      <div class="lever third">
+        <span class="li"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3h.01M12 3 3 20h18L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <h4>Audit</h4>
+        <p>Every ALLOW / DENY decision is logged on Hedera Consensus Service. Live spend feed in the console.</p>
+      </div>
+      <div class="lever kill">
+        <span class="li"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3v9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 7a8 8 0 1 0 11 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <h4>Kill-switch — the whole point</h4>
+        <p>One on-chain write revokes the agent everywhere. The next payment fails closed. Fully reversible — reactivate when it's safe.</p>
+        <span class="kbadge">✕ Revoked → cut off everywhere · ✓ Reactivate anytime</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- honest model -->
+  <section class="sec wrap">
+    <div class="section-label">The honest model</div>
+    <h2>Control and independence — not trustlessness.</h2>
+    <p class="lead">LEASH is a corporate-card model for agents. We're precise about what the chain does and what the facilitator does.</p>
+    <div class="honest">
+      <details class="honest-d" open>
+        <summary>How enforcement actually works <span class="tag">read the fine print</span> <span class="chev">▾</span></summary>
+        <div class="honest-body">
+          <div class="honest-list">
+            <div class="honest-item"><span class="m">→</span><div><b>The chain stores the policy and the revocation.</b> Your limits live in the agent's ENS record; a revoke is one on-chain write. The facilitator LEASH runs enforces the limits you set on each payment.</div></div>
+            <div class="honest-item"><span class="m">→</span><div><b>Identity is on-chain-resolved, not verified.</b> We resolve the agent's ERC-8004 / EVM identity from the chain — we don't attest that the operator behind it is who they claim.</div></div>
+            <div class="honest-item"><span class="m">→</span><div><b>Rolling caps are a soft budget.</b> Daily and weekly ceilings are best-effort accounting, not an exact trustless guarantee. The per-payment cap is the hard limit.</div></div>
+            <div class="honest-item"><span class="m">→</span><div><b>Privy denies over-funding on an independent rail.</b> Funding is a separate path; an over-fund is blocked before it goes out. Privy does not co-sign payments.</div></div>
+            <div class="honest-item"><span class="m">→</span><div><b>Co-owned, 2-of-2.</b> The agent holds its own key; LEASH holds only its co-signer key plus the agent's public key. Neither can spend alone.</div></div>
+            <div class="honest-item"><span class="m">→</span><div><b>LEASH binds agents, it doesn't mint them.</b> You bring an agent you already run; we bind it to identity, an account, and limits.</div></div>
+          </div>
+          <div class="truthbar">
+            <span class="tb-true">Control — TRUE</span>
+            <span class="tb-true">Independence — TRUE</span>
+            <span class="tb-false">Trustlessness — FALSE</span>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <hr class="hair" />
+
+  <!-- proof strip -->
+  <section class="sec wrap">
+    <div class="section-label">On-chain proof</div>
+    <h2>Every claim resolves on-chain.</h2>
+    <div class="proof-strip">
+      <div class="pcard">
+        <div class="h"><span class="badge b-onchain">ENS</span><span class="p">Policy & identity</span></div>
+        <div class="row"><span class="kk">ETHRegistry (Sepolia)</span><span class="vv">0x67b7…4b43</span></div>
+        <div class="row"><span class="kk">ERC-8004 Registry</span><span class="vv">0x8004…BD9e</span></div>
+        <div class="row"><span class="kk">agentId</span><span class="vv">7395</span></div>
+      </div>
+      <div class="pcard">
+        <div class="h"><span class="badge b-onchain">Hedera x402</span><span class="p">Account & audit</span></div>
+        <div class="row"><span class="kk">KeyList account</span><span class="vv">0.0.10508343</span></div>
+        <div class="row"><span class="kk">Settlement</span><span class="vv">gas-free · testnet</span></div>
+        <div class="row"><span class="kk">Audit</span><span class="vv">Consensus Service</span></div>
+      </div>
+      <div class="pcard">
+        <div class="h"><span class="badge b-onchain">Kill-switch</span><span class="p">Co-held role</span></div>
+        <div class="row"><span class="kk">Grant tx</span><span class="vv">0x3155…0101</span></div>
+        <div class="row"><span class="kk">Owner</span><span class="vv">0x92AA…7522</span></div>
+        <div class="row"><span class="kk">Governed agent</span><span class="vv">0x42D7…8919</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="sec wrap">
+    <div class="cta-band">
+      <h2>Put the leash on your fleet.</h2>
+      <p class="sub">Bind the agents you already run. Set the limits. Keep the one-write kill in your pocket.</p>
+      <div class="btns">
+        <button class="btn btn-primary" onclick="go('console')">Open your console →</button>
+        <button class="btn btn-ghost" onclick="go('sandbox')">Judges — try the live demo</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer wrap">
+    <a class="brand" href="#" onclick="go('landing');return false"><svg class="mark" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 11.2c-.2 3.5-1.6 5-1.6 7.3a1.6 1.6 0 1 0 3.2 0c0-2.3-1.4-3.8-1.6-7.3z" fill="currentColor"/></svg>LEASH</a>
+    <span>The control layer for your AI agent fleet · ENS · Hedera x402 · Privy</span>
+    <a class="link-sub" href="#" onclick="go('proof');return false">View on-chain proof →</a>
+  </footer>
+</main>
+
+<!-- ===================== CONSOLE ===================== -->
+<section id="console" class="page" role="tabpanel" aria-label="Console">
+  <div class="wrap">
+    <div class="app-head">
+      <div class="section-label">Console · owner product</div>
+      <h2>Fleet control</h2>
+      <div class="statusbar">
+        <span class="sb"><span class="dot dot-a"></span> Facilitator <b>online</b></span>
+        <span class="sep"></span>
+        <span class="sb">Signed in as <b>ops@acme.dev</b></span>
+        <span class="sep"></span>
+        <span class="sb">Org <b>acme.leash.eth</b></span>
+        <span class="sb push"><span class="chip">gas sponsored</span><span class="chip">Sepolia + Hedera testnet</span></span>
+      </div>
+    </div>
+
+    <!-- login + provision (compact, shown as completed steps at top) -->
+    <div class="grid-2">
+      <div class="stack">
+        <div class="mini-card">
+          <div class="step-tag">Step 1 · Connect</div>
+          <h3>Sign in with Privy</h3>
+          <p>Email or Google — no seed phrase. Privy provisions an embedded wallet and gas is sponsored, so you sign in like any SaaS product.</p>
+          <div class="oauth">
+            <button><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6"/></svg> Continue with email</button>
+            <button><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.6"/></svg> Continue with Google</button>
+          </div>
+          <div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5m0 3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Privy is the independent funding rail. It provisions the wallet — it does not co-sign your agents' payments.</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="step-tag">Step 2 · Provision org</div>
+          <h3>Claim your org name</h3>
+          <p>Pick a name → mint <span class="mono">&lt;org&gt;.leash.eth</span>. Gas-sponsored, one time.</p>
+          <div class="provision-row">
+            <input class="inp mono" value="acme" aria-label="Org name" />
+            <span class="suffix">.leash.eth</span>
+            <button class="btn btn-primary btn-sm">Provision</button>
+          </div>
+          <div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <b style="color:var(--allow)">acme.leash.eth</b> is live — your fleet is anchored to this name.</div>
+        </div>
+      </div>
+
+      <!-- org spend feed -->
+      <div class="panel">
+        <div class="panel-h"><h3>Live org spend feed</h3><span class="sub">Hedera Consensus Service</span></div>
+        <div class="feed">
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>data</b> agent paid $3 to api.acme.dev</div><span class="t">2m ago</span></div>
+          <div class="ev"><span class="ic ic-d">✕</span><div class="tx"><b>payments</b> agent blocked — over daily limit</div><span class="t">5m ago</span></div>
+          <div class="ev"><span class="ic ic-d">✕</span><div class="tx"><b>research</b> agent revoked — cut off everywhere</div><span class="t">just now</span></div>
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>data</b> agent paid $2 to api.acme.dev</div><span class="t">14m ago</span></div>
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>payments</b> agent paid $18 to stripe.com</div><span class="t">31m ago</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- fleet overview -->
+    <div class="grid-main" style="margin-top:22px">
+      <div class="panel">
+        <div class="panel-b">
+          <div class="orghead">
+            <div class="av"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+            <div>
+              <div class="nm">acme.leash.eth</div>
+              <div class="mono">Fleet of 3 agents · owner 0x92AA…7522</div>
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="document.getElementById('bind-form').scrollIntoView({behavior:'smooth'})">+ Bind an agent</button>
+          </div>
+          <div class="miniStats">
+            <div class="miniStat"><div class="k">3</div><div class="v">Agents</div></div>
+            <div class="miniStat"><div class="k a">2</div><div class="v">Active</div></div>
+            <div class="miniStat"><div class="k r">1</div><div class="v">Revoked</div></div>
+            <div class="miniStat"><div class="k">$46</div><div class="v">Spent today</div></div>
+          </div>
+        </div>
+
+        <!-- agent list -->
+        <div class="panel-h" style="border-top:1px solid var(--line-soft)"><h3>Agents</h3><span class="sub">Click an agent to open full controls</span></div>
+        <div>
+          <div class="agent-row">
+            <div class="id">
+              <div class="nm">data.acme.leash.eth <span class="badge b-active"><span class="dot dot-a"></span>Active</span> <span class="badge b-onchain">on-chain-resolved</span> <span class="badge b-coowned">co-owned</span></div>
+              <div class="caps"><span class="chip">Up to $5 / payment</span><span class="chip">Up to $50/day (soft)</span><span class="chip">Can pay: api.acme.dev</span></div>
+              <div class="fundbar"><i style="width:40%"></i></div>
+              <div class="sub">Funded $40 of $100</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="go('console-detail')">Open →</button>
+          </div>
+          <div class="agent-row">
+            <div class="id">
+              <div class="nm">payments.acme.leash.eth <span class="badge b-active"><span class="dot dot-a"></span>Active</span> <span class="badge b-coowned">co-owned</span></div>
+              <div class="caps"><span class="chip">Up to $25 / payment</span><span class="chip">Up to $200/week (soft)</span><span class="chip">Can pay: billing.acme.dev, stripe.com</span></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="go('console-detail')">Open →</button>
+          </div>
+          <div class="agent-row dim">
+            <div class="id">
+              <div class="nm">research.acme.leash.eth <span class="badge b-revoked"><span class="dot dot-r"></span>Revoked</span></div>
+              <div class="caps"><span class="chip">Cut off everywhere · record cleared</span></div>
+            </div>
+            <button class="btn btn-quiet btn-sm">Reactivate</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- bind an agent form -->
+      <div class="panel" id="bind-form">
+        <div class="panel-h"><h3>Bind an agent</h3><span class="sub">You bring an agent you already run — LEASH binds it</span></div>
+        <div class="panel-b">
+          <div class="form-grid">
+            <div class="fg full">
+              <label>Agent's Hedera public key <span class="req">required</span></label>
+              <input class="inp mono" placeholder="302a300506032b6570032100…" aria-label="Hedera public key" />
+              <span class="hint">The agent holds its own key. LEASH stores only the public key + its co-signer key.</span>
+            </div>
+            <div class="fg">
+              <label>ERC-8004 agentId</label>
+              <input class="inp mono" placeholder="7395" aria-label="agentId" />
+              <span class="hint">Resolved on-chain, not verified.</span>
+            </div>
+            <div class="fg">
+              <label>External EVM address</label>
+              <input class="inp mono" placeholder="0x42D7…8919" aria-label="EVM address" />
+            </div>
+            <div class="fg">
+              <label>Label</label>
+              <input class="inp" placeholder="data" aria-label="Label" />
+            </div>
+            <div class="fg">
+              <label>Per-payment cap (hard) <span class="req">required</span></label>
+              <input class="inp" placeholder="$5" aria-label="Per-payment cap" />
+            </div>
+          </div>
+
+          <details class="adv">
+            <summary>Advanced — allowlist, identity & dynamic limits <span class="chev">▾</span></summary>
+            <div class="adv-body">
+              <div class="form-grid">
+                <div class="fg full">
+                  <label>Allowlist — who this agent can pay</label>
+                  <input class="inp" placeholder="api.acme.dev" aria-label="Allowlist" />
+                  <span class="hint">Comma-separated. A payment to anyone off this list is refused.</span>
+                </div>
+                <div class="fg">
+                  <label>Agent type</label>
+                  <input class="inp" placeholder="Data / ingestion" aria-label="Agent type" />
+                  <span class="hint">Advisory identity.</span>
+                </div>
+                <div class="fg">
+                  <label>Description</label>
+                  <input class="inp" placeholder="Pays the ingestion API" aria-label="Description" />
+                </div>
+                <div class="fg">
+                  <label>Rolling daily cap (soft)</label>
+                  <input class="inp" placeholder="$50/day" aria-label="Daily cap" />
+                </div>
+                <div class="fg">
+                  <label>Rolling weekly cap (soft)</label>
+                  <input class="inp" placeholder="$200/week" aria-label="Weekly cap" />
+                </div>
+                <div class="fg">
+                  <label>Active hours — from (UTC)</label>
+                  <input class="inp mono" placeholder="08:00" aria-label="Active from" />
+                </div>
+                <div class="fg">
+                  <label>Active hours — to (UTC)</label>
+                  <input class="inp mono" placeholder="20:00" aria-label="Active to" />
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <div style="display:flex;gap:12px;margin-top:22px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary">Bind agent (gas-sponsored)</button>
+            <span class="note" style="margin:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="12" r="2" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="12" r="2" stroke="currentColor" stroke-width="1.6"/></svg> Creates a 2-of-2 co-owned account and writes the policy to the agent's ENS record.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONSOLE — AGENT DETAIL ===================== -->
+<section id="console-detail" class="page" role="tabpanel" aria-label="Agent detail">
+  <div class="wrap">
+    <div class="app-head">
+      <a class="link-sub" href="#" onclick="go('console');return false">← Back to fleet</a>
+      <div class="detail-head" style="margin-top:16px">
+        <div>
+          <h2>data.acme.leash.eth</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <span class="badge b-active" id="dz-badge"><span class="dot dot-a"></span>Active</span>
+            <span class="badge b-onchain">on-chain-resolved</span>
+            <span class="badge b-coowned">co-owned · 2-of-2</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost btn-sm">Edit policy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="grid-main">
+        <!-- identity -->
+        <div class="panel">
+          <div class="panel-h"><h3>Identity</h3><span class="sub">on-chain-resolved, not verified</span></div>
+          <div class="panel-b">
+            <div class="identity-grid">
+              <div class="id-block"><div class="l">ERC-8004 agentId</div><div class="v mono">#7395</div></div>
+              <div class="id-block"><div class="l">External EVM</div><div class="v mono">0x42D7…8919</div></div>
+              <div class="id-block"><div class="l">Co-owned account</div><div class="v mono">0.0.10508343</div></div>
+            </div>
+            <details class="viewchain">
+              <summary>View on-chain ▾</summary>
+              <div class="chain-body">
+                <span class="kk">ENS ETHRegistry:</span> <span class="vv">0x67b728a792e789a8978b30cf1b3b641f19354b43</span><br>
+                <span class="kk">ERC-8004 Registry:</span> <span class="vv">0x8004A818BFB912233c491871b3d84c89A494BD9e</span><br>
+                <span class="kk">agentId 7395 → owner:</span> <span class="vv">0x92AAe0857979a139344f5b6F008e71F27A507522</span><br>
+                <span class="kk">Verify on Etherscan (Sepolia) / HashScan</span>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- limits -->
+        <div class="panel">
+          <div class="panel-h"><h3>Current limits</h3><span class="sub">the facilitator enforces these</span></div>
+          <div class="panel-b">
+            <div class="limits-tbl">
+              <div class="limit-row"><span class="ll">Per-payment cap (hard)</span><span class="lv">$5</span><button class="btn btn-quiet btn-sm edit">Edit</button></div>
+              <div class="limit-row"><span class="ll">Rolling daily (soft budget)</span><span class="lv">$50 / day</span><button class="btn btn-quiet btn-sm edit">Edit</button></div>
+              <div class="limit-row"><span class="ll">Rolling weekly (soft budget)</span><span class="lv">— not set</span><button class="btn btn-quiet btn-sm edit">Set</button></div>
+              <div class="limit-row"><span class="ll">Active hours (UTC)</span><span class="lv">08:00 → 20:00</span><button class="btn btn-quiet btn-sm edit">Edit</button></div>
+              <div class="limit-row"><span class="ll">Can pay (allowlist)</span><span class="lv">api.acme.dev</span><button class="btn btn-quiet btn-sm edit">Edit</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- funding + test payment -->
+        <div class="panel">
+          <div class="panel-h"><h3>Funding & test a payment</h3><span class="sub">Privy rail · facilitator enforcement</span></div>
+          <div class="panel-b">
+            <div class="action-grid">
+              <div class="action-box">
+                <h4>Funding</h4>
+                <p>Funded $40 of $100 · Privy independent rail.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="showRes('fund-res','allow','✓ Funded $10 · balance $50 of $100')">Fund $10</button>
+                  <button class="btn btn-quiet btn-sm" onclick="showRes('fund-res','deny','✕ Over-fund denied — Privy blocked $500 before it went out')">Try an over-fund →</button>
+                </div>
+                <div class="result-line" id="fund-res"></div>
+              </div>
+              <div class="action-box">
+                <h4>Test a payment</h4>
+                <p>Simulate against the current policy.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="showRes('pay-res','allow','✓ Paid $3 to api.acme.dev · gas-free · logged')">Pay $3 (in cap)</button>
+                  <button class="btn btn-quiet btn-sm" onclick="showRes('pay-res','deny','✕ Blocked — over the $5 per-payment cap')">Pay $50 (over cap)</button>
+                </div>
+                <div class="result-line" id="pay-res"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- danger zone -->
+        <div class="panel">
+          <div class="panel-b">
+            <div class="danger-zone">
+              <h4><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3h.01M12 3 3 20h18L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Danger zone — kill-switch</h4>
+              <p>One on-chain write clears this agent's record. The very next payment fails closed everywhere. Reversible — you can reactivate when it's safe.</p>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <button class="btn btn-danger" id="dz-revoke" onclick="revokeAgent()">Revoke — cut off everywhere</button>
+                <button class="btn btn-quiet" id="dz-react" onclick="reactivateAgent()" style="display:none">Reactivate agent</button>
+              </div>
+              <div class="dz-status" id="dz-status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- per-agent feed -->
+      <div class="panel">
+        <div class="panel-h"><h3>Activity — data agent</h3><span class="sub">per-agent</span></div>
+        <div class="feed" id="agent-feed">
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>Paid $3</b> to api.acme.dev</div><span class="t">2m ago</span></div>
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>Paid $2</b> to api.acme.dev</div><span class="t">14m ago</span></div>
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>Funded $20</b> · Privy rail</div><span class="t">1h ago</span></div>
+          <div class="ev"><span class="ic ic-d">✕</span><div class="tx"><b>Blocked</b> — payment to unknown host</div><span class="t">3h ago</span></div>
+          <div class="ev"><span class="ic ic-a">✓</span><div class="tx"><b>Bound</b> · 2-of-2 account created</div><span class="t">2d ago</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SANDBOX ===================== -->
+<section id="sandbox" class="page" role="tabpanel" aria-label="Sandbox">
+  <div class="wrap">
+    <div class="sb-intro">
+      <div class="zero">● No login · no wallet · no ETH — built for judges</div>
+      <div class="section-label">Sandbox · live demo</div>
+      <h2>Four beats. Watch the policy and the payment move together.</h2>
+    </div>
+
+    <div class="sb-grid">
+      <div class="beats-panel">
+        <button class="beat-btn" onclick="sbSpend()">
+          <div class="bn">BEAT 1</div><div class="bt">Spend $3 (in cap)</div><div class="bd">Within the $5 cap · gas-free</div>
+        </button>
+        <button class="beat-btn" onclick="sbOverCap()">
+          <div class="bn">BEAT 2</div><div class="bt">Try $50 (over cap)</div><div class="bd">Refused by the facilitator</div>
+        </button>
+        <button class="beat-btn danger" onclick="sbRevoke()">
+          <div class="bn">BEAT 3</div><div class="bt">Revoke on-chain</div><div class="bd">Clears the record → cut off everywhere</div>
+        </button>
+        <button class="beat-btn" onclick="sbOverFund()">
+          <div class="bn">BEAT 4</div><div class="bt">Leaked-key over-fund</div><div class="bd">Privy blocks it on the funding rail</div>
+        </button>
+        <button class="beat-btn" onclick="sbReset()" style="opacity:.85">
+          <div class="bn">RESET</div><div class="bt">↻ Restore the agent</div><div class="bd">Reactivate · rewrite policy</div>
+        </button>
+      </div>
+
+      <div>
+        <div class="split">
+          <div class="split-side left">
+            <div class="split-h"><span class="dot dot-a" id="rec-dot"></span> ENS spend-policy record · data.acme.leash.eth</div>
+            <div class="policy-rec" id="policy-rec">
+              <div class="prow"><span class="pk">Status</span><span class="pv" style="color:var(--allow)">ACTIVE</span></div>
+              <div class="prow"><span class="pk">Per-payment cap</span><span class="pv">$5.00</span></div>
+              <div class="prow"><span class="pk">Daily (soft)</span><span class="pv">$50.00</span></div>
+              <div class="prow"><span class="pk">Can pay</span><span class="pv">api.acme.dev</span></div>
+              <div class="prow"><span class="pk">agentId</span><span class="pv">#7395</span></div>
+              <div class="prow"><span class="pk">Account</span><span class="pv">0.0.10508343</span></div>
+            </div>
+            <div class="rec-empty-msg">✕ Record cleared — revoked</div>
+          </div>
+          <div class="split-side right">
+            <div class="split-h">Live payment result</div>
+            <div class="big-result allow" id="sb-result">
+              <div class="r"><span class="ic">✓</span> Paid $3</div>
+              <div class="meta">to api.acme.dev · within the $5 cap · gas-free · settled on the co-owned account 0.0.10508343 and logged on Hedera Consensus Service.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel audit">
+          <div class="panel-h"><h3>Audit log</h3><span class="sub">Hedera Consensus Service — ALLOW / DENY</span></div>
+          <div class="panel-b" id="audit-log">
+            <div class="audit-row"><span class="audit-tag at-allow">ALLOW</span><span class="a-tx">data → api.acme.dev · $3.00 · in cap</span><span class="a-t">just now</span></div>
+            <div class="audit-row"><span class="audit-tag at-allow">ALLOW</span><span class="a-tx">data → api.acme.dev · $2.00 · in cap</span><span class="a-t">14m</span></div>
+            <div class="audit-row"><span class="audit-tag at-deny">DENY</span><span class="a-tx">payments → over daily limit · $210.00</span><span class="a-t">22m</span></div>
+            <div class="audit-row"><span class="audit-tag at-allow">ALLOW</span><span class="a-tx">payments → stripe.com · $18.00 · in cap</span><span class="a-t">31m</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PROOF ===================== -->
+<section id="proof" class="page" role="tabpanel" aria-label="Proof">
+  <div class="wrap">
+    <div class="proof-hero">
+      <div class="section-label">Proof · deployed & verifiable</div>
+      <h2>Three integrations. Every pointer resolves on-chain.</h2>
+    </div>
+
+    <div class="proof-cards">
+      <div class="pf">
+        <div class="pf-h">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.4 8 8 10 4.6-2 8-5 8-10V6l-8-4z" stroke="currentColor" stroke-width="1.8"/></svg></div>
+          <div><div class="prize">ENS</div><div class="net">Identity & policy · Sepolia</div></div>
+        </div>
+        <div class="pf-b">
+          <div class="pf-row"><div class="l">ETHRegistry</div><div class="v">0x67b728a792e789a8978b30cf1b3b641f19354b43 <span class="ext">↗</span></div></div>
+          <div class="pf-row"><div class="l">ERC-8004 Identity Registry</div><div class="v">0x8004A818BFB912233c491871b3d84c89A494BD9e <span class="ext">↗</span></div></div>
+          <div class="pf-row"><div class="l">On-chain-resolved binding</div><div class="v">agentId 7395 → 0x92AAe0857979a139344f5b6F008e71F27A507522</div></div>
+          <div class="pf-row"><div class="l">What lives here</div><div class="v" style="color:var(--dim);font-family:Inter">The agent's spend policy + its on-chain-resolved identity. Verifiable on Etherscan (Sepolia).</div></div>
+        </div>
+      </div>
+
+      <div class="pf">
+        <div class="pf-h">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="12" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="12" r="2" stroke="currentColor" stroke-width="1.8"/></svg></div>
+          <div><div class="prize">Hedera x402</div><div class="net">Account, settlement & audit · testnet</div></div>
+        </div>
+        <div class="pf-b">
+          <div class="pf-row"><div class="l">Co-signed in-cap payment settles on KeyList account</div><div class="v">0.0.10508343 <span class="ext">↗</span></div></div>
+          <div class="pf-row"><div class="l">Kill-switch role — grant tx (user co-holds)</div><div class="v">0x31559a9b7300bb5e4eeb8759d7e1285f14b423050ae451eb16f187eab49e0101 <span class="ext">↗</span></div></div>
+          <div class="pf-row"><div class="l">Audit</div><div class="v" style="color:var(--dim);font-family:Inter">Every ALLOW / DENY logged on Hedera Consensus Service. Verifiable on HashScan / Hedera Mirror.</div></div>
+        </div>
+      </div>
+
+      <div class="pf">
+        <div class="pf-h">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/></svg></div>
+          <div><div class="prize">Privy</div><div class="net">Independent funding rail</div></div>
+        </div>
+        <div class="pf-b">
+          <div class="pf-row"><div class="l">Login & embedded wallet</div><div class="v" style="color:var(--dim);font-family:Inter">Email / Google sign-in provisions an embedded wallet; gas is sponsored.</div></div>
+          <div class="pf-row"><div class="l">Funding guarantee</div><div class="v" style="color:var(--dim);font-family:Inter">An over-fund is denied before it goes out. Privy is the independent rail — it does not co-sign payments.</div></div>
+          <div class="pf-row"><div class="l">Owner</div><div class="v">0x92AAe0857979a139344f5b6F008e71F27A507522</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="honest-banner">
+      <span class="m"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.4 8 8 10 4.6-2 8-5 8-10V6l-8-4z" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <p><b>On-chain-resolved, not verified.</b> LEASH gives you control and independence — a corporate-card model for agents. The chain stores the policy and records the revocation; the facilitator LEASH runs enforces the limits you set. Rolling caps are a soft budget. This is not a trustless system, and we don't claim it is.</p>
+    </div>
+
+    <div class="proof-legend">
+      <span>↗ Verifiable on Etherscan (Sepolia)</span>
+      <span>↗ Verifiable on HashScan</span>
+      <span>↗ Verifiable on Hedera Mirror</span>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ---------- routing ---------- */
+function go(id){
+  var pages=document.querySelectorAll('.page');
+  pages.forEach(function(p){p.classList.remove('active')});
+  var target=document.getElementById(id==='console-detail'?'console-detail':id);
+  if(!target){target=document.getElementById('landing');id='landing'}
+  target.classList.add('active');
+  // tab highlight (console-detail keeps console active)
+  var tabId=(id==='console-detail')?'console':id;
+  document.querySelectorAll('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===tabId;
+    t.setAttribute('aria-current',on?'true':'false');
+  });
+  window.scrollTo({top:0,behavior:'auto'});
+}
+
+/* ---------- landing money-shot ---------- */
+function revokeMoneyshot(){
+  var before=document.getElementById('ms-before');
+  var after=document.getElementById('ms-after');
+  var btn=document.getElementById('ms-btn');
+  before.style.transition='opacity .5s, transform .5s';
+  before.style.opacity='.4';before.style.transform='scale(.985)';
+  after.style.transition='opacity .5s, transform .5s';
+  after.style.opacity='1';after.style.transform='none';
+  after.classList.add('flash');
+  setTimeout(function(){after.classList.remove('flash')},650);
+  btn.textContent='✓ Revoked — 1 write, cut off everywhere';
+  btn.disabled=true;btn.style.opacity='.7';btn.style.cursor='default';
+  setTimeout(function(){
+    btn.disabled=false;btn.style.opacity='';btn.style.cursor='';
+    btn.textContent='Revoke this agent (1 on-chain write)';
+    before.style.opacity='';before.style.transform='';
+    after.style.opacity='.45';after.style.transform='';
+  },3200);
+}
+
+/* ---------- console detail: result lines ---------- */
+function showRes(id,kind,msg){
+  var el=document.getElementById(id);
+  el.className='result-line show '+(kind==='allow'?'res-allow':'res-deny');
+  el.textContent=msg;
+}
+
+/* ---------- console detail: revoke / reactivate ---------- */
+function revokeAgent(){
+  var badge=document.getElementById('dz-badge');
+  var status=document.getElementById('dz-status');
+  var rev=document.getElementById('dz-revoke');
+  var react=document.getElementById('dz-react');
+  var feed=document.getElementById('agent-feed');
+  badge.className='badge b-revoked';badge.innerHTML='<span class="dot dot-r"></span>Revoked';
+  status.className='dz-status revoked show';
+  status.textContent='clearRecord() → 1 on-chain write · record cleared · next payment fails closed';
+  rev.style.display='none';react.style.display='inline-flex';
+  var ev=document.createElement('div');
+  ev.className='ev';ev.innerHTML='<span class="ic ic-d">✕</span><div class="tx"><b>Revoked</b> — cut off everywhere</div><span class="t">just now</span>';
+  feed.insertBefore(ev,feed.firstChild);
+}
+function reactivateAgent(){
+  var badge=document.getElementById('dz-badge');
+  var status=document.getElementById('dz-status');
+  var rev=document.getElementById('dz-revoke');
+  var react=document.getElementById('dz-react');
+  var feed=document.getElementById('agent-feed');
+  badge.className='badge b-active';badge.innerHTML='<span class="dot dot-a"></span>Active';
+  status.className='dz-status show';
+  status.textContent='Reactivated · policy re-written · agent can pay within limits again';
+  rev.style.display='inline-flex';react.style.display='none';
+  var ev=document.createElement('div');
+  ev.className='ev';ev.innerHTML='<span class="ic ic-a">✓</span><div class="tx"><b>Reactivated</b> · policy restored</div><span class="t">just now</span>';
+  feed.insertBefore(ev,feed.firstChild);
+}
+
+/* ---------- sandbox ---------- */
+var sbResult=document.getElementById('sb-result');
+function setResult(kind,icon,title,meta){
+  sbResult.className='big-result '+kind;
+  sbResult.innerHTML='<div class="r"><span class="ic">'+icon+'</span> '+title+'</div><div class="meta">'+meta+'</div>';
+  sbResult.classList.add('flash');
+  setTimeout(function(){sbResult.classList.remove('flash')},650);
+}
+function addAudit(kind,tx){
+  var log=document.getElementById('audit-log');
+  var row=document.createElement('div');
+  row.className='audit-row';
+  var tag=kind==='ALLOW'?'at-allow':'at-deny';
+  row.innerHTML='<span class="audit-tag '+tag+'">'+kind+'</span><span class="a-tx">'+tx+'</span><span class="a-t">now</span>';
+  log.insertBefore(row,log.firstChild);
+}
+function recEmpty(v){
+  var rec=document.getElementById('policy-rec');
+  var dot=document.getElementById('rec-dot');
+  if(v){rec.classList.add('empty');dot.className='dot dot-r'}
+  else{rec.classList.remove('empty');dot.className='dot dot-a'}
+}
+var revoked=false;
+function sbSpend(){
+  if(revoked){setResult('deny','✕','Blocked — revoked','This agent was revoked. Its record is gone, so the same $3 payment fails closed everywhere. Reactivate it first.');addAudit('DENY','data → api.acme.dev · $3.00 · revoked');return}
+  setResult('allow','✓','Paid $3','to api.acme.dev · within the $5 cap · gas-free · settled on the co-owned account 0.0.10508343 and logged on Hedera Consensus Service.');
+  addAudit('ALLOW','data → api.acme.dev · $3.00 · in cap');
+}
+function sbOverCap(){
+  if(revoked){setResult('deny','✕','Blocked — revoked','The agent is revoked — every payment fails closed regardless of amount.');addAudit('DENY','data → api.acme.dev · $50.00 · revoked');return}
+  setResult('deny','✕','Blocked — over cap','$50 exceeds the $5 per-payment cap. The facilitator LEASH runs refuses it before any money moves.');
+  addAudit('DENY','data → api.acme.dev · $50.00 · over $5 cap');
+}
+function sbRevoke(){
+  revoked=true;recEmpty(true);
+  setResult('deny','✕','Revoked — cut off everywhere','One on-chain write cleared the ENS record. The agent is cut off everywhere. Try Spend $3 again — the same payment now fails closed.');
+  addAudit('DENY','data → REVOKED · record cleared · 1 on-chain write');
+}
+function sbOverFund(){
+  setResult('deny','✕','Over-fund blocked','A leaked key tried to over-fund the account. Privy, the independent funding rail, denied it before it went out — funding is separate from spending.');
+  addAudit('DENY','fund data · $5000.00 · Privy blocked over-fund');
+}
+function sbReset(){
+  revoked=false;recEmpty(false);
+  setResult('allow','✓','Agent restored','Reactivated · the ENS spend-policy record is re-written. The agent can pay within its limits again.');
+  addAudit('ALLOW','data → REACTIVATED · policy restored');
+}
+</script>
+</body>
+</html>
