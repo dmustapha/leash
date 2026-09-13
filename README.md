@@ -1,8 +1,13 @@
-# LEASH: keep your AI agents on a leash
+<div align="center">
 
-**Not another agent that pays an API. LEASH is the ENS name that can un-pay it.** The control layer for AI agents that spend money: bind an existing agent to a governed 2-of-2 co-signed account, declare its spend policy on an ENS name, fund it through a fail-closed rail, and cut it off everywhere with one on-chain write. The name is the leash: clear the record, and the agent's next payment fails closed.
+<img src="./docs/images/logo-square-512.png" alt="LEASH" width="120" />
 
-> Keep your AI agents on a leash.
+# LEASH
+
+### Keep your AI agents on a leash
+
+**Not another agent that pays an API. LEASH is the ENS name that can un-pay it.**
+The control layer for AI agents that spend money: bind an existing agent to a governed 2-of-2 co-signed account, declare its spend policy on an ENS name, fund it through a fail-closed rail, and cut it off everywhere with one on-chain write. The name is the leash: clear the record, and the agent's next payment fails closed.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![ENS](https://img.shields.io/badge/ENS-Sepolia-5298FF)](https://ens.domains/)
@@ -11,9 +16,11 @@
 [![Tests](https://img.shields.io/badge/tests-102_unit_%2B_8_integration_%2B_live-4fd08a)](#tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Live:** [leash.ink](https://leash.ink) · **Judge sandbox:** [leash.ink/demo](https://leash.ink/demo) · **On-chain proof:** [leash.ink/proof](https://leash.ink/proof)
+**[▶ Live app](https://leash.ink)** · **[Judge sandbox](https://leash.ink/demo)** · **[On-chain proof](https://leash.ink/proof)**
 
-![LEASH: keep your AI agents on a leash](docs/images/cover.png)
+<img src="./docs/images/cover.png" alt="LEASH: keep your AI agents on a leash" width="820" />
+
+</div>
 
 ---
 
@@ -45,7 +52,9 @@ Open [leash.ink/demo](https://leash.ink/demo). Nothing to install, connect, or f
 
 Each verdict is written to the Hedera Consensus Service audit topic, so every outcome is checkable on-chain. A new user binds their own agent in [`/app`](https://leash.ink/app) the same way, with no Hedera setup: give the agent's EVM / ERC-8004 identity (the agent already lives on another chain), and LEASH generates its Hedera spending key for you, shows the private half once for you to save, provisions a 2-of-2 co-owned Hedera account, and writes the ENS policy. Advanced users can paste their agent's own Hedera public key instead. Either way LEASH never retains the private key, so LEASH alone still cannot move the agent's funds.
 
-![The judge sandbox governing SOLV-001](docs/images/page-demo-full.png)
+<div align="center">
+  <img src="docs/images/page-demo-full.png" alt="The judge sandbox governing SOLV-001" width="820" />
+</div>
 
 Full walkthrough for both paths: [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md).
 
@@ -173,7 +182,9 @@ These transactions collectively prove the full loop: policy set on ENS, in-cap c
 
 ## On-chain verification
 
-![The /proof verification surface](docs/images/page-proof-full.png)
+<div align="center">
+  <img src="docs/images/proof-hero.png" alt="The /proof verification surface: deployed contracts and per-integration on-chain evidence" width="820" />
+</div>
 
 `npm run verify:claims` re-derives each headline number from a committed source (USDC = raw / 1e6) and, when a Sepolia RPC is configured, live-reads the `leash.policy` caps via the PermissionedResolver. It writes the result to `evidence/claims-recomputed.json` and diffs it against the asserted values in [`docs/pipeline/claims.json`](docs/pipeline/claims.json). It refuses to read back a stored success; a non-zero exit means an asserted number did not recompute.
 

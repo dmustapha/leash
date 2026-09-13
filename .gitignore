@@ -66,3 +66,20 @@ docs/*-KICKOFF*.md
 docs/*-SCOPE.md
 docs/LEASH-MASTER-BUILD-DOC.md
 docs/FORGE-KICKOFF-PROMPT.md
+
+# Internal working/build docs (kept on disk, not published)
+DEMO-SCRIPT.md
+FEATURE-OBSERVABLES.md
+PRD.md
+docs/FORGE-KICKOFF-PROMPT.md
+docs/LEASH-MASTER-BUILD-DOC.md
+docs/REFRAME-SCOPE.md
+docs/WS7-HARDENING-SCOPE.md
+docs/*KICKOFF*.md
+docs/REDESIGN-*.md
+docs/WIRE-*.md
+submission/ETHGLOBAL-SUBMISSION.md
+submission/LIVE-PROOF-PROMPT.md
+submission/assets/
+scripts/live-proof-solv.ts
+evidence/*.md
