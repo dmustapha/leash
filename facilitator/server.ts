@@ -323,7 +323,7 @@ app.get('/healthz', (_req: Request, res: Response) => res.json({ ok: true }));
 // context so the decoded field shape is observable.
 const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 if (isMain) {
-  const port = Number(process.env.FACILITATOR_PORT ?? 8401);
+  const port = Number(process.env.FACILITATOR_PORT ?? process.env.PORT ?? 8401);
   app.listen(port, () => {
     console.log(`[leash-facilitator] self-hosted @x402/core+@x402/hedera (Blocky402-equivalent) on :${port}`);
     console.log(`[leash-facilitator] scheme registered: exact @ ${HEDERA_NETWORK}`);

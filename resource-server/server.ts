@@ -85,7 +85,7 @@ app.get('/premium', (_req, res) => {
   res.json({ data: 'premium payload', ts: new Date().toISOString() });
 });
 
-const port = Number(process.env.RESOURCE_PORT ?? 8402);
+const port = Number(process.env.RESOURCE_PORT ?? process.env.PORT ?? 8402);
 app.listen(port, () => {
   console.log(`[leash-resource] x402-gated /premium on :${port}`);
   console.log(`[leash-resource] facilitator: ${process.env.FACILITATOR_URL ?? 'http://localhost:8401'}`);
