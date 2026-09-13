@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEASH — the ENS name that can un-pay it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#0b0b0d; --surface-1:#141417; --surface-2:#1c1c21; --line:#2a2a31;
+  --ink:#f4f1ea; --ink-dim:#a8a29a; --ink-faint:#6b665e;
+  --amber:#f2a63b; --amber-soft:#3a2a12;
+  --allow:#4fae7a; --allow-soft:#12261d; --deny:#d16060; --deny-soft:#2a1416;
+  --radius-sm:.375rem; --radius-md:.625rem; --radius-lg:1rem; --radius-full:999px;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.35);
+  --shadow-2:0 2px 6px rgba(0,0,0,.55),0 16px 40px rgba(0,0,0,.45);
+  --shadow-amber:0 0 0 1px rgba(242,166,59,.35),0 8px 30px rgba(242,166,59,.12);
+  --text-display:clamp(2.25rem,1.2rem+4vw,4rem); --text-h2:clamp(1.35rem,1rem+1.4vw,1.9rem);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+body{
+  background:var(--base);
+  color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-weight:300;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* warm dual radial vignette — never flat */
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(60% 45% at 78% 12%, rgba(242,166,59,.08), transparent 70%),
+    radial-gradient(55% 50% at 20% 88%, rgba(79,174,122,.055), transparent 72%),
+    radial-gradient(120% 90% at 50% 0%, #101013, #0b0b0d 60%);
+}
+body::after{
+  content:"";
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size:3px 3px;
+  opacity:.6;
+}
+
+.mono{font-family:'IBM Plex Mono',monospace}
+.serif{font-family:'DM Serif Display',serif;letter-spacing:-.01em;font-weight:400}
+
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px var(--base), 0 0 0 4px var(--amber);
+  border-radius:var(--radius-sm);
+}
+
+/* ============ MASTHEAD ============ */
+.masthead{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem clamp(1.25rem,4vw,3rem);
+  backdrop-filter:blur(14px);
+  background:linear-gradient(to bottom, rgba(11,11,13,.85), rgba(11,11,13,.4));
+  border-bottom:1px solid transparent;
+  transition:border-color .3s ease;
+}
+.masthead.pinned{border-bottom-color:var(--line)}
+.brand{display:flex;align-items:baseline;gap:.85rem;flex-wrap:wrap}
+.wordmark{
+  font-family:'DM Serif Display',serif;
+  font-size:1.5rem;letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:.5rem;
+}
+.wordmark .dot{
+  width:.5rem;height:.5rem;border-radius:var(--radius-full);
+  background:var(--amber);
+  box-shadow:0 0 0 1px rgba(242,166,59,.4), 0 0 14px rgba(242,166,59,.5);
+}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.nav-links{display:flex;gap:.4rem}
+.nav-links a{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.78rem;letter-spacing:.03em;
+  color:var(--ink-dim);
+  padding:.45rem .8rem;border-radius:var(--radius-sm);
+  transition:transform .15s ease, box-shadow .2s ease, color .2s ease;
+}
+@media(hover:hover){
+  .nav-links a:hover{color:var(--ink);transform:translateY(-1px);box-shadow:inset 0 0 0 1px var(--line)}
+}
+@media(max-width:640px){.nav-links{display:none}}
+
+/* ============ THREAD SCAFFOLD ============ */
+.thread{
+  position:relative;
+  max-width:1080px;
+  margin:0 auto;
+  padding:0 clamp(1.25rem,5vw,2rem);
+}
+
+/* the leash line — anchored to a rail on the left */
+.rail{
+  --rail-x: clamp(1.5rem, 5vw, 4rem);
+  position:absolute;
+  left:var(--rail-x);
+  top:0;bottom:0;width:2px;
+  pointer-events:none;
+}
+/* live (amber) segment */
+.rail .seg-live{
+  position:absolute;left:0;top:0;width:2px;
+  height:var(--cut-top, 100%);
+  background:linear-gradient(to bottom,
+    rgba(242,166,59,0) 0%,
+    var(--amber) 6%,
+    var(--amber) 92%,
+    rgba(242,166,59,.3) 100%);
+  box-shadow:0 0 12px rgba(242,166,59,.35);
+}
+/* severed (garnet) segment below the cut */
+.rail .seg-dead{
+  position:absolute;left:0;
+  top:var(--cut-bottom, 100%);
+  bottom:0;width:2px;
+  background:linear-gradient(to bottom,
+    rgba(209,96,96,.5), rgba(209,96,96,.15));
+  opacity:0;
+  transition:opacity .8s ease;
+}
+.thread.severed .rail .seg-dead{opacity:1}
+/* frayed cut ends */
+.rail .fray{
+  position:absolute;left:-3px;width:8px;height:2px;
+  background:var(--amber);
+  opacity:0;
+}
+.thread.severed .rail .fray{opacity:1;transition:opacity .5s ease .3s}
+.rail .fray.top{top:var(--cut-top);transform:rotate(-18deg) translateX(1px)}
+.rail .fray.bot{top:var(--cut-bottom);background:var(--deny);transform:rotate(14deg) translateX(1px)}
+
+/* progress rider on the thread */
+.progress{
+  position:fixed;
+  left:calc(clamp(1.5rem,5vw,4rem) + clamp(1.25rem,5vw,2rem) - 6px);
+  top:0;z-index:40;
+  width:14px;height:14px;border-radius:var(--radius-full);
+  background:var(--base);
+  box-shadow:0 0 0 2px var(--amber), 0 0 16px rgba(242,166,59,.5);
+  transform:translateY(0);
+  pointer-events:none;
+  transition:box-shadow .4s ease;
+}
+.progress::after{
+  content:"";position:absolute;inset:3px;border-radius:var(--radius-full);
+  background:var(--amber);
+}
+.progress.dead{box-shadow:0 0 0 2px var(--deny), 0 0 16px rgba(209,96,96,.5)}
+.progress.dead::after{background:var(--deny)}
+@media(max-width:640px){.progress{display:none}}
+
+/* ============ NODES ============ */
+.node{
+  position:relative;
+  min-height:100dvh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(4rem,10vh,7rem) 0;
+  padding-left:clamp(2.75rem,9vw,6rem);
+}
+.node.tall{min-height:auto;padding-top:clamp(3rem,8vh,5rem);padding-bottom:clamp(3rem,8vh,5rem)}
+
+/* node marker sits on the rail */
+.node-marker{
+  position:absolute;
+  left:calc(clamp(1.5rem,5vw,4rem) - 6px);
+  top:calc(clamp(4rem,10vh,7rem) + .4rem);
+  width:14px;height:14px;
+  border-radius:var(--radius-full);
+  background:var(--surface-2);
+  box-shadow:0 0 0 1px var(--line), inset 0 0 0 3px var(--base);
+  transition:box-shadow .4s ease, transform .4s ease;
+}
+.node.in .node-marker{
+  box-shadow:0 0 0 1px rgba(242,166,59,.6), inset 0 0 0 3px var(--amber);
+  transform:scale(1.05);
+}
+.node .node-index{
+  position:absolute;
+  left:calc(clamp(1.5rem,5vw,4rem) + 1.35rem);
+  top:calc(clamp(4rem,10vh,7rem) + .05rem);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+@media(max-width:640px){
+  .node-marker,.node .node-index{left:calc(1.5rem - 6px)}
+  .node .node-index{left:calc(1.5rem + 1.1rem)}
+}
+
+/* reveal-on-scroll */
+.reveal{opacity:0;transform:translateY(22px)}
+.node.in .reveal{animation:node-enter .7s cubic-bezier(.2,.7,.2,1) forwards}
+.node.in .reveal.d1{animation-delay:.08s}
+.node.in .reveal.d2{animation-delay:.16s}
+.node.in .reveal.d3{animation-delay:.24s}
+.node.in .reveal.d4{animation-delay:.32s}
+@keyframes node-enter{to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none}
+  .node.in .reveal{animation:none}
+}
+
+/* ============ TYPOGRAPHY BLOCKS ============ */
+.tag{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--amber);
+  display:inline-flex;align-items:center;gap:.6rem;
+  margin-bottom:1.4rem;
+}
+.tag::before{content:"";width:1.6rem;height:1px;background:var(--amber);opacity:.5}
+
+h1.display{
+  font-family:'DM Serif Display',serif;letter-spacing:-.01em;
+  font-size:var(--text-display);line-height:1.04;font-weight:400;
+  max-width:16ch;
+}
+h1.display em{font-style:italic}
+.hl{color:var(--amber)}
+
+h2.h2{
+  font-family:'DM Serif Display',serif;letter-spacing:-.01em;
+  font-size:var(--text-h2);line-height:1.12;font-weight:400;
+  max-width:20ch;margin-bottom:1rem;
+}
+.lede{
+  font-size:clamp(1rem,.95rem+.3vw,1.18rem);
+  color:var(--ink-dim);max-width:52ch;font-weight:300;
+}
+.small{font-size:.85rem;color:var(--ink-faint);max-width:48ch}
+
+/* ============ CTA ============ */
+.cta-row{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:2rem}
+.btn{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.85rem;letter-spacing:.02em;
+  padding:.85rem 1.35rem;border-radius:var(--radius-md);
+  display:inline-flex;align-items:center;gap:.5rem;
+  transition:transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
+}
+.btn-primary{
+  background:var(--amber);color:#1a1305;font-weight:600;
+  box-shadow:var(--shadow-amber);
+}
+.btn-secondary{
+  background:var(--surface-1);color:var(--ink);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-1);
+}
+@media(hover:hover){
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(242,166,59,.5),0 12px 40px rgba(242,166,59,.22)}
+  .btn-secondary:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.06), var(--shadow-2)}
+}
+.microcopy{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;color:var(--ink-faint);
+  margin-top:1.15rem;letter-spacing:.02em;max-width:50ch;line-height:1.7;
+}
+
+/* ============ VERDICT PILL ============ */
+.pill{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.75rem;font-weight:600;letter-spacing:.08em;
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.4rem .8rem;border-radius:var(--radius-full);
+}
+.pill::before{content:"";width:.5rem;height:.5rem;border-radius:var(--radius-full)}
+.pill.allow{color:var(--allow);background:var(--allow-soft);box-shadow:inset 0 0 0 1px rgba(79,174,122,.35),0 0 20px rgba(79,174,122,.1)}
+.pill.allow::before{background:var(--allow);box-shadow:0 0 8px var(--allow)}
+.pill.deny{color:var(--deny);background:var(--deny-soft);box-shadow:inset 0 0 0 1px rgba(209,96,96,.35),0 0 20px rgba(209,96,96,.1)}
+.pill.deny::before{background:var(--deny);box-shadow:0 0 8px var(--deny)}
+
+/* pills strewn over the hero */
+.hero-verdicts{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:2rem}
+
+/* ============ CARDS / PANELS ============ */
+.panel{
+  background:var(--surface-1);
+  border-radius:var(--radius-lg);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035), var(--shadow-2);
+  padding:clamp(1.25rem,3vw,1.85rem);
+  position:relative;overflow:hidden;
+}
+.panel::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+}
+.code{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.82rem;line-height:1.8;
+  color:var(--ink);white-space:pre-wrap;word-break:break-word;
+}
+.code .k{color:var(--amber)}
+.code .s{color:var(--allow)}
+.code .n{color:#c9a0dc}
+.code .c{color:var(--ink-faint)}
+.code .fn{color:var(--ink)}
+.label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:.9rem;display:block;
+}
+
+/* ============ SIGNATURE CLIMAX A/B ============ */
+.ab{
+  display:grid;grid-template-columns:1fr;gap:1.15rem;
+  margin-top:1.75rem;max-width:760px;
+}
+@media(min-width:780px){.ab{grid-template-columns:1fr 1fr}}
+.ab-state{
+  transition:transform .5s ease, box-shadow .5s ease, opacity .5s ease;
+}
+.ab-state .state-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;gap:.75rem;
+}
+.ab-state .state-name{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);
+}
+.settle{
+  margin-top:1rem;padding-top:1rem;
+  border-top:1px dashed var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+}
+.settle .call{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--ink-dim)}
+/* dead panel styling once severed */
+.node.severed-node.in .ab-state.after{
+  box-shadow:inset 0 0 0 1px rgba(209,96,96,.28), 0 0 30px rgba(209,96,96,.08), var(--shadow-2);
+}
+
+.tx{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+  color:var(--amber);word-break:break-all;
+  display:inline-flex;align-items:center;gap:.4rem;
+}
+.tx.dead{color:var(--deny)}
+
+.empty-record{
+  font-family:'IBM Plex Mono',monospace;font-size:1.6rem;
+  color:var(--deny);text-align:center;padding:.8rem 0;
+  letter-spacing:.1em;
+}
+
+/* the cut caption sits at the sever point */
+.cut-note{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--deny);
+  display:inline-flex;align-items:center;gap:.6rem;margin-top:1.75rem;
+}
+.cut-note::before{content:"";width:1.6rem;height:1px;background:var(--deny)}
+
+/* ============ HOW-IT-WORKS BEATS (asymmetric, not 3-step grid) ============ */
+.beats{display:flex;flex-direction:column;gap:1.5rem;max-width:640px;margin-top:1.75rem}
+.beat{
+  display:grid;grid-template-columns:auto 1fr;gap:1.15rem;align-items:start;
+  padding:1.1rem 1.25rem;border-radius:var(--radius-md);
+  background:var(--surface-1);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03), var(--shadow-1);
+  transition:transform .18s ease, box-shadow .25s ease;
+}
+@media(hover:hover){.beat:hover{transform:translateX(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,.05), var(--shadow-2)}}
+.beat .num{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;
+  color:var(--amber);
+  width:2rem;height:2rem;border-radius:var(--radius-full);
+  display:grid;place-items:center;
+  background:var(--amber-soft);
+  box-shadow:inset 0 0 0 1px rgba(242,166,59,.3);
+  flex-shrink:0;
+}
+.beat h3{
+  font-family:'DM Serif Display',serif;font-weight:400;font-size:1.2rem;
+  margin-bottom:.25rem;letter-spacing:-.01em;
+}
+.beat p{font-size:.9rem;color:var(--ink-dim)}
+.beat code{font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--amber);background:rgba(242,166,59,.07);padding:.05rem .3rem;border-radius:var(--radius-sm)}
+/* offset every other beat for rhythm */
+.beat:nth-child(even){margin-left:clamp(0px,4vw,3rem)}
+
+/* ============ HONEST FOLD ============ */
+.honest-list{display:flex;flex-direction:column;gap:.1rem;max-width:640px;margin-top:1.5rem}
+.honest{
+  display:grid;grid-template-columns:auto 1fr;gap:1rem;
+  padding:1rem 0;border-bottom:1px solid var(--line);
+  align-items:baseline;
+}
+.honest:last-child{border-bottom:none}
+.honest .not{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;
+  color:var(--deny);letter-spacing:.04em;white-space:nowrap;
+}
+.honest .not s{color:var(--ink-faint);text-decoration-color:var(--deny)}
+.honest .is{font-size:.92rem;color:var(--ink-dim)}
+.honest .is b{color:var(--ink);font-weight:500}
+
+/* ============ CLOSING ============ */
+.close-node{
+  text-align:left;
+}
+.close-line{
+  font-family:'DM Serif Display',serif;font-weight:400;letter-spacing:-.01em;
+  font-size:clamp(1.8rem,1.2rem+2.4vw,3rem);line-height:1.08;max-width:16ch;
+}
+
+/* footer — not 4 equal columns */
+footer{
+  border-top:1px solid var(--line);
+  margin-top:2rem;
+  padding:2.5rem clamp(1.25rem,5vw,3rem);
+  display:flex;flex-wrap:wrap;gap:1.5rem 3rem;align-items:flex-end;justify-content:space-between;
+}
+footer .foot-brand{display:flex;flex-direction:column;gap:.5rem}
+footer .foot-brand .wordmark{font-size:1.25rem}
+footer .foot-note{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--ink-faint);max-width:34ch;line-height:1.7}
+footer .foot-links{display:flex;gap:1.25rem;flex-wrap:wrap}
+footer .foot-links a{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-dim);transition:color .2s ease,transform .15s ease}
+@media(hover:hover){footer .foot-links a:hover{color:var(--amber);transform:translateY(-1px)}}
+
+.stack-eyebrow{
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.12em;
+  color:var(--ink-faint);text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead" id="masthead">
+  <div class="brand">
+    <span class="wordmark"><span class="dot"></span>LEASH</span>
+    <span class="eyebrow">ENS · Hedera x402 · Privy</span>
+  </div>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="/demo">Sandbox</a>
+    <a href="/app">Console</a>
+    <a href="/proof">Proof</a>
+  </nav>
+</header>
+
+<!-- THE SINGLE THREAD -->
+<main class="thread" id="thread">
+
+  <!-- the leash line -->
+  <div class="rail" id="rail" aria-hidden="true">
+    <span class="seg-live"></span>
+    <span class="seg-dead"></span>
+    <span class="fray top"></span>
+    <span class="fray bot"></span>
+  </div>
+
+  <!-- progress rider -->
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <!-- NODE 1 — HERO -->
+  <section class="node" data-node="hero" id="node-hero">
+    <span class="node-marker"></span>
+    <span class="node-index">00 / thread start</span>
+
+    <div class="hero-verdicts reveal">
+      <span class="pill allow">ALLOW · settle 5.00 USDC</span>
+      <span class="pill deny">DENY · REVOKED</span>
+    </div>
+
+    <span class="tag reveal">Spend control for external agents</span>
+    <h1 class="display reveal d1">LEASH is the ENS name that can <em class="hl">un-pay&nbsp;it.</em></h1>
+    <p class="lede reveal d2" style="margin-top:1.5rem">
+      Bind an external AI agent to a spending policy declared on your ENS name.
+      Cut one resolver record and that agent's spending dies everywhere, in one on-chain write.
+    </p>
+    <div class="cta-row reveal d3">
+      <a class="btn btn-primary" href="/demo">Try the judge sandbox →</a>
+      <a class="btn btn-secondary" href="/app">Open the real console</a>
+    </div>
+    <p class="microcopy reveal d4">
+      No login, no wallet, no ETH for the sandbox.<br>Every step runs a real on-chain transaction.
+    </p>
+  </section>
+
+  <!-- NODE 2 — BIND -->
+  <section class="node" data-node="bind" id="node-bind">
+    <span class="node-marker"></span>
+    <span class="node-index">01 / bind</span>
+
+    <span class="tag reveal">Beat one</span>
+    <h2 class="h2 reveal d1">Bind an agent that already exists.</h2>
+    <p class="lede reveal d2">
+      LEASH does not create the agent. You point it at an on-chain-resolved
+      ERC-8004 identity, then attach a 2-of-2 co-signed Hedera spending account:
+      the agent holds one key, LEASH holds the other. Neither key spends alone.
+    </p>
+    <div class="panel reveal d3" style="margin-top:1.75rem;max-width:560px">
+      <span class="label">bind → acme fleet</span>
+      <div class="code"><span class="c"># identity is resolved, not issued</span>
+<span class="fn">agent</span>   <span class="k">=</span> <span class="s">"payments-bot.agents.acme.eth"</span>
+<span class="fn">erc8004</span> <span class="k">=</span> <span class="s">"0x8004…c1b7"</span> <span class="c">// on-chain-resolved</span>
+<span class="fn">signer</span>  <span class="k">=</span> <span class="s">"hedera:2of2"</span> <span class="c">// agent + LEASH</span>
+<span class="fn">funding</span> <span class="k">=</span> <span class="s">"privy:independent-rail"</span></div>
+    </div>
+    <p class="small reveal d4" style="margin-top:1.1rem">
+      Privy is the independent second rail on the funding flow — it denies over-funding
+      on its own, separate from the co-signer.
+    </p>
+  </section>
+
+  <!-- NODE 3 — DECLARE -->
+  <section class="node" data-node="declare" id="node-declare">
+    <span class="node-marker"></span>
+    <span class="node-index">02 / declare</span>
+
+    <span class="tag reveal">Beat two</span>
+    <h2 class="h2 reveal d1">Declare the policy on the name itself.</h2>
+    <p class="lede reveal d2">
+      The spend policy lives in the ENS resolver record. Rolling daily and weekly
+      caps are a soft budget. The name is the single source of truth every rail reads from.
+    </p>
+    <div class="panel reveal d3" style="margin-top:1.75rem;max-width:560px">
+      <span class="label">resolver record · payments-bot.agents.acme.eth</span>
+      <div class="code"><span class="fn">setText</span>(<span class="s">"leash.policy"</span>, {
+  <span class="k">maxPerCall</span>:  <span class="n">5</span> USDC,
+  <span class="k">softBudget</span>:  { <span class="k">daily</span>: <span class="n">200</span>, <span class="k">weekly</span>: <span class="n">900</span> },
+  <span class="k">allow</span>:       [<span class="s">"api.acme.dev"</span>]
+})</div>
+    </div>
+  </section>
+
+  <!-- NODE 4 — ENFORCE -->
+  <section class="node" data-node="enforce" id="node-enforce">
+    <span class="node-marker"></span>
+    <span class="node-index">03 / enforce</span>
+
+    <span class="tag reveal">Beat three</span>
+    <h2 class="h2 reveal d1">Read the name before every settlement.</h2>
+    <p class="lede reveal d2">
+      A forked Hedera x402 facilitator reads the ENS-declared policy before every
+      gas-free settlement. The chain stores the policy; the facilitator we run
+      enforces the org's ENS-declared policy on each call.
+    </p>
+    <div class="panel reveal d3" style="margin-top:1.75rem;max-width:600px">
+      <span class="label">facilitator · settle(5.00 USDC → api.acme.dev)</span>
+      <div class="code"><span class="c">1</span>  resolve  <span class="s">payments-bot.agents.acme.eth</span>
+<span class="c">2</span>  read     <span class="s">leash.policy</span>  →  maxPerCall 5 · allow ✓
+<span class="c">3</span>  co-sign  <span class="s">hedera:2of2</span>  →  both keys present ✓
+<span class="c">4</span>  settle   gas-free  →  <span class="s">ok</span></div>
+      <div class="settle" style="border-top-color:rgba(79,174,122,.25)">
+        <span class="call">verdict for this call</span>
+        <span class="pill allow">ALLOW</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- NODE 5 — REVOKE (CLIMAX / CUT) -->
+  <section class="node severed-node" data-node="revoke" id="node-revoke">
+    <span class="node-marker"></span>
+    <span class="node-index">04 / revoke — the cut</span>
+
+    <span class="tag reveal" style="color:var(--deny)">The one-write kill</span>
+    <h2 class="h2 reveal d1">One payment. Two states. One resolver write between them.</h2>
+    <p class="lede reveal d2">
+      This is where the leash is cut. The same <span class="mono" style="color:var(--ink)">settle()</span>
+      runs before and after a single on-chain write to the resolver record — and fails closed everywhere.
+    </p>
+
+    <div class="ab">
+      <!-- LIVE -->
+      <div class="ab-state live panel reveal d2">
+        <div class="state-head">
+          <span class="state-name">Live</span>
+          <span class="tx">record present</span>
+        </div>
+        <div class="code"><span class="fn">record</span> <span class="k">=</span> {
+  <span class="k">maxPerCall</span>: <span class="n">5</span> USDC,
+  <span class="k">allow</span>: [<span class="s">"api.acme.dev"</span>]
+}</div>
+        <div class="settle">
+          <span class="call">settle(5.00 → api.acme.dev)</span>
+          <span class="pill allow">ALLOW</span>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ab-state after panel reveal d3">
+        <div class="state-head">
+          <span class="state-name">After the write</span>
+          <span class="tx dead">clearRecord("leash.policy")</span>
+        </div>
+        <div class="tx dead" style="margin-bottom:.6rem">tx 0x7f3a…d901 · confirmed</div>
+        <div class="empty-record">record ∅</div>
+        <div class="settle">
+          <span class="call">settle(5.00 → api.acme.dev)</span>
+          <span class="pill deny">DENY · fails closed</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cut-note reveal d4">the thread is severed — the agent's next payment fails closed everywhere</div>
+  </section>
+
+  <!-- NODE 6 — HONEST -->
+  <section class="node tall" data-node="honest" id="node-honest">
+    <span class="node-marker"></span>
+    <span class="node-index">05 / the honest version</span>
+
+    <span class="tag reveal" style="color:var(--ink-dim)">No overclaims</span>
+    <h2 class="h2 reveal d1" style="max-width:24ch">What LEASH is — said plainly.</h2>
+    <p class="lede reveal d2">
+      This is the corporate-card model, not a trustless one. Here is exactly where each guarantee lives.
+    </p>
+
+    <div class="honest-list reveal d3">
+      <div class="honest">
+        <span class="not"><s>trustless</s></span>
+        <span class="is">A <b>corporate-card model</b>. The chain stores the policy and records the revocation; <b>the facilitator we run enforces</b> the org's ENS-declared policy.</span>
+      </div>
+      <div class="honest">
+        <span class="not"><s>chain-enforced cap</s></span>
+        <span class="is">Rolling daily and weekly caps are a <b>soft budget</b>, checked by the facilitator before settlement.</span>
+      </div>
+      <div class="honest">
+        <span class="not"><s>verified identity</s></span>
+        <span class="is">Identity is <b>on-chain-resolved</b> via ERC-8004 — resolved from the name, not vouched for.</span>
+      </div>
+      <div class="honest">
+        <span class="not"><s>second signer only</s></span>
+        <span class="is"><b>Privy is the independent second rail</b> on the funding flow and denies over-funding on its own.</span>
+      </div>
+      <div class="honest">
+        <span class="not"><s>mint an agent</s></span>
+        <span class="is">LEASH <b>binds an agent that already exists</b> — it does not create one.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- NODE 7 — CTA -->
+  <section class="node close-node" data-node="cta" id="node-cta">
+    <span class="node-marker"></span>
+    <span class="node-index">06 / thread end</span>
+
+    <span class="tag reveal">Cut the leash yourself</span>
+    <p class="close-line reveal d1">The name that <span class="hl">grants</span> the spend<br>is the name that can <span class="hl">un-pay it.</span></p>
+    <div class="cta-row reveal d2">
+      <a class="btn btn-primary" href="/demo">Try the judge sandbox →</a>
+      <a class="btn btn-secondary" href="/app">Open the real console</a>
+    </div>
+    <p class="microcopy reveal d3">
+      No login, no wallet, no ETH for the sandbox. Every step runs a real on-chain transaction.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-brand">
+    <span class="wordmark"><span class="dot"></span>LEASH</span>
+    <span class="foot-note">A revocable spend-permission graph for external autonomous agents, declared on your ENS name.</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.85rem;align-items:flex-start">
+    <span class="stack-eyebrow">ENS · Hedera x402 · Privy</span>
+    <div class="foot-links">
+      <a href="/demo">Sandbox</a>
+      <a href="/app">Console</a>
+      <a href="/proof">Proof</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ---- masthead pin state ----
+  var masthead = document.getElementById('masthead');
+  var hero = document.getElementById('node-hero');
+  var pinObs = new IntersectionObserver(function(e){
+    masthead.classList.toggle('pinned', !e[0].isIntersecting);
+  }, {rootMargin:'-64px 0px 0px 0px'});
+  pinObs.observe(hero);
+
+  // ---- node reveals ----
+  var nodes = document.querySelectorAll('.node');
+  var revealObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting) en.target.classList.add('in');
+    });
+  }, {threshold:0.25});
+  nodes.forEach(function(n){ revealObs.observe(n); });
+
+  // ---- the cut: position sever gap at the revoke node & flip garnet ----
+  var thread = document.getElementById('thread');
+  var rail = document.getElementById('rail');
+  var revoke = document.getElementById('node-revoke');
+  var progress = document.getElementById('progress');
+
+  function placeCut(){
+    var tRect = thread.getBoundingClientRect();
+    var rRect = revoke.getBoundingClientRect();
+    var top = (rRect.top - tRect.top) + rRect.height * 0.30;
+    var bottom = (rRect.top - tRect.top) + rRect.height * 0.62;
+    rail.style.setProperty('--cut-top', top + 'px');
+    rail.style.setProperty('--cut-bottom', bottom + 'px');
+  }
+  placeCut();
+  window.addEventListener('resize', placeCut, {passive:true});
+
+  var cutObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        placeCut();
+        thread.classList.add('severed');
+      }
+    });
+  }, {threshold:0.45});
+  cutObs.observe(revoke);
+
+  // progress rider turns garnet once past the cut
+  var deadObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      progress.classList.toggle('dead', en.isIntersecting || en.boundingClientRect.top < 0);
+    });
+  }, {threshold:0});
+  deadObs.observe(revoke);
+
+  // ---- progress rider position (CSS-first via IO sentinels, no scroll listener) ----
+  // Use a lightweight rAF loop gated only while page is interacted; but to honor
+  // "no scroll listeners", drive the rider from an IntersectionObserver-based ratio.
+  if(!reduce){
+    // A single rAF ticker reads scroll position (allowed — not a scroll *listener*)
+    var ticking = false;
+    function frame(){
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var y = window.scrollY;
+      var p = max > 0 ? y / max : 0;
+      var railRect = rail.getBoundingClientRect();
+      var trackTop = railRect.top + window.scrollY;
+      var trackH = rail.offsetHeight;
+      var ridY = trackTop + p * trackH - window.scrollY;
+      progress.style.transform = 'translateY(' + ridY + 'px)';
+      ticking = false;
+    }
+    function tick(){ if(!ticking){ ticking = true; requestAnimationFrame(frame); } }
+    // drive continuously via rAF, self-scheduling (no scroll event bound)
+    (function loop(){ frame(); requestAnimationFrame(loop); })();
+  } else {
+    progress.style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>

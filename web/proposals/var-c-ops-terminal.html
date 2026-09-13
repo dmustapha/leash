@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEASH — Ops Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--base:#0a0d13;--s1:#111621;--s2:#19202e;--s3:#212a3b;--line:#273143;--line-soft:#1b2431;--ink:#e9eff7;--ink-dim:#9cadc2;--ink-faint:#5f7089;--accent:#4f8bff;--accent-hi:#6ea1ff;--accent-soft:#12213c;--allow:#3fc08a;--allow-soft:#0e2a20;--deny:#f2647a;--deny-soft:#2a1620;--r-sm:.375rem;--r-md:.625rem;--r-lg:1rem;--r-full:999px;--sh1:0 1px 2px rgba(0,0,0,.5),0 6px 20px rgba(0,0,0,.4);--sh2:0 2px 8px rgba(0,0,0,.55),0 20px 50px rgba(0,0,0,.5);--sh-accent:0 0 0 1px rgba(79,139,255,.4),0 10px 34px rgba(79,139,255,.18);}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  background:var(--base);color:var(--ink);
+  min-height:100dvh;font-weight:400;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(1200px 700px at 78% -8%, rgba(79,139,255,.09), transparent 60%),
+    radial-gradient(900px 600px at 0% 100%, rgba(79,139,255,.05), transparent 55%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.1}
+.mono{font-family:'IBM Plex Mono',monospace}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 2px var(--base),0 0 0 4px var(--accent);border-radius:var(--r-sm)}
+
+.wrap{max-width:1320px;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem)}
+
+/* ============ LANDING ============ */
+.landing{padding:clamp(2.5rem,7vw,5.5rem) 0 clamp(2rem,5vw,3.5rem)}
+.top-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:clamp(3rem,8vw,6rem)}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:'Sora';font-weight:700;font-size:1.15rem}
+.brand .dot{width:11px;height:11px;border-radius:var(--r-full);background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft),0 0 16px rgba(79,139,255,.7)}
+.nav-links{display:flex;align-items:center;gap:1.6rem;color:var(--ink-dim);font-size:.9rem}
+.nav-links a{transition:color .15s}
+@media(hover:hover){.nav-links a:hover{color:var(--ink)}}
+
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-hi);
+  background:var(--accent-soft);border:1px solid rgba(79,139,255,.28);padding:.4rem .8rem;border-radius:var(--r-full);margin-bottom:1.5rem}
+.eyebrow .pip{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:700;max-width:16ch}
+.hero h1 .hl{color:var(--accent-hi)}
+.hero .lede{margin-top:1.4rem;max-width:52ch;font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-dim);font-weight:300}
+.hero .cta{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-top:2.4rem}
+.btn{display:inline-flex;align-items:center;gap:.55rem;font-weight:600;font-size:.95rem;padding:.85rem 1.5rem;border-radius:var(--r-md);transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s,background .15s}
+.btn-primary{background:var(--accent);color:#04101f;box-shadow:var(--sh-accent)}
+.btn-side{color:var(--ink-dim);border:1px solid var(--line);background:var(--s1)}
+.btn-side .side-tag{font-size:.7rem;color:var(--accent-hi);background:var(--accent-soft);padding:.15rem .45rem;border-radius:var(--r-full)}
+@media(hover:hover){
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(79,139,255,.55),0 16px 44px rgba(79,139,255,.3)}
+  .btn-side:hover{transform:translateY(-2px);color:var(--ink);box-shadow:var(--sh1)}
+}
+.hero-strip{display:flex;flex-wrap:wrap;gap:clamp(1rem,3vw,2.4rem);margin-top:3rem;padding-top:2rem;border-top:1px solid var(--line-soft)}
+.hs-item{display:flex;flex-direction:column;gap:.2rem}
+.hs-item b{font-family:'Sora';font-size:1.4rem;font-weight:600}
+.hs-item span{font-size:.82rem;color:var(--ink-faint)}
+
+/* ============ CONSOLE ============ */
+.console-anchor{scroll-margin-top:1rem}
+.console-frame{background:linear-gradient(180deg,var(--s1),var(--base));border-top:1px solid var(--line);padding:clamp(1.5rem,4vw,2.5rem) 0 clamp(3rem,6vw,4rem)}
+.console-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.4rem}
+.console-title{display:flex;align-items:center;gap:.7rem}
+.console-title h2{font-size:1.05rem;font-weight:600}
+.chip{font-size:.72rem;color:var(--ink-dim);padding:.28rem .6rem;border-radius:var(--r-full);border:1px solid var(--line);background:var(--s2)}
+.fleet-counts{display:flex;gap:.6rem;flex-wrap:wrap}
+.count{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--ink-dim);background:var(--s2);border:1px solid var(--line-soft);padding:.4rem .75rem;border-radius:var(--r-md)}
+.count b{color:var(--ink);font-family:'Sora';font-weight:600}
+.count .d{width:8px;height:8px;border-radius:50%}
+.d.on{background:var(--allow);box-shadow:0 0 10px rgba(63,192,138,.6)}
+.d.off{background:var(--deny);box-shadow:0 0 10px rgba(242,100,122,.55)}
+
+/* master-detail grid */
+.ops{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:1rem;align-items:start}
+@media(max-width:1080px){.ops{grid-template-columns:240px minmax(0,1fr);}
+  .stream-col{grid-column:1 / -1}}
+@media(max-width:720px){.ops{grid-template-columns:1fr}
+  .rail,.inspector,.stream-col{grid-column:1}
+}
+
+.panel{background:var(--s1);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh1)}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;border-bottom:1px solid var(--line-soft)}
+.panel-hd h3{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+
+/* LEFT RAIL */
+.rail-list{padding:.5rem}
+.agent-item{width:100%;text-align:left;display:flex;gap:.7rem;align-items:flex-start;padding:.7rem .75rem;border-radius:var(--r-md);border:1px solid transparent;transition:background .15s,border-color .15s,transform .15s;position:relative}
+.agent-item + .agent-item{margin-top:.25rem}
+@media(hover:hover){.agent-item:hover{background:var(--s2);transform:translateX(2px)}}
+.agent-item.sel{background:var(--accent-soft);border-color:rgba(79,139,255,.4);box-shadow:inset 3px 0 0 var(--accent)}
+.ai-dot{margin-top:.35rem;width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ai-dot.active{background:var(--allow);box-shadow:0 0 9px rgba(63,192,138,.6)}
+.ai-dot.revoked{background:var(--deny);box-shadow:0 0 9px rgba(242,100,122,.5)}
+.ai-body{min-width:0}
+.ai-name{font-weight:600;font-size:.92rem;display:flex;align-items:center;gap:.4rem}
+.ai-sub{font-size:.76rem;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.1rem}
+.mini-badge{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;padding:.1rem .35rem;border-radius:var(--r-full);font-weight:600}
+.mini-badge.active{color:var(--allow);background:var(--allow-soft)}
+.mini-badge.revoked{color:var(--deny);background:var(--deny-soft)}
+
+.bind{margin:.4rem .5rem .5rem;padding:.8rem;border:1px dashed var(--line);border-radius:var(--r-md);color:var(--ink-dim);font-size:.85rem;display:flex;align-items:center;gap:.55rem;justify-content:center;transition:border-color .15s,color .15s,background .15s}
+@media(hover:hover){.bind:hover{border-color:var(--accent);color:var(--accent-hi);background:var(--accent-soft)}}
+
+/* INSPECTOR */
+.inspector{min-height:520px}
+.insp-inner{padding:clamp(1.1rem,2.5vw,1.6rem)}
+.insp-inner.fade{animation:crossfade .28s ease}
+@keyframes crossfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.insp-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem}
+.insp-id h2{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:600}
+.id-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.6rem}
+.badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.76rem;padding:.32rem .65rem;border-radius:var(--r-full);border:1px solid var(--line);background:var(--s2);color:var(--ink-dim)}
+.badge svg{width:13px;height:13px}
+.badge.resolved{color:var(--accent-hi);border-color:rgba(79,139,255,.35);background:var(--accent-soft)}
+.status-badge{display:inline-flex;align-items:center;gap:.45rem;font-weight:600;font-size:.82rem;padding:.4rem .8rem;border-radius:var(--r-full)}
+.status-badge.active{color:var(--allow);background:var(--allow-soft);border:1px solid rgba(63,192,138,.3)}
+.status-badge.revoked{color:var(--deny);background:var(--deny-soft);border:1px solid rgba(242,100,122,.3)}
+.status-badge .sd{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}
+
+.insp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem;margin-top:1.5rem}
+.card{background:var(--s2);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:1rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.card .lbl{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;display:flex;align-items:center;gap:.4rem}
+.card .val{margin-top:.55rem;font-size:1.05rem;font-weight:500;font-family:'Sora'}
+.card .note{margin-top:.3rem;font-size:.8rem;color:var(--ink-dim)}
+.card .val.small{font-size:.98rem}
+.co-owned .pair{display:flex;align-items:center;gap:.5rem;margin-top:.55rem}
+.sig{display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--ink);background:var(--s3);border:1px solid var(--line);padding:.35rem .6rem;border-radius:var(--r-sm)}
+.sig .ck{color:var(--allow)}
+.plus{color:var(--ink-faint)}
+
+/* funding meter */
+.fund .bar{height:9px;border-radius:var(--r-full);background:var(--s3);overflow:hidden;margin-top:.7rem;border:1px solid var(--line)}
+.fund .fill{height:100%;border-radius:var(--r-full);background:linear-gradient(90deg,var(--accent),var(--accent-hi));width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.fund .fnote{display:flex;justify-content:space-between;margin-top:.5rem;font-size:.8rem;color:var(--ink-dim)}
+.rail-priv{font-size:.72rem;color:var(--ink-faint);margin-top:.35rem}
+
+/* allowlist */
+.allow-line{display:inline-flex;align-items:center;gap:.45rem;font-family:'IBM Plex Mono';font-size:.85rem;color:var(--ink);background:var(--s3);border:1px solid var(--line);padding:.3rem .6rem;border-radius:var(--r-sm);margin-top:.55rem}
+.allow-line .g{width:7px;height:7px;border-radius:50%;background:var(--allow)}
+
+/* activity inside inspector */
+.insp-activity{margin-top:1.6rem}
+.insp-activity h3{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.7rem}
+.ev-row{display:flex;gap:.7rem;align-items:flex-start;padding:.6rem .2rem;border-bottom:1px solid var(--line-soft);font-size:.88rem}
+.ev-row:last-child{border-bottom:none}
+.ev-dot{margin-top:.35rem;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ev-dot.ok{background:var(--allow);box-shadow:0 0 7px rgba(63,192,138,.6)}
+.ev-dot.no{background:var(--deny);box-shadow:0 0 7px rgba(242,100,122,.5)}
+.ev-txt{flex:1;min-width:0}
+.ev-txt .ok-t{color:var(--allow)}
+.ev-txt .no-t{color:var(--deny)}
+.ev-txt .t{display:block;color:var(--ink-faint);font-size:.75rem;margin-top:.15rem}
+
+/* actions */
+.insp-actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.7rem;padding-top:1.4rem;border-top:1px solid var(--line-soft);align-items:center}
+.btn-danger{background:var(--deny-soft);color:var(--deny);border:1px solid rgba(242,100,122,.4);padding:.75rem 1.3rem;border-radius:var(--r-md);font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:.5rem;transition:transform .16s,box-shadow .16s,background .15s}
+@media(hover:hover){.btn-danger:hover{transform:translateY(-2px);background:rgba(242,100,122,.16);box-shadow:0 10px 30px rgba(242,100,122,.22)}}
+.btn-reactivate{background:var(--accent);color:#04101f;padding:.75rem 1.3rem;border-radius:var(--r-md);font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:.5rem;box-shadow:var(--sh-accent);transition:transform .16s}
+@media(hover:hover){.btn-reactivate:hover{transform:translateY(-2px)}}
+.btn-ghost{color:var(--ink-dim);font-size:.85rem;display:inline-flex;align-items:center;gap:.4rem;transition:color .15s}
+@media(hover:hover){.btn-ghost:hover{color:var(--ink)}}
+.action-hint{font-size:.8rem;color:var(--ink-faint);flex-basis:100%}
+
+/* details fold */
+details.onchain{margin-top:1.1rem;border:1px solid var(--line-soft);border-radius:var(--r-md);background:var(--s2)}
+details.onchain summary{list-style:none;cursor:pointer;padding:.7rem 1rem;font-size:.82rem;color:var(--ink-dim);display:flex;align-items:center;gap:.5rem;transition:color .15s}
+details.onchain summary::-webkit-details-marker{display:none}
+@media(hover:hover){details.onchain summary:hover{color:var(--ink)}}
+details.onchain summary .caret{transition:transform .2s;color:var(--ink-faint)}
+details.onchain[open] summary .caret{transform:rotate(90deg)}
+.onchain-body{padding:0 1rem 1rem;font-family:'IBM Plex Mono';font-size:.78rem;color:var(--ink-dim);line-height:1.7}
+.onchain-body .kv{display:flex;justify-content:space-between;gap:1rem;padding:.25rem 0;border-bottom:1px solid var(--line-soft)}
+.onchain-body .kv:last-child{border:none}
+.onchain-body .k{color:var(--ink-faint)}
+
+/* STREAM COLUMN */
+.stream-col .panel-hd .live{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--allow)}
+.stream-col .live .p{width:7px;height:7px;border-radius:50%;background:var(--allow);animation:pulse 1.8s infinite;box-shadow:0 0 8px rgba(63,192,138,.6)}
+.stream{padding:.4rem;max-height:640px;overflow:auto}
+.stream::-webkit-scrollbar{width:6px}
+.stream::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--r-full)}
+.stream-row{display:flex;gap:.6rem;padding:.65rem .55rem;border-radius:var(--r-sm);align-items:flex-start;font-size:.82rem}
+.stream-row + .stream-row{border-top:1px solid var(--line-soft)}
+.stream-row.new{animation:slidein .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes slidein{from{opacity:0;transform:translateY(-12px);background:var(--accent-soft)}to{opacity:1;transform:none}}
+.sr-dot{margin-top:.35rem;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sr-dot.ok{background:var(--allow);box-shadow:0 0 7px rgba(63,192,138,.55)}
+.sr-dot.no{background:var(--deny);box-shadow:0 0 7px rgba(242,100,122,.5)}
+.sr-txt{flex:1;min-width:0;line-height:1.4}
+.sr-txt .who{font-weight:600}
+.sr-txt .ok-t{color:var(--allow)}
+.sr-txt .no-t{color:var(--deny)}
+.sr-txt .t{color:var(--ink-faint);font-size:.72rem;display:block;margin-top:.15rem}
+
+/* toast */
+.toast-wrap{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(140%);z-index:50;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.toast-wrap.show{transform:translateX(-50%) translateY(0)}
+.toast{display:flex;align-items:center;gap:.7rem;background:var(--s3);border:1px solid rgba(242,100,122,.4);border-radius:var(--r-md);padding:.85rem 1.2rem;box-shadow:var(--sh2);max-width:min(92vw,440px)}
+.toast .ic{width:26px;height:26px;border-radius:var(--r-full);background:var(--deny-soft);color:var(--deny);display:grid;place-items:center;flex-shrink:0}
+.toast .msg{font-size:.88rem}
+.toast .msg b{font-weight:600}
+.toast.re{border-color:rgba(79,139,255,.4)}
+.toast.re .ic{background:var(--accent-soft);color:var(--accent-hi)}
+
+/* revoke flip */
+.flip{animation:flip .5s ease}
+@keyframes flip{0%{transform:rotateX(0)}45%{transform:rotateX(90deg);opacity:.4}100%{transform:rotateX(0);opacity:1}}
+
+.foot{text-align:center;padding:2.5rem 1rem;color:var(--ink-faint);font-size:.8rem;border-top:1px solid var(--line-soft)}
+.foot b{color:var(--ink-dim)}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .toast-wrap{transition:transform .01s!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LANDING ============ -->
+<header class="landing">
+  <div class="wrap">
+    <nav class="top-nav">
+      <div class="brand"><span class="dot"></span> LEASH</div>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#console">Console</a>
+        <a href="#console" class="mono" style="color:var(--accent-hi)">acme.leash.eth</a>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <span class="eyebrow"><span class="pip"></span> Mission control for autonomous agents</span>
+      <h1>The control layer for your <span class="hl">AI agent fleet</span>.</h1>
+      <p class="lede">Bind every agent that spends your money to an on-chain identity, a co-owned account, plain spending limits, and a one-click kill-switch. Revoke an agent and its next payment is blocked everywhere — one on-chain write.</p>
+      <div class="cta">
+        <a href="#console" class="btn btn-primary">
+          Open your console
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#console" class="btn btn-side">For judges — live demo <span class="side-tag">no login</span></a>
+      </div>
+
+      <div class="hero-strip">
+        <div class="hs-item"><b>1 write</b><span>to cut an agent off everywhere</span></div>
+        <div class="hs-item"><b>2-of-2</b><span>agent + LEASH both approve</span></div>
+        <div class="hs-item"><b>Live</b><span>every payment, allowed or blocked</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ CONSOLE ============ -->
+<main id="console" class="console-frame console-anchor" aria-label="Fleet console">
+  <div class="wrap">
+    <div class="console-head">
+      <div class="console-title">
+        <h2>acme · your fleet</h2>
+        <span class="chip mono">acme.leash.eth</span>
+      </div>
+      <div class="fleet-counts" id="fleetCounts">
+        <div class="count"><span class="d on"></span> <b id="cActive">2</b> active</div>
+        <div class="count"><span class="d off"></span> <b id="cRevoked">1</b> revoked</div>
+        <div class="count">total <b>3</b> agents</div>
+      </div>
+    </div>
+
+    <div class="ops">
+
+      <!-- LEFT: fleet rail -->
+      <aside class="panel rail" aria-label="Fleet list">
+        <div class="panel-hd"><h3>Fleet</h3></div>
+        <div class="rail-list" id="railList" role="listbox" aria-label="Agents"></div>
+        <button class="bind" type="button" onclick="alert('Bind flow: name the agent, resolve its on-chain identity, open a co-owned account, and set its limits.')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Bind an agent
+        </button>
+      </aside>
+
+      <!-- MIDDLE: inspector -->
+      <section class="panel inspector" aria-live="polite" aria-label="Selected agent">
+        <div class="insp-inner" id="inspector"></div>
+      </section>
+
+      <!-- RIGHT: live stream -->
+      <aside class="panel stream-col" aria-label="Live activity">
+        <div class="panel-hd">
+          <h3>Live activity</h3>
+          <span class="live"><span class="p"></span> streaming</span>
+        </div>
+        <div class="stream" id="stream" aria-live="polite"></div>
+      </aside>
+
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <p>The facilitator LEASH runs enforces the limits you set. Identity is <b>on-chain-resolved</b>. <b>Privy</b> is the independent funding rail. Limits are a soft budget you control.</p>
+</footer>
+
+<!-- toast -->
+<div class="toast-wrap" id="toast" role="status" aria-live="assertive">
+  <div class="toast" id="toastBox">
+    <div class="ic" id="toastIc"></div>
+    <div class="msg" id="toastMsg"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const agents = [
+  {
+    id:'data', name:'data agent', status:'active',
+    rail:'up to $5/payment · pays api.acme.dev',
+    perPayment:'Up to $5 per payment', daily:'Up to $50 a day',
+    allow:'api.acme.dev', addr:'0x9f42…c17e', agentId:'#7395',
+    funded:40, cap:100,
+    events:[
+      {ok:true, who:'data agent', body:'paid $3 to api.acme.dev', t:'2m ago'},
+      {ok:true, who:'data agent', body:'paid $2 to api.acme.dev', t:'22m ago'},
+      {ok:false, who:'data agent', body:'blocked — over daily limit', t:'1h ago'},
+    ]
+  },
+  {
+    id:'payments', name:'payments agent', status:'active',
+    rail:'up to $20/payment · pays 2 endpoints',
+    perPayment:'Up to $20 per payment', daily:'Up to $200 a day',
+    allow:'pay.acme.dev, billing.acme.dev', addr:'0x3b71…9d0a', agentId:'#7412',
+    funded:180, cap:250,
+    events:[
+      {ok:true, who:'payments agent', body:'paid $18 to billing.acme.dev', t:'5m ago'},
+      {ok:false, who:'payments agent', body:'blocked — over daily limit', t:'40m ago'},
+      {ok:true, who:'payments agent', body:'paid $12 to pay.acme.dev', t:'2h ago'},
+    ]
+  },
+  {
+    id:'research', name:'research agent', status:'revoked',
+    rail:'revoked — cut off everywhere',
+    perPayment:'Up to $10 per payment', daily:'Up to $80 a day',
+    allow:'search.acme.dev', addr:'0xa10c…44f2', agentId:'#7266',
+    funded:0, cap:100,
+    events:[
+      {ok:false, who:'research agent', body:'revoked — cut off everywhere', t:'just now'},
+      {ok:true, who:'research agent', body:'paid $6 to search.acme.dev', t:'3h ago'},
+    ]
+  },
+];
+
+let selectedId = 'data';
+const $ = s => document.querySelector(s);
+const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+/* ---------- rail ---------- */
+function renderRail(){
+  $('#railList').innerHTML = agents.map(a=>`
+    <button class="agent-item ${a.id===selectedId?'sel':''}" role="option" aria-selected="${a.id===selectedId}" data-id="${a.id}">
+      <span class="ai-dot ${a.status}"></span>
+      <span class="ai-body">
+        <span class="ai-name">${a.name}
+          <span class="mini-badge ${a.status}">${a.status==='active'?'Active':'Revoked'}</span>
+        </span>
+        <span class="ai-sub">${a.rail}</span>
+      </span>
+    </button>`).join('');
+  document.querySelectorAll('.agent-item').forEach(el=>{
+    el.addEventListener('click',()=>select(el.dataset.id));
+  });
+  const act = agents.filter(a=>a.status==='active').length;
+  $('#cActive').textContent = act;
+  $('#cRevoked').textContent = agents.length-act;
+}
+
+/* ---------- inspector ---------- */
+function renderInspector(){
+  const a = agents.find(x=>x.id===selectedId);
+  const pct = Math.round(a.funded/a.cap*100);
+  const revoked = a.status==='revoked';
+  $('#inspector').className = 'insp-inner fade';
+  $('#inspector').innerHTML = `
+    <div class="insp-top">
+      <div class="insp-id">
+        <h2>${a.name}</h2>
+        <div class="id-row">
+          <span class="badge resolved">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
+            on-chain-resolved
+          </span>
+          <span class="badge mono">${a.addr}</span>
+          <span class="badge">agent ${a.agentId}</span>
+        </div>
+      </div>
+      <span class="status-badge ${a.status}" id="statusBadge"><span class="sd"></span>${revoked?'Revoked':'Active'}</span>
+    </div>
+
+    <div class="insp-grid">
+      <div class="card">
+        <div class="lbl">Per payment</div>
+        <div class="val">${a.perPayment}</div>
+        <div class="note">Anything above is ${revoked?'blocked' :'declined'} automatically.</div>
+      </div>
+      <div class="card">
+        <div class="lbl">Daily limit</div>
+        <div class="val">${a.daily}</div>
+        <div class="note">Resets at midnight UTC.</div>
+      </div>
+      <div class="card">
+        <div class="lbl">Can pay</div>
+        <div class="allow-line"><span class="g"></span>${a.allow}</div>
+        <div class="note" style="margin-top:.6rem">Any other destination is refused.</div>
+      </div>
+      <div class="card co-owned">
+        <div class="lbl">Co-owned account</div>
+        <div class="pair">
+          <span class="sig"><span class="ck">✓</span> the agent</span>
+          <span class="plus">+</span>
+          <span class="sig"><span class="ck">✓</span> LEASH</span>
+        </div>
+        <div class="note" style="margin-top:.6rem">Both approve before any payment goes out.</div>
+      </div>
+      <div class="card fund" style="grid-column:span 2">
+        <div class="lbl">Funding</div>
+        <div class="bar"><div class="fill" id="fundFill"></div></div>
+        <div class="fnote"><span>Funded $${a.funded} of $${a.cap}</span><span>${pct}%</span></div>
+        <div class="rail-priv">Privy is the independent funding rail — LEASH never holds the balance.</div>
+      </div>
+    </div>
+
+    <div class="insp-activity">
+      <h3>This agent's activity</h3>
+      ${a.events.map(e=>`
+        <div class="ev-row">
+          <span class="ev-dot ${e.ok?'ok':'no'}"></span>
+          <span class="ev-txt">
+            <span class="${e.ok?'ok-t':'no-t'}">${e.body.startsWith('paid')?a.name+' '+e.body:a.name+' '+e.body}</span>
+            <span class="t">${e.t}</span>
+          </span>
+        </div>`).join('')}
+    </div>
+
+    <div class="insp-actions">
+      ${revoked
+        ? `<button class="btn-reactivate" onclick="toggleRevoke()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reactivate</button>
+           <span class="action-hint">Reactivating restores this agent's limits and lets it pay again.</span>`
+        : `<button class="btn-danger" onclick="toggleRevoke()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><path d="M12 2v10"/></svg> Revoke · cut off everywhere</button>
+           <button class="btn-ghost" onclick="alert('Adjust limits: change the per-payment cap, the daily budget, or the allowed destinations.')">Adjust limits</button>
+           <span class="action-hint">One on-chain write. The agent's next payment is blocked everywhere.</span>`}
+    </div>
+
+    <details class="onchain">
+      <summary><span class="caret">▸</span> View on-chain details</summary>
+      <div class="onchain-body">
+        <div class="kv"><span class="k">identity</span><span>${a.addr}</span></div>
+        <div class="kv"><span class="k">agent registry id</span><span>${a.agentId}</span></div>
+        <div class="kv"><span class="k">account model</span><span>2-of-2 (agent + LEASH)</span></div>
+        <div class="kv"><span class="k">funding rail</span><span>Privy (independent)</span></div>
+        <div class="kv"><span class="k">status</span><span>${revoked?'revoked':'active'}</span></div>
+      </div>
+    </details>
+  `;
+  // funding fill after paint
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const f = $('#fundFill'); if(f) f.style.width = (reduce?pct:pct)+'%';
+  }));
+}
+
+function select(id){
+  if(id===selectedId){renderInspector();return;}
+  selectedId = id;
+  renderRail();
+  renderInspector();
+}
+
+/* ---------- revoke / reactivate ---------- */
+function toggleRevoke(){
+  const a = agents.find(x=>x.id===selectedId);
+  const nowRevoked = a.status==='active';
+  a.status = nowRevoked ? 'revoked' : 'active';
+  a.rail = nowRevoked ? 'revoked — cut off everywhere'
+                      : `up to ${a.perPayment.replace('Up to ','').replace(' per payment','')}/payment · pays ${a.allow.split(',')[0]}`;
+  if(nowRevoked){
+    a.events.unshift({ok:false, who:a.name, body:'revoked — cut off everywhere', t:'just now'});
+    pushStream({ok:false, who:a.name, body:'revoked — cut off everywhere', t:'just now'});
+  } else {
+    a.events.unshift({ok:true, who:a.name, body:'reactivated — limits restored', t:'just now'});
+    pushStream({ok:true, who:a.name, body:'reactivated — limits restored', t:'just now'});
+  }
+  renderRail();
+  renderInspector();
+  if(!reduce){
+    const sb = $('#statusBadge'); if(sb){sb.classList.add('flip');}
+  }
+  showToast(nowRevoked, a.name);
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function showToast(revoked, name){
+  const box = $('#toastBox'), ic = $('#toastIc'), msg = $('#toastMsg');
+  box.className = 'toast'+(revoked?'':' re');
+  ic.innerHTML = revoked
+    ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`
+    : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+  msg.innerHTML = revoked
+    ? `<b>${name} revoked.</b> Its next payment is now <b style="color:var(--deny)">Blocked — revoked</b> everywhere.`
+    : `<b>${name} reactivated.</b> Its limits are restored.`;
+  $('#toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>$('#toast').classList.remove('show'), 4200);
+}
+
+/* ---------- live stream ---------- */
+const streamSeed = [
+  {ok:true, who:'data agent', body:'paid $3 to api.acme.dev', t:'2m ago'},
+  {ok:false, who:'payments agent', body:'blocked — over daily limit', t:'5m ago'},
+  {ok:true, who:'payments agent', body:'paid $18 to billing.acme.dev', t:'8m ago'},
+  {ok:true, who:'data agent', body:'paid $2 to api.acme.dev', t:'22m ago'},
+  {ok:false, who:'research agent', body:'revoked — cut off everywhere', t:'just now'},
+];
+function rowHTML(e, isNew){
+  const cls = e.ok?'ok':'no';
+  const label = e.body.startsWith('paid')
+    ? `<span class="who">${e.who}</span> <span class="${e.ok?'ok-t':'no-t'}">${e.body}</span>`
+    : `<span class="who">${e.who}</span> <span class="no-t">— ${e.body}</span>`;
+  return `<div class="stream-row ${isNew?'new':''}">
+    <span class="sr-dot ${cls}"></span>
+    <span class="sr-txt">${label}<span class="t">${e.t}</span></span>
+  </div>`;
+}
+function renderStream(){
+  $('#stream').innerHTML = streamSeed.map(e=>rowHTML(e,false)).join('');
+}
+function pushStream(e){
+  streamSeed.unshift(e);
+  $('#stream').insertAdjacentHTML('afterbegin', rowHTML(e,true));
+  if(streamSeed.length>18){streamSeed.pop(); const rows=$('#stream').children; if(rows.length>18) rows[rows.length-1].remove();}
+}
+
+/* ---------- simulated tick ---------- */
+const tickPool = [
+  {ok:true, who:'data agent', body:'paid $4 to api.acme.dev'},
+  {ok:true, who:'payments agent', body:'paid $9 to pay.acme.dev'},
+  {ok:false, who:'payments agent', body:'blocked — over daily limit'},
+  {ok:true, who:'data agent', body:'paid $2 to api.acme.dev'},
+  {ok:false, who:'data agent', body:'blocked — over daily limit'},
+];
+let ti = 0;
+function startTicks(){
+  setInterval(()=>{
+    // only report on active agents
+    const t = tickPool[ti++ % tickPool.length];
+    const a = agents.find(x=>x.name===t.who);
+    if(a && a.status==='revoked') return;
+    pushStream({...t, t:'just now'});
+  }, 5200);
+}
+
+/* ---------- init ---------- */
+renderRail();
+renderInspector();
+renderStream();
+if(!reduce) startTicks();
+</script>
+</body>
+</html>

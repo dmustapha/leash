@@ -14,7 +14,7 @@
 // This module is server-only by construction: it is imported ONLY by the console route handlers (which never
 // run on the client) and it pulls in the Hedera SDK + viem wallet client. It is never imported by any 'use
 // client' component, so no 'server-only' guard package is required.
-import { AccountId, TransferTransaction, TokenId, AccountCreateTransaction, KeyList, PublicKey, Hbar } from '@hiero-ledger/sdk';
+import { AccountId, TransferTransaction, TokenId, AccountCreateTransaction, KeyList, PublicKey, PrivateKey, Hbar } from '@hiero-ledger/sdk';
 import type { agents as agentsTable } from '../../db/schema';
 import { deploySubregistry } from '../../scripts/ens/subregistry';
 import { mintSubname } from '../../scripts/ens/subname';
@@ -88,6 +88,8 @@ export interface CosignedSpendingAccount {
   longZeroEvm: string;    // long-zero EVM facade (Privy funding target + ENS agentEvm)
   agentPub: string;       // the agent's PUBLIC key (the ONLY agent key LEASH holds — SR-1)
   cosignerPub: string;    // LEASH's co-signer public key
+  generatedAgentKey?: string; // present ONLY when LEASH generated the keypair for the user: the agent's
+                              // PRIVATE key, returned ONCE for the user to save. NEVER persisted by LEASH (SR-1).
 }
 
 // [REFRAME R2 / SR-1-PURE] Provision a NET-NEW 2-of-2 co-signed spending account for the register-EXISTING (bind)
@@ -98,17 +100,26 @@ export interface CosignedSpendingAccount {
 // `setMaxAutomaticTokenAssociations(>=1)` and then FUNDED with USDC — the incoming transfer AUTO-ASSOCIATES the
 // token with NO agent signature required. ensureCanonicalAgent is NOT called; the KeyList logic is not
 // duplicated (longZeroEvm + ensureCosignerKey reused from the S1 primitive).
-export async function provisionSpendingAccount(agentPub: string, fundRaw = 20_000_000): Promise<CosignedSpendingAccount> {
+export async function provisionSpendingAccount(agentPub?: string, fundRaw = 20_000_000): Promise<CosignedSpendingAccount> {
   const trimmed = agentPub?.trim();
-  if (!trimmed) {
-    // NEVER silently generate a key — that breaks SR-1 (the agent must supply its own public key).
-    throw new Error('provisionSpendingAccount: agentPub (the agent-supplied Hedera public key) is required');
-  }
+  // SR-1, two honest paths:
+  //  (a) the user brings their agent's Hedera public key -> LEASH uses it, never touches a private half.
+  //  (b) the user's agent lives on another chain and has no Hedera key -> LEASH GENERATES the keypair, puts the
+  //      PUBLIC half in the 2-of-2, and returns the PRIVATE half ONCE for the user to save. LEASH does not
+  //      persist it (it is never written to env/DB), so the co-owner model holds: LEASH-alone still cannot move
+  //      funds (it lacks the agent private half after handing it back).
   let agentPublicKey: PublicKey;
-  try {
-    agentPublicKey = PublicKey.fromString(trimmed);
-  } catch {
-    throw new Error(`provisionSpendingAccount: agentPub "${trimmed}" is not a valid Hedera public key`);
+  let generatedAgentKey: string | undefined;
+  if (trimmed) {
+    try {
+      agentPublicKey = PublicKey.fromString(trimmed);
+    } catch {
+      throw new Error(`provisionSpendingAccount: agentPub "${trimmed}" is not a valid Hedera public key`);
+    }
+  } else {
+    const kp = PrivateKey.generateECDSA();
+    agentPublicKey = kp.publicKey;
+    generatedAgentKey = kp.toStringRaw(); // returned once to the caller; never stored by LEASH
   }
   // Reject a non-positive funding amount up front (a public fn; a 0/negative fund would create an unusable
   // co-signed account that can never pay). Callers pass a positive default, but guard the public surface.
@@ -141,7 +152,7 @@ export async function provisionSpendingAccount(agentPub: string, fundRaw = 20_00
     const receipt = await fundResp.getReceipt(client);
     if (receipt.status.toString() !== 'SUCCESS') throw new Error(`fund cosigned ${accountId}: ${receipt.status.toString()}`);
 
-    return { accountId, longZeroEvm: evm, agentPub: trimmed, cosignerPub: cosigner.publicKey.toStringRaw() };
+    return { accountId, longZeroEvm: evm, agentPub: agentPublicKey.toStringRaw(), cosignerPub: cosigner.publicKey.toStringRaw(), generatedAgentKey };
   } finally {
     client.close();
   }

@@ -33,7 +33,7 @@ function toLabel(raw: string): string {
 
 // [REFRAME D4] Parse + validate the OPTIONAL dynamic-limit inputs into the AgentPolicy shape. Caps are raw
 // smallest-unit integer strings; windows are minute-of-day UTC (start-incl 0..1439, end-excl 1..1440), optional
-// UTC days 0=Sun..6=Sat. Any present-but-malformed field throws (route maps to 400 — never silently dropped, so
+// UTC days 0=Sun..6=Sat. Any present-but-malformed field throws (route maps to 400, never silently dropped, so
 // a bad limit can't ship as "no limit"). Returns the subset to spread onto a policy in CANONICAL field order.
 type DynamicLimitInput = { dailyCap?: string; weeklyCap?: string; allowedWindows?: unknown };
 function parseDynamicLimits(input: DynamicLimitInput): Pick<AgentPolicy, 'dailyCap' | 'weeklyCap' | 'allowedWindows'> {
@@ -244,11 +244,10 @@ async function bindExistingAgent(
   if (!/^\d+$/.test(body.maxPerCall)) {
     return NextResponse.json({ error: 'maxPerCall must be a raw smallest-unit integer string' }, { status: 400 });
   }
-  const agentPub = body.agentPub?.trim();
-  if (!agentPub) {
-    // SR-1: the agent MUST supply its own Hedera public key; LEASH never generates one for a co-signed account.
-    return NextResponse.json({ error: 'agentPub (the agent-supplied Hedera public key) is required to bind' }, { status: 400 });
-  }
+  // agentPub is OPTIONAL: if the user's agent already has a Hedera public key they paste it (SR-1 pure). If not
+  // (the common case: the agent lives on another chain), LEASH GENERATES the keypair, uses the public half in the
+  // 2-of-2, and returns the private half ONCE for the user to save. LEASH never persists that private key.
+  const agentPub = body.agentPub?.trim() || undefined;
 
   const label = toLabel(body.label);
   const name = `${label}.${org.ensName}`;
@@ -276,7 +275,7 @@ async function bindExistingAgent(
       kind: 'mint', registry, label, agentAddress: account.longZeroEvm as `0x${string}`, expires,
     });
 
-    // 4) ADVISORY on-chain-RESOLVED identity records (INVARIANT #13) — agent.address (resolved EVM) + erc8004 (CAIP).
+    // 4) ADVISORY on-chain-RESOLVED identity records (INVARIANT #13): agent.address (resolved EVM) + erc8004 (CAIP).
     // Never an enforcement input; labeled "on-chain-resolved", not "verified". Non-fatal (identity is a nicety).
     const agentType = (body.agentType || 'external x402 agent (bound)').slice(0, 60);
     const description = (body.description || `External agent bound under ${org.ensName}; on-chain-resolved identity, ENS-declared spend policy.`).slice(0, 200);
@@ -307,7 +306,7 @@ async function bindExistingAgent(
     };
     const policyTx = await relay(org.ensName, { kind: 'setPolicy', registry, label, name, policy });
 
-    // 6) Privy funding UNION (behind the same requireOwner, A1) — target the account's long-zero EVM facade.
+    // 6) Privy funding UNION (behind the same requireOwner, A1): target the account's long-zero EVM facade.
     // Non-fatal warning on failure (mirrors the mint path); the agent exists on-chain regardless.
     let fundingAllowlisted = false;
     let fundingWarning: string | null = null;
@@ -336,6 +335,10 @@ async function bindExistingAgent(
       bound: true,
       identity: { source: resolved.source, resolvedOwner: resolved.resolvedOwner, agentId: resolved.agentId, caip: resolved.caip, label: 'on-chain-resolved' },
       cosigned: { accountId: account.accountId, longZeroEvm: account.longZeroEvm, cosignerPub: account.cosignerPub },
+      // Present ONLY when LEASH generated the keypair (the user did not paste one). The agent's PRIVATE key,
+      // returned ONCE. LEASH does not store it; the user must save it and give it to their agent to co-sign
+      // payments. Absent when the user supplied their own agentPub.
+      agentKeyOnce: account.generatedAgentKey ?? null,
       mintTx, policyTx, fundingAllowlisted, fundingWarning, identityTxs, identityWarning,
     });
   } catch (e) {

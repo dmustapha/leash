@@ -48,7 +48,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ scope: 'org', ensName: org.ensName, indexed, events });
     }
 
-    // Single-agent drill-down: OWNER-SCOPED (H-01 fix — this is the authed console surface, not public). Resolve
+    // Single-agent drill-down: OWNER-SCOPED (H-01 fix: this is the authed console surface, not public). Resolve
     // the agent by ENS name, then assert the caller owns it (same ownership JOIN as every mutating route).
     if (agent) {
       const rows = await db.select().from(agents).where(eq(agents.ensName, agent)).limit(1);
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ scope: 'agent', agent, indexed, events });
     }
 
-    // Global recent activity — the /demo audit scroll ONLY (public HCS ledger data; sandbox agents).
+    // Global recent activity: the /demo audit scroll ONLY (public HCS ledger data; sandbox agents).
     const events = await recentSpendEvents(limit);
     return NextResponse.json({ scope: 'global', indexed, events });
   } catch (e) {

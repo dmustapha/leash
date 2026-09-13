@@ -1,29 +1,32 @@
 {
   "name": "LEASH",
-  "tagline": "The ENS name that can un-pay it.",
+  "tagline": "Keep your agents on a leash.",
   "colorMode": "dark-only",
-  "brandColor": "#f2a63b",
-  "accent": "#f2a63b",
-  "ink": ["#0b0b0d", "#141417", "#1c1c21", "#2a2a31", "#f4f1ea"],
-  "inkText": { "primary": "#f4f1ea", "dim": "#a8a29a", "faint": "#6b665e" },
+  "brandColor": "#c6f24d",
+  "accent": "#c6f24d",
+  "accentHi": "#d6ff6a",
+  "ink": ["#0a0a0b", "#141416", "#1c1c1f", "#232327", "#2a2a2e", "#f4f4ef"],
+  "inkText": { "primary": "#f4f4ef", "dim": "#a2a29c", "faint": "#64645f" },
   "semantic": {
-    "success": "#4fae7a",
-    "warning": "#f2a63b",
-    "danger": "#d16060"
+    "success": "#4fd08a",
+    "warning": "#c6f24d",
+    "danger": "#ff5d6c"
   },
   "fonts": {
-    "display": "system-ui",
-    "body": "ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif",
-    "mono": "ui-monospace, SF Mono, JetBrains Mono, Menlo, monospace"
+    "display": "Clash Display",
+    "body": "Manrope",
+    "mono": "JetBrains Mono"
   },
-  "radii": { "sm": 6, "md": 10, "lg": 16, "full": 999 },
-  "shadowPhilosophy": "pure-glow",
-  "signatureElement": "Muted jewel-tone verdict pills (jade ALLOW / garnet DENY-REVOKED) with a mono code face, over a near-black base warmed by a faint amber+jade radial vignette.",
-  "invariantPhrase": "LEASH is the ENS name that can un-pay it.",
+  "radii": { "sm": 6, "md": 10, "lg": 16, "xl": 22, "full": 999 },
+  "shadowPhilosophy": "crisp-glow",
+  "signatureElement": "The Concept A tether identity: the LEASH wordmark riding a single fine electric-lime leash-line, with a clasp loop and snap gate before the L and a hook after the H, native to the name (the leash you can cut). Paired with a faint blueprint grid warmed by a single electric-lime radial glow and lime verdict beacons; bright is reserved for the action and the verdict, everything else is near-black.",
+  "invariantPhrase": "Keep your AI agents on a leash.",
   "statusLegend": [
-    { "color": "#4fae7a", "token": "ALLOW", "meaning": "policy check passed; the co-signed payment settled on Hedera" },
-    { "color": "#d16060", "token": "DENY / REVOKED", "meaning": "blocked at the payment rail — OVER_CAP / OVER_DAILY_CAP / OVER_WEEKLY_CAP / OUTSIDE_WINDOW / OFF_ALLOWLIST / MISSING_COSIGN / RPC_ERROR, or the ENS policy record was revoked" },
-    { "color": "#f2a63b", "token": "PENDING / IDLE", "meaning": "accent — an action in flight or an awaiting-input state (not a settled verdict)" }
+    { "color": "#4fd08a", "token": "ALLOW", "meaning": "policy check passed; the co-signed payment settled on Hedera" },
+    { "color": "#ff5d6c", "token": "DENY / REVOKED", "meaning": "blocked at the payment rail (OVER_CAP / OVER_DAILY_CAP / OVER_WEEKLY_CAP / OUTSIDE_WINDOW / OFF_ALLOWLIST / MISSING_COSIGN / RPC_ERROR) or the ENS policy record was revoked" },
+    { "color": "#c6f24d", "token": "PENDING / IDLE", "meaning": "accent; an action in flight or an awaiting-input state (not a settled verdict)" }
   ],
-  "logoPath": "public/logo.svg"
+  "logoPath": "public/logo.svg",
+  "logoProvider": "pollinations",
+  "logoMark": "tether clasp mark"
 }

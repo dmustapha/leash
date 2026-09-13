@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 90" role="img" aria-label="LEASH">
+  <title>LEASH — Cut</title>
+  <g fill="#f4f4ef" font-family="'Clash Display','Helvetica Neue',Arial,sans-serif" font-weight="700">
+    <text x="10" y="48" font-size="46" letter-spacing="1">LEASH</text>
+  </g>
+  <!-- Severed tether running under the word: two ends with a clean gap + spark -->
+  <g stroke="#c6f24d" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- left segment -->
+    <path d="M12 70 h120"/>
+    <!-- frayed cut tip left -->
+    <path d="M132 70 l6 -4 M132 70 l6 4" stroke-width="2.5"/>
+    <!-- right segment -->
+    <path d="M168 70 h120"/>
+    <!-- frayed cut tip right -->
+    <path d="M168 70 l-6 -4 M168 70 l-6 4" stroke-width="2.5"/>
+  </g>
+  <!-- spark at the break -->
+  <g stroke="#d6ff6a" stroke-width="2.5" stroke-linecap="round">
+    <path d="M150 70 v-11 M150 70 v11 M150 70 l-9 -6 M150 70 l9 -6 M150 70 l-9 6 M150 70 l9 6"/>
+  </g>
+  <circle cx="150" cy="70" r="2.5" fill="#d6ff6a"/>
+</svg>

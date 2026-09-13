@@ -1,37 +1,15 @@
 // File: web/app/app/page.tsx
-// [Task 5.4b] The real console (/app). Wraps the console in Privy's PrivyProvider so a user can sign in with
-// email or Google (real @privy-io/react-auth v3 SDK). The PrivyProvider + the console tree are the ONLY place
-// Privy client modules are imported - the /demo tree has NO import edge here (INVARIANT #10).
-//
-// The appId comes from NEXT_PUBLIC_PRIVY_APP_ID. Wiring the Privy dashboard (enabling Email/Google login
-// methods + allowed origins) is the deploy-time human step (Task 5.4a). When the id is absent locally the full
-// login surface still renders and explains what is pending - it NEVER fakes a session (INVARIANT: no
-// fabricated demo state; honest framing INVARIANT #4).
+// The console entry (the fleet). PrivyProvider now lives in layout.tsx (shared with /app/agent/[ensName]), so this
+// route only renders the console body. The four states, not-configured / not-authenticated / authenticated-no-org
+// / authenticated-with-org, are handled inside AppConsole. It NEVER fabricates a session or fake data.
 'use client';
 
-import { PrivyProvider } from '@privy-io/react-auth';
 import AppConsole from './app-console';
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+// Whether the deploy-time Privy app id is present. When false, layout.tsx did not mount PrivyProvider, so the
+// console renders a real "pending configuration" panel (no usePrivy call is made).
+const CONFIGURED = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
 export default function AppPage() {
-  // No app id configured (Task 5.4a not yet done): render the console shell, which shows a clear pending state
-  // instead of crashing PrivyProvider on an empty id. No fake session is created.
-  if (!PRIVY_APP_ID) {
-    return <AppConsole configured={false} />;
-  }
-  return (
-    <PrivyProvider
-      appId={PRIVY_APP_ID}
-      config={{
-        loginMethods: ['email', 'google'],
-        appearance: { theme: 'dark', accentColor: '#f2a63b' },
-        // [WS-7 C1] Create an embedded wallet on login so the user HAS an EVM address to receive the co-hold
-        // kill-switch role on their agents (additive with the relayer). No seed phrase for the user to manage.
-        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
-      }}
-    >
-      <AppConsole configured />
-    </PrivyProvider>
-  );
+  return <AppConsole configured={CONFIGURED} />;
 }

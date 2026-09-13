@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEASH — The ENS name that can un-pay it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#0b0b0d; --surface-1:#141417; --surface-2:#1c1c21; --line:#2a2a31;
+  --ink:#f4f1ea; --ink-dim:#a8a29a; --ink-faint:#6b665e;
+  --amber:#f2a63b; --amber-soft:#3a2a12;
+  --allow:#4fae7a; --allow-soft:#12261d; --deny:#d16060; --deny-soft:#2a1416;
+  --radius-sm:.375rem; --radius-md:.625rem; --radius-lg:1rem; --radius-full:999px;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.35);
+  --shadow-2:0 2px 6px rgba(0,0,0,.55),0 16px 40px rgba(0,0,0,.45);
+  --shadow-amber:0 0 0 1px rgba(242,166,59,.35),0 8px 30px rgba(242,166,59,.12);
+  --text-display:clamp(2.25rem,1.2rem+4vw,4rem); --text-h2:clamp(1.35rem,1rem+1.4vw,1.9rem);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--base);
+  color:var(--ink);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:300;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+  position:relative;
+  overflow-x:hidden;
+}
+/* warmed near-black vignette — amber + jade radial, never flat */
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(120% 80% at 15% -10%, rgba(242,166,59,.10), transparent 55%),
+    radial-gradient(90% 70% at 92% 8%, rgba(79,174,122,.055), transparent 60%),
+    radial-gradient(140% 120% at 50% 120%, rgba(242,166,59,.045), transparent 55%);
+}
+::selection{background:var(--amber-soft);color:var(--ink)}
+a{color:inherit;text-decoration:none}
+.serif{font-family:'DM Serif Display',serif;font-weight:400;letter-spacing:-.01em;line-height:1.02}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(1.25rem,4vw,3rem)}
+
+/* focus ring — amber double ring */
+a:focus-visible,button:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px var(--base),0 0 0 4px var(--amber);
+  border-radius:var(--radius-sm);
+}
+
+/* ============ MASTHEAD ============ */
+.masthead{position:relative;z-index:2}
+.mast-top{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;
+  padding:1.4rem 0 1rem;
+}
+.wordmark{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(1.9rem,1.2rem+2vw,2.7rem);
+  letter-spacing:.02em;
+}
+.wordmark .dot{color:var(--amber)}
+.mast-eyebrow{
+  font-size:.66rem;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.mast-nav{display:flex;gap:1.6rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
+.mast-nav a{
+  color:var(--ink-dim);
+  padding:.25rem 0;
+  border-bottom:1px solid transparent;
+  transition:color .18s ease,border-color .18s ease;
+}
+.hairline{height:1px;background:var(--line);border:0;width:100%}
+.hairline.double{height:3px;background:
+  linear-gradient(var(--line),var(--line)) top/100% 1px no-repeat,
+  linear-gradient(var(--line),var(--line)) bottom/100% 1px no-repeat;}
+.dateline{
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-faint);
+  padding:.55rem 0;
+}
+
+/* ============ HERO — editorial split ============ */
+.hero{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:2.5rem;
+  padding:clamp(2.5rem,5vw,4.5rem) 0 clamp(2rem,4vw,3.5rem);
+}
+@media(min-width:900px){
+  .hero{grid-template-columns:1.55fr 1fr;gap:clamp(2.5rem,5vw,5rem);align-items:start}
+}
+.hero-eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--amber);
+  margin-bottom:1.4rem;
+}
+.hero h1{
+  font-family:'DM Serif Display',serif;
+  font-size:var(--text-display);
+  line-height:1.03;
+  letter-spacing:-.015em;
+  font-weight:400;
+}
+.hero h1 .key{color:var(--amber);font-style:italic}
+/* oversized drop-cap */
+.hero h1::first-letter{
+  initial-letter:2;
+  -webkit-initial-letter:2;
+  color:var(--ink);
+  margin-right:.06em;
+}
+.hero-sub{
+  margin-top:1.8rem;
+  max-width:42ch;
+  color:var(--ink-dim);
+  font-size:clamp(1rem,.95rem+.3vw,1.12rem);
+  font-weight:300;
+}
+.cta-row{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2.2rem}
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.8rem;letter-spacing:.06em;
+  padding:.85rem 1.35rem;
+  border-radius:var(--radius-md);
+  transition:transform .18s ease,box-shadow .2s ease,background .2s ease;
+  will-change:transform;
+}
+.btn-primary{
+  background:var(--amber);color:#1a1206;font-weight:600;
+  box-shadow:var(--shadow-amber);
+}
+.btn-secondary{
+  background:var(--surface-1);color:var(--ink);
+  box-shadow:var(--shadow-1);
+  border:1px solid var(--line);
+}
+.hero-micro{
+  margin-top:1.4rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.68rem;letter-spacing:.05em;
+  color:var(--ink-faint);
+  max-width:40ch;
+}
+
+/* marginalia column — ledger margin notes */
+.marginalia{
+  border-left:1px solid var(--line);
+  padding-left:clamp(1.1rem,2vw,1.8rem);
+  padding-top:.3rem;
+}
+.marg-head{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-bottom:1.1rem;
+}
+.marg-note{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;line-height:1.7;
+  color:var(--ink-dim);
+  padding:.7rem 0;
+  border-bottom:1px dashed var(--line);
+}
+.marg-note:last-child{border-bottom:0}
+.marg-note .lbl{color:var(--ink-faint);display:block;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;margin-bottom:.25rem}
+.marg-note code{color:var(--amber)}
+.tx{color:var(--allow);word-break:break-all}
+
+/* verdict pills */
+.pill{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;font-weight:600;letter-spacing:.14em;
+  padding:.4rem .8rem;
+  border-radius:var(--radius-full);
+}
+.pill::before{content:"";width:.5rem;height:.5rem;border-radius:50%;flex:none}
+.pill-allow{background:var(--allow-soft);color:var(--allow);border:1px solid rgba(79,174,122,.3)}
+.pill-allow::before{background:var(--allow);box-shadow:0 0 8px rgba(79,174,122,.7)}
+.pill-deny{background:var(--deny-soft);color:var(--deny);border:1px solid rgba(209,96,96,.3)}
+.pill-deny::before{background:var(--deny);box-shadow:0 0 8px rgba(209,96,96,.6)}
+
+/* ============ SECTION NUMERATOR ============ */
+.numerator{
+  display:flex;align-items:baseline;gap:1rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink-faint);
+  padding:2.4rem 0 1.2rem;
+}
+.numerator .n{color:var(--amber);font-weight:600}
+.numerator .fill{flex:1;height:1px;background:var(--line)}
+
+/* ============ SIGNATURE — FACING PAGES LEDGER SPREAD ============ */
+.spread-section{padding-top:.5rem}
+.spread-lead{
+  max-width:56ch;margin-bottom:2rem;
+}
+.spread-lead h2{font-size:var(--text-h2);margin-bottom:.7rem}
+.spread-lead p{color:var(--ink-dim);font-size:.98rem}
+.spread{
+  display:grid;grid-template-columns:1fr;gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:var(--shadow-2);
+}
+@media(min-width:820px){.spread{grid-template-columns:1fr 1fr}}
+.page{
+  background:var(--surface-1);
+  padding:clamp(1.6rem,3vw,2.6rem);
+  position:relative;
+  min-height:19rem;
+}
+.page-verso{
+  background:
+    linear-gradient(180deg,rgba(79,174,122,.06),transparent 40%),
+    var(--surface-1);
+}
+.page-recto{
+  background:
+    linear-gradient(180deg,rgba(209,96,96,.06),transparent 40%),
+    var(--surface-2);
+}
+.page-foot{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-faint);
+  display:flex;justify-content:space-between;
+  margin-bottom:1.3rem;
+}
+.entry-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:.5rem;
+}
+.record{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.78rem;line-height:1.75;
+  background:var(--base);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+  padding:1rem 1.1rem;
+  margin-bottom:1.1rem;
+  box-shadow:inset 0 1px 0 rgba(244,241,234,.03);
+}
+.record .k{color:var(--ink-faint)}
+.record .v{color:var(--amber)}
+.record .empty{color:var(--ink-faint);font-style:italic}
+.record .strike{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--deny)}
+.settle-line{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:.7rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.7rem;letter-spacing:.06em;color:var(--ink-dim);
+  padding-top:.7rem;
+  border-top:1px dashed var(--line);
+}
+.write-note{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.66rem;color:var(--ink-dim);
+  margin-bottom:1.1rem;line-height:1.6;
+}
+.write-note .tx{color:var(--deny)}
+/* VOID overprint stamp */
+.page-recto{overflow:hidden}
+.void-stamp{
+  position:absolute;
+  top:46%;left:50%;
+  transform:translate(-50%,-50%) rotate(-8deg);
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(3.4rem,4rem+3vw,6.5rem);
+  letter-spacing:.08em;
+  color:rgba(209,96,96,.16);
+  border:.28rem solid rgba(209,96,96,.24);
+  border-radius:var(--radius-md);
+  padding:.1em .28em;
+  pointer-events:none;
+  text-transform:uppercase;
+  white-space:nowrap;
+  text-shadow:0 0 30px rgba(209,96,96,.15);
+}
+
+/* ============ HOW IT WORKS — ledger line items ============ */
+.beats{display:flex;flex-direction:column}
+.beat{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:.9rem 2rem;
+  padding:1.8rem 0;
+  border-bottom:1px solid var(--line);
+  align-items:start;
+}
+.beat:first-child{border-top:1px solid var(--line)}
+@media(min-width:760px){
+  .beat{grid-template-columns:minmax(9rem,.85fr) 2.6fr}
+  .beat:nth-child(even){padding-left:clamp(0px,4vw,3.5rem)}
+}
+.beat-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;
+}
+.beat-label .no{color:var(--amber);display:block;font-size:1.4rem;font-weight:600;margin-bottom:.35rem;letter-spacing:.05em}
+.beat-body h3{
+  font-family:'DM Serif Display',serif;font-weight:400;
+  font-size:1.4rem;letter-spacing:-.01em;margin-bottom:.5rem;
+}
+.beat-body p{color:var(--ink-dim);font-size:.96rem;max-width:52ch}
+.beat-body code{
+  font-family:'IBM Plex Mono',monospace;font-size:.85em;
+  color:var(--amber);background:var(--amber-soft);
+  padding:.05em .35em;border-radius:var(--radius-sm);
+}
+
+/* ============ HONEST FOLD ============ */
+.honest{
+  margin-top:1rem;
+  background:var(--surface-1);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-1);
+  overflow:hidden;
+}
+.honest summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1.5rem clamp(1.3rem,3vw,2.2rem);
+  transition:background .18s ease;
+}
+.honest summary::-webkit-details-marker{display:none}
+.honest summary .st{
+  font-family:'DM Serif Display',serif;font-size:1.35rem;letter-spacing:-.01em;
+}
+.honest summary .hint{
+  font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-faint);
+  display:flex;align-items:center;gap:.6rem;
+}
+.honest summary .chev{transition:transform .25s ease;display:inline-block}
+.honest[open] summary .chev{transform:rotate(90deg)}
+.honest-body{
+  padding:0 clamp(1.3rem,3vw,2.2rem) 1.8rem;
+  border-top:1px solid var(--line);
+}
+.honest dl{margin-top:1.3rem}
+.hrow{
+  display:grid;grid-template-columns:1fr;gap:.3rem 2rem;
+  padding:1rem 0;border-bottom:1px dashed var(--line);
+}
+@media(min-width:680px){.hrow{grid-template-columns:.7fr 1.6fr}}
+.hrow:last-child{border-bottom:0}
+.hrow dt{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.1em;
+  color:var(--amber);
+}
+.hrow dd{color:var(--ink-dim);font-size:.93rem}
+
+/* ============ CLOSING ============ */
+.closing{
+  padding:clamp(3.5rem,7vw,6rem) 0 clamp(2.5rem,5vw,4rem);
+  text-align:left;
+  position:relative;
+}
+.closing-inner{
+  max-width:60ch;
+}
+.closing .eyebrow{
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:1.2rem;
+}
+.closing h2{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(2rem,1.4rem+2.4vw,3.2rem);
+  line-height:1.05;letter-spacing:-.015em;
+}
+.closing h2 em{color:var(--amber)}
+.closing .cta-row{margin-top:2.2rem}
+
+/* ============ FOOTER — asymmetric, not 4 columns ============ */
+footer{padding:2.5rem 0 3.5rem}
+.foot-grid{
+  display:grid;grid-template-columns:1fr;gap:1.6rem;
+  align-items:end;
+}
+@media(min-width:720px){.foot-grid{grid-template-columns:1.6fr auto auto;gap:clamp(1.5rem,4vw,4rem)}}
+.foot-mark{font-family:'DM Serif Display',serif;font-size:1.6rem;letter-spacing:.02em}
+.foot-mark .dot{color:var(--amber)}
+.foot-tag{
+  font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-faint);margin-top:.5rem;max-width:36ch;line-height:1.7;
+}
+.foot-links{display:flex;flex-direction:column;gap:.5rem}
+.foot-links a{
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-dim);
+  transition:color .18s ease;
+}
+.foot-legal{
+  font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-faint);
+}
+
+/* ============ HOVER (pointer only) ============ */
+@media(hover:hover){
+  .mast-nav a:hover{color:var(--ink);border-color:var(--amber)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(242,166,59,.5),0 12px 40px rgba(242,166,59,.22)}
+  .btn-secondary:hover{transform:translateY(-2px);box-shadow:var(--shadow-2)}
+  .honest summary:hover{background:var(--surface-2)}
+  .foot-links a:hover{color:var(--amber)}
+  .beat:hover .beat-body h3{color:var(--amber);transition:color .2s ease}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div class="mast-top">
+      <div>
+        <div class="wordmark">LEASH<span class="dot">.</span></div>
+        <div class="mast-eyebrow">ENS · Hedera x402 · Privy</div>
+      </div>
+      <nav class="mast-nav" aria-label="Primary">
+        <a href="/demo">Sandbox</a>
+        <a href="/app">Console</a>
+        <a href="/proof">Proof</a>
+      </nav>
+    </div>
+    <hr class="hairline double">
+    <div class="dateline">
+      <span>The Spend Ledger — Edition 01</span>
+      <span>Vol. I · Revocable Agent Finance</span>
+      <span>acme.eth · resolver 0x00…c3</span>
+    </div>
+    <hr class="hairline">
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-lead">
+      <p class="hero-eyebrow">A control-room for money that agents spend</p>
+      <h1 class="serif">LEASH is the ENS name that can <span class="key">un-pay it.</span></h1>
+      <p class="hero-sub">Bind an external AI agent to a spending policy declared on your ENS name. Cut one resolver record and that agent's spending dies everywhere, in one on-chain write.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/demo">Try the judge sandbox →</a>
+        <a class="btn btn-secondary" href="/app">Open the real console</a>
+      </div>
+      <p class="hero-micro">No login, no wallet, no ETH for the sandbox. Every step runs a real on-chain transaction.</p>
+    </div>
+
+    <!-- MARGINALIA -->
+    <aside class="marginalia" aria-label="Ledger margin notes">
+      <div class="marg-head">In the margin</div>
+      <div class="marg-note">
+        <span class="lbl">Bound name</span>
+        <code>agent.ops.acme.eth</code> — declares its own spend policy on-chain.
+      </div>
+      <div class="marg-note">
+        <span class="lbl">Live entry</span>
+        <code>maxPerCall: 5 USDC</code><br>
+        <code>allow: ["api.acme.dev"]</code>
+      </div>
+      <div class="marg-note">
+        <span class="lbl">Verdict at settle</span>
+        <span class="pill pill-allow">ALLOW</span>
+      </div>
+      <div class="marg-note">
+        <span class="lbl">Revocation write</span>
+        tx <span class="tx" style="color:var(--deny)">0x9c…af31</span> — one record cleared.
+      </div>
+    </aside>
+  </section>
+
+  <!-- 01 · THE ONE-WRITE KILL -->
+  <div class="numerator">
+    <span class="n">01</span><span>The one-write kill</span><span class="fill"></span><span>A/B ledger spread</span>
+  </div>
+
+  <section class="spread-section" aria-label="One-write kill demonstration">
+    <div class="spread-lead">
+      <h2 class="serif">One payment. Two states. One on-chain write between them.</h2>
+      <p>The same agent, the same call to <code style="font-family:'IBM Plex Mono',monospace;color:var(--amber)">settle()</code>. On the left, its ENS-declared policy is live and the facilitator we run lets it through. On the right, the org cleared one resolver record — and the next payment fails closed, everywhere.</p>
+    </div>
+
+    <div class="spread">
+      <!-- VERSO -->
+      <article class="page page-verso">
+        <div class="page-foot"><span>Verso · recto 8</span><span>state: LIVE</span></div>
+        <p class="entry-label">ENS resolver record — leash.policy</p>
+        <div class="record">
+          <span class="k">{</span><br>
+          &nbsp;&nbsp;<span class="k">"maxPerCall":</span> <span class="v">"5 USDC"</span>,<br>
+          &nbsp;&nbsp;<span class="k">"allow":</span> <span class="v">["api.acme.dev"]</span>,<br>
+          &nbsp;&nbsp;<span class="k">"softBudget":</span> <span class="v">"120 USDC / day"</span><br>
+          <span class="k">}</span>
+        </div>
+        <div class="settle-line">
+          <span>settle( 3.20 USDC → api.acme.dev )</span>
+          <span class="pill pill-allow">ALLOW</span>
+        </div>
+      </article>
+
+      <!-- RECTO -->
+      <article class="page page-recto">
+        <div class="void-stamp serif" aria-hidden="true">VOID</div>
+        <div class="page-foot"><span>Recto · recto 9</span><span>state: REVOKED</span></div>
+        <p class="entry-label">after clearRecord("leash.policy")</p>
+        <p class="write-note">write: <span class="tx">0x9c…af31</span> — one on-chain transaction · block 20,441,908</p>
+        <div class="record">
+          <span class="k">{</span> <span class="empty">∅ — no policy resolved</span> <span class="k">}</span><br>
+          <span class="strike">"maxPerCall": "5 USDC"</span><br>
+          <span class="strike">"allow": ["api.acme.dev"]</span>
+        </div>
+        <div class="settle-line">
+          <span>settle( 3.20 USDC → api.acme.dev )</span>
+          <span class="pill pill-deny">DENY · REVOKED</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 02 · HOW IT WORKS -->
+  <div class="numerator">
+    <span class="n">02</span><span>How it works</span><span class="fill"></span><span>four line-items</span>
+  </div>
+
+  <section aria-label="How it works">
+    <div class="beats">
+      <div class="beat">
+        <div class="beat-label"><span class="no">01</span>Bind</div>
+        <div class="beat-body">
+          <h3 class="serif">Bind an agent that already exists.</h3>
+          <p>Point an ENS name — <code>agent.ops.acme.eth</code> — at an external autonomous agent you already run. Its identity is on-chain-resolved through ERC-8004; LEASH binds the leash, it does not create the agent.</p>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-label"><span class="no">02</span>Declare</div>
+        <div class="beat-body">
+          <h3 class="serif">Declare the spend policy on the name.</h3>
+          <p>Write the policy into the ENS resolver record: a per-call ceiling, an allow-list of endpoints, and a rolling <code>softBudget</code> daily and weekly cap. The name itself carries the rule.</p>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-label"><span class="no">03</span>Enforce</div>
+        <div class="beat-body">
+          <h3 class="serif">Enforce at every gas-free settlement.</h3>
+          <p>A forked Hedera x402 facilitator — the facilitator we run — reads the ENS-declared policy before each settlement. Spend rides a 2-of-2 co-signed Hedera account (the agent holds one key, LEASH the other); neither spends alone. Privy is the independent second rail on the funding flow.</p>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-label"><span class="no">04</span>Revoke</div>
+        <div class="beat-body">
+          <h3 class="serif">Revoke with one on-chain write.</h3>
+          <p>Clear the resolver record — one write to <code>leash.policy</code>. The agent's next payment fails closed everywhere, and the co-signer stops counter-signing. No queue to drain, no keys to rotate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · HONEST VERSION -->
+  <div class="numerator">
+    <span class="n">03</span><span>The honest version</span><span class="fill"></span><span>read the fine print</span>
+  </div>
+
+  <section aria-label="Honest version">
+    <details class="honest">
+      <summary>
+        <span class="st serif">What LEASH is, and what it is not.</span>
+        <span class="hint">Expand <span class="chev" aria-hidden="true">›</span></span>
+      </summary>
+      <div class="honest-body">
+        <dl>
+          <div class="hrow"><dt>Model</dt><dd>A corporate-card model, not a trustless one. There is a party in the loop — you can see it, and you can cut it.</dd></div>
+          <div class="hrow"><dt>The chain</dt><dd>The chain stores the policy and records the revocation. The facilitator we run enforces the org's ENS-declared policy at settlement time.</dd></div>
+          <div class="hrow"><dt>Identity</dt><dd>Agent identity is on-chain-resolved through ERC-8004. That is a resolution, not a claim we call "verified."</dd></div>
+          <div class="hrow"><dt>Caps</dt><dd>Rolling daily and weekly caps are a soft budget — a rolling ceiling the facilitator holds to, not a limit the chain itself enforces.</dd></div>
+          <div class="hrow"><dt>Funding</dt><dd>Privy is the independent second rail on the funding flow, and it denies over-funding on that rail — a separate check from the spend policy.</dd></div>
+          <div class="hrow"><dt>Scope</dt><dd>LEASH binds agents. It does not create or mint them; it leashes agents that already exist.</dd></div>
+        </dl>
+      </div>
+    </details>
+  </section>
+
+  <!-- CLOSING -->
+  <hr class="hairline" style="margin-top:3rem">
+  <section class="closing">
+    <div class="closing-inner">
+      <p class="eyebrow">Cut the record. End the spend.</p>
+      <h2 class="serif">The fastest way to trust an agent with money is to know you can <em>un-pay it</em> in one write.</h2>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/demo">Try the judge sandbox →</a>
+        <a class="btn btn-secondary" href="/app">Open the real console</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hairline double">
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-grid">
+      <div>
+        <div class="foot-mark">LEASH<span class="dot">.</span></div>
+        <p class="foot-tag">The ENS name that can un-pay it. A revocable spend-permission graph for a fleet of external autonomous agents.</p>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="/demo">Sandbox</a>
+        <a href="/app">Console</a>
+        <a href="/proof">Proof</a>
+      </nav>
+      <div class="foot-legal">
+        ENS · Hedera x402 · Privy<br>
+        demo org: acme<br>
+        Edition 01
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 90" role="img" aria-label="LEASH">
+  <title>LEASH — Clasp-L</title>
+  <!-- The L rendered as a carabiner clasp: elongated rounded-rect frame with a spring gate -->
+  <g fill="none" stroke="#c6f24d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- carabiner body: open oval that reads as an L (tall spine + foot) -->
+    <path d="M22 16
+             C 10 16, 8 24, 8 34
+             L 8 62
+             C 8 74, 16 80, 28 80
+             L 50 80"/>
+    <!-- spring gate crossing the top opening (the clip mechanism) -->
+    <path d="M22 16 C 34 16, 40 22, 40 34" stroke-width="4"/>
+    <!-- gate hinge dot -->
+  </g>
+  <circle cx="40" cy="34" r="3.5" fill="#d6ff6a"/>
+  <!-- EASH in ink -->
+  <g fill="#f4f4ef" font-family="'Clash Display','Helvetica Neue',Arial,sans-serif" font-weight="700">
+    <text x="60" y="70" font-size="52" letter-spacing="1">EASH</text>
+  </g>
+</svg>

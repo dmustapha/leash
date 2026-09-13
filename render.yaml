@@ -42,6 +42,20 @@ services:
         sync: false
       - key: HCS_TOPIC_ID
         sync: false
+      # DEPLOY BUG FIX (REDESIGN-BUILD-SCOPE §7): the durable replay guard is
+      # Neon-backed and fails closed without DATABASE_URL -> hosted settle DENY.
+      # Value set in the Render dashboard (sync:false); paste it UNQUOTED.
+      - key: DATABASE_URL
+        sync: false
+      # DEPLOY BUG FIX: the facilitator reads the live ENS leash.policy at settle
+      # (readPolicy -> publicClient). Without these the read throws -> RPC_ERROR
+      # (fail closed) -> in-cap settle DENIES. Read-only (no signing key needed).
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: POLICY_RESOLVER
+        sync: false
+      - key: SANDBOX_REGISTRY
+        sync: false
 
   # x402-gated resource server. Reads process.env.PORT. Do NOT set RESOURCE_PORT.
   # FACILITATOR_URL points at the leash-facilitator service (set after it deploys).

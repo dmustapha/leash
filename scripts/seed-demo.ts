@@ -41,11 +41,18 @@ interface DemoAgent {
   evmEnv: string;
   type: string;                  // [WS-7 D1] advisory ENS identity (agent.type)
   description: string;           // [WS-7 D1] advisory ENS identity (agent.description)
+  address?: string;              // on-chain-resolved external EVM identity (advisory, agent.address)
 }
 
 const AGENTS: DemoAgent[] = [
+  // The judge-sandbox hero is SOLV-001: a real autonomous agent (Circle wallet on Arc). Its EXTERNAL
+  // identity (0x927c… on Arc) is written on-chain as agent.address (on-chain-resolved, advisory), while
+  // LEASH governs its spend through this Hedera account + the leash.policy the facilitator reads. This is
+  // the Arc-vs-Hedera seam: SOLV-001 settles natively on Arc; the controls judges demo run on Hedera.
   { label: 'data', capRaw: '5000000', idEnv: 'SANDBOX_AGENT_ACCOUNT', keyEnv: 'SANDBOX_AGENT_KEY', evmEnv: 'SANDBOX_AGENT_EVM',
-    type: 'data buyer', description: 'Buys premium API data within a 5 USDC per-call cap declared on ENS.' },
+    type: 'SOLV-001 · autonomous agent',
+    description: 'SOLV-001, a real autonomous agent that earns USDC via Circle and pays for services on Arc. Bound to LEASH and governed here through a Hedera account, within a 5 USDC per-call cap declared on ENS.',
+    address: '0x927c1d756d12879aebea0772f3ee220f21f4841a' },
   { label: 'payments', capRaw: '25000000', idEnv: 'SANDBOX_AGENT2_ACCOUNT', keyEnv: 'SANDBOX_AGENT2_KEY', evmEnv: 'SANDBOX_AGENT2_EVM',
     type: 'payments agent', description: 'Settles vendor payments within a 25 USDC per-call cap declared on ENS.' },
 ];
@@ -119,12 +126,19 @@ async function ensureAgentPolicy(agent: DemoAgent, tokenId: string): Promise<Age
     return existing!;
   }
 
-  // Mint the subname only if it does not resolve yet (no policy record == not seeded before). The
-  // register call is guarded so a re-run that only needs a policy rewrite never double-mints.
+  // Mint the subname only if it does not resolve yet. A cleared/revoked policy record (readPolicy == null)
+  // does NOT imply the name is unminted: a prior demo run clears the leash.policy TEXT record but leaves the
+  // subname registered. Re-minting then reverts (name already registered). So the register is best-effort:
+  // if it reverts because the name exists, we fall through to setPolicy, which is what restores the policy.
   if (!existing) {
     const expires = BigInt(Math.floor(Date.now() / 1000) + 31_536_000);
-    await mintSubname(registry, agent.label, process.env.SANDBOX_ORG_NAME!, agentEvm, expires);
-    console.log(`  minted ${name} (tokenId ${tokenIdOf(name)})`);
+    try {
+      await mintSubname(registry, agent.label, process.env.SANDBOX_ORG_NAME!, agentEvm, expires);
+      console.log(`  minted ${name} (tokenId ${tokenIdOf(name)})`);
+    } catch (e: unknown) {
+      // Name already registered from a prior seed; only its policy record was cleared. Proceed to rebind.
+      console.log(`  ${name} already registered (re-binding cleared policy): ${e instanceof Error ? e.message.split('\n')[0] : String(e)}`);
+    }
   }
   await setPolicy(name, policy, registry, agent.label);
   console.log(`  bound ${name} policy: cap=${policy.maxPerCall} account=${policy.hederaAccount}`);
@@ -156,7 +170,7 @@ async function main(): Promise<void> {
     await ensureAgentPolicy(agent, tokenId);
     // [WS-7 D1] Write advisory ENS identity records alongside the policy (never an enforcement input).
     const name = `${agent.label}.${process.env.SANDBOX_ORG_NAME!}`;
-    await writeIdentity(name, { type: agent.type, description: agent.description }).catch((e: unknown) => {
+    await writeIdentity(name, { type: agent.type, description: agent.description, address: agent.address }).catch((e: unknown) => {
       console.warn(`  identity write skipped for ${name}: ${e instanceof Error ? e.message : String(e)}`);
     });
   }
