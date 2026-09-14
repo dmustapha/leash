@@ -21,7 +21,7 @@ import AgentCard from '../../components/AgentCard';
 import SiteNav from '../../components/SiteNav';
 import type { AgentPolicy } from '../../../types';
 
-type Beat = 'spend' | 'refuse' | 'revoke' | 'deny';
+type Beat = 'spend' | 'refuse' | 'revoke' | 'deny' | 'reactivate';
 
 type AgentIdentity = { description?: string; type?: string; avatar?: string; erc8004?: string; address?: string };
 type PolicyState = { policy: AgentPolicy | null; identity: AgentIdentity | null; revoked: boolean; loading: boolean };
@@ -83,6 +83,14 @@ const STEPS: Step[] = [
     cta: 'Try to over-fund it',
     proves: 'An over-fund is denied by the funding rail, capping the damage.',
   },
+  {
+    n: 6,
+    beat: 'reactivate',
+    title: 'Clip the leash back on',
+    lead: 'Cutting an agent off is not permanent. The org restores SOLV-001’s limit on-chain, the record is populated again, and it can pay within its cap. Revoke and re-enable are a round trip, and the sandbox is left live for the next run.',
+    cta: 'Re-enable it',
+    proves: 'Re-binding the limit brings the agent back online: the kill switch is reversible.',
+  },
 ];
 
 type Props = {
@@ -125,8 +133,22 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
     }
   }, []);
 
-  // Load both cards + the audit scroll on mount.
-  useEffect(() => { void loadCard(dataAgent); void loadCard(paymentsAgent); void loadAudit(); }, [loadCard, dataAgent, paymentsAgent, loadAudit]);
+  // Load both cards + the audit scroll on mount. SELF-HEAL: a previous visitor may have left SOLV-001 revoked
+  // (the walkthrough's step 4 clears its policy on-chain). If so, re-enable it BEFORE rendering the cards so
+  // every fresh judge starts on a working sandbox. The reactivate beat is idempotent (it only writes to Sepolia
+  // when the record is actually empty), so this is a cheap ENS read on the healthy path.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const r = await fetch(`/api/policy/${encodeURIComponent(dataAgent)}`, { cache: 'no-store' });
+        const j = await r.json();
+        if (j.revoked) {
+          await fetch('/api/demo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ beat: 'reactivate' }) });
+        }
+      } catch { /* self-heal is best-effort; never block the sandbox from rendering */ }
+      void loadCard(dataAgent); void loadCard(paymentsAgent); void loadAudit();
+    })();
+  }, [loadCard, dataAgent, paymentsAgent, loadAudit]);
 
   const runBeat = useCallback(
     async (beat: Beat) => {
@@ -140,8 +162,8 @@ export default function DemoClient({ org, dataAgent, paymentsAgent, hcsTopicId, 
         const j = (await r.json()) as NonNullable<LiveResult>;
         setResult(j);
         setLog((l) => [j, ...l].slice(0, 8));
-        // The data agent's on-chain record changed on revoke; refresh its card.
-        if (beat === 'revoke') await loadCard(dataAgent);
+        // The data agent's on-chain record changed on revoke/reactivate; refresh its card.
+        if (beat === 'revoke' || beat === 'reactivate') await loadCard(dataAgent);
         // A new ALLOW/DENY was logged to HCS; pull it into the audit scroll.
         void loadAudit();
       } catch (e) {

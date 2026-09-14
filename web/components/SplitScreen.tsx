@@ -14,12 +14,13 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AgentPolicy } from '../../types';
 
 export type LiveResult = {
-  beat: 'spend' | 'refuse' | 'revoke' | 'deny';
+  beat: 'spend' | 'refuse' | 'revoke' | 'deny' | 'reactivate';
   verdict?: string;
   reason?: string;
   txId?: string | null;
   revokeTx?: string;
   fundTx?: string | null;
+  policyTx?: string; // reactivate: the Sepolia setPolicy re-bind tx
   gasFree?: boolean;
   note?: string;
   error?: string;
@@ -170,6 +171,7 @@ function Verdict({ result, revoked }: { result: LiveResult; revoked: boolean }) 
   const key = `${result.beat}-${v}-${result.error ?? ''}`;
   if (result.error) return <span key={key} className="pill pill-deny flip-in">error</span>;
   if (v === 'ALLOW') return <span key={key} className="pill pill-allow flip-in">paid</span>;
+  if (v === 'REACTIVATED') return <span key={key} className="pill pill-allow flip-in">re-enabled</span>;
   if (v === 'REVOKED') return <span key={key} className="pill pill-deny flip-in">cut off</span>;
   if (v === 'DENY') return <span key={key} className="pill pill-deny flip-in">blocked</span>;
   return <span key={key} className={`flip-in ${revoked ? 'pill pill-deny' : 'pill pill-idle'}`}>{v || 'done'}</span>;
@@ -182,6 +184,9 @@ function ResultDetail({ result }: { result: NonNullable<LiveResult> }) {
   let tone: 'good' | 'bad' = 'good';
   if (v === 'ALLOW') {
     headline = result.gasFree ? 'Paid $3 to api.acme.dev, gas-free.' : 'Paid $3 to api.acme.dev.';
+    tone = 'good';
+  } else if (v === 'REACTIVATED') {
+    headline = 'Re-enabled. Its $5 limit is back on-chain and it can pay again.';
     tone = 'good';
   } else if (v === 'REVOKED') {
     headline = 'Revoked, cut off everywhere. The next payment fails.';
@@ -224,6 +229,10 @@ function ResultDetail({ result }: { result: NonNullable<LiveResult> }) {
         {result.revokeTx && (
           <a className="link-tx" target="_blank" rel="noreferrer"
              href={`https://sepolia.etherscan.io/tx/${result.revokeTx}`}>view revoke on-chain ↗</a>
+        )}
+        {result.policyTx && (
+          <a className="link-tx" target="_blank" rel="noreferrer"
+             href={`https://sepolia.etherscan.io/tx/${result.policyTx}`}>view re-enable on-chain ↗</a>
         )}
         {result.fundTx && (
           <a className="link-tx" target="_blank" rel="noreferrer"
