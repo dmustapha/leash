@@ -1,0 +1,35 @@
+# Keeps the Render Free-tier services warm so judges never hit a cold start.
+# Render Free web services spin down after ~15 min of inactivity; the first request
+# after that eats a 30-60s cold start (which makes the /demo pay-probe time out with
+# NO_SETTLE_RESPONSE). Pinging /healthz every 5 min keeps both services awake.
+#
+# NOTE: this is a best-effort stopgap. GitHub scheduled workflows can be delayed or
+# skipped under load, so a judge arriving mid-restart may still hit one cold start.
+# The bulletproof fix is upgrading both services to Render's Starter plan (always-on).
+name: keep-render-awake
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # every 5 minutes (headroom under Render's ~15 min idle threshold)
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+# Never let overlapping runs pile up.
+concurrency:
+  group: keep-render-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping facilitator + resource server
+        run: |
+          for url in \
+            "https://leash-facilitator.onrender.com/healthz" \
+            "https://leash-resource.onrender.com/premium"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$url" || echo "000")
+            echo "$url -> $code"
+          done
+          # The job succeeds as long as it ran; the ping itself is the keep-alive.
+          # (/healthz returns 200, /premium returns 402 — both count as traffic.)
