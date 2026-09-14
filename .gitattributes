@@ -1,0 +1,5 @@
+# Design mockups and prototypes are process artifacts, not app code.
+# Exclude them from GitHub language statistics so the repo reads as TypeScript.
+web/design/** linguist-documentation
+web/proposals/** linguist-documentation
+*.html linguist-documentation
