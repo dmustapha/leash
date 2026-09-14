@@ -13,7 +13,8 @@
 import { NextResponse } from 'next/server';
 import { pay } from '../../../../agent/pay';
 import { clearPolicy } from '../../../../scripts/ens/revoke';
-import { readPolicy } from '../../../../scripts/ens/policy';
+import { readPolicy, setPolicy } from '../../../../scripts/ens/policy';
+import type { AgentPolicy } from '../../../../types';
 import { fundAgent } from '../../../../treasury/privy';
 import { config } from '../../../lib/config';
 import { DATA_AGENT, resourcePremiumUrl } from '../../../lib/demo';
@@ -22,7 +23,7 @@ import { enforceRateLimit } from '../../../lib/ratelimit';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // beats do real on-chain work; give the settle/revoke room
 
-type Beat = 'spend' | 'refuse' | 'revoke' | 'deny';
+type Beat = 'spend' | 'refuse' | 'revoke' | 'deny' | 'reactivate';
 
 // The hero agent (data.acme.leash.eth, cap 5 USDC) drives every beat. Its keys are read server-side only.
 function agentArgs() {
@@ -136,6 +137,34 @@ export async function POST(req: Request) {
           fundTx: 'funded' in result ? result.txHash : null,
           amountUsdc: '10.000001', // one raw unit over the 10 USDC funding cap
           note: 'Leaked-key over-fund (over the 10 USDC funding cap) blocked by the treasury Privy policy before broadcast (FUNDING_DENIED).',
+        });
+      }
+
+      // BEAT 5 - REACTIVATE (F-021, symmetric to revoke): re-bind the agent's leash.policy on-chain via one
+      // relayer-sponsored setPolicy write, so the very next in-cap payment settles again (the facilitator reads
+      // the now-populated ENS record live). This is the honest inverse of the kill switch: revoke and re-enable
+      // are a round trip. IDEMPOTENT: if the record is already bound, it reports active WITHOUT a redundant write
+      // (so the /demo auto-heal-on-load can call it every mount and only pay Sepolia gas when actually revoked).
+      case 'reactivate': {
+        const before = await readPolicy(DATA_AGENT);
+        if (before) {
+          return NextResponse.json({
+            beat, verdict: 'REACTIVATED', reactivated: false, alreadyActive: true,
+            policy: before, chain: 'sepolia',
+            note: 'Agent already active: its leash.policy is bound on-chain. No write needed.',
+          });
+        }
+        const policy: AgentPolicy = {
+          maxPerCall: '5000000', // 5 USDC cap (the /demo hero cap)
+          allowedPayees: [process.env.RECEIVER_ACCOUNT_ID!],
+          hederaAccount: process.env.SANDBOX_AGENT_ACCOUNT!,
+          token: config.usdcTokenId,
+        };
+        const policyTx = await setPolicy(DATA_AGENT, policy, process.env.SANDBOX_REGISTRY as `0x${string}`, DATA_AGENT.split('.')[0]);
+        const after = await readPolicy(DATA_AGENT);
+        return NextResponse.json({
+          beat, verdict: 'REACTIVATED', reactivated: true, policyTx, chain: 'sepolia', policy: after,
+          note: 'leash.policy re-bound on-chain. The limit is restored and the next in-cap payment settles again.',
         });
       }
 
