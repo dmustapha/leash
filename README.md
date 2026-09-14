@@ -20,12 +20,13 @@ The control layer for AI agents that spend money: bind an existing agent to a go
 
 <img src="./docs/images/cover.png" alt="LEASH: keep your AI agents on a leash" width="820" />
 
-<a href="https://leash.ink/demo"><img src="./docs/images/demo-thumb.png" alt="Watch LEASH govern SOLV-001 live in the judge sandbox" width="820" /></a>
-
 </div>
 
-<!-- DEMO-VIDEO: replace this comment with the v7 GitHub attachment URL on its own line for a native inline player -->
-<!-- e.g. https://github.com/user-attachments/assets/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -->
+## Demo
+
+https://github.com/user-attachments/assets/8f87a06f-449f-4ffa-83e0-87fbccdc31ea
+
+A 3-minute walkthrough: SOLV-001 pays under its cap, gets refused over cap, and is cut off with one on-chain write. Try it yourself in the [live sandbox](https://leash.ink/demo).
 
 ---
 
