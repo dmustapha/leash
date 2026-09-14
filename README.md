@@ -20,6 +20,10 @@ The control layer for AI agents that spend money: bind an existing agent to a go
 
 <img src="./docs/images/cover.png" alt="LEASH: keep your AI agents on a leash" width="820" />
 
+<a href="https://x.com/leash_dash/status/2099208074925879541"><img src="./docs/images/demo-thumb.png" alt="Watch the LEASH demo: SOLV-001 governed live on real rails" width="820" /></a>
+
+**[▶ Watch the 3-minute demo](https://x.com/leash_dash/status/2099208074925879541)**
+
 </div>
 
 ---
